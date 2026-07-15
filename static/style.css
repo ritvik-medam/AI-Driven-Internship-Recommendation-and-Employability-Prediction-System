@@ -1171,19 +1171,25 @@ h1, h2, h3, h4 {
         display: none !important;
     }
 
-    /* Reset background and container offsets */
+    /* Force the printed body to have no margins/padding and reset display flex */
     html, body {
         background: #ffffff !important;
         color: #000000 !important;
         margin: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
         padding: 0 !important;
         width: 100% !important;
         height: 100% !important;
         overflow: visible !important;
+        display: block !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
+    /* Reset absolute offsets and sidebar left margins on all parents */
     #app-container,
     .app-workspace,
     main,
@@ -1194,22 +1200,30 @@ h1, h2, h3, h4 {
         width: 100% !important;
         height: 100% !important;
         margin: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
         padding: 0 !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        position: static !important;
+        left: 0 !important;
+        top: 0 !important;
     }
 
-    /* Position the resume paper at the absolute top-left of the A4 page */
+    /* Position the resume paper container precisely at the top-left page corner */
     #resume-paper-container {
         display: block !important;
+        box-sizing: border-box !important;
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
-        width: 210mm !important; /* A4 width */
-        height: 297mm !important; /* A4 height */
+        width: 210mm !important; /* Standard A4 Width */
+        height: 297mm !important; /* Standard A4 Height */
         margin: 0 !important;
-        padding: 20mm !important; /* Professional margins */
+        padding: 20mm !important; /* Standard professional resume margins */
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
@@ -1219,7 +1233,7 @@ h1, h2, h3, h4 {
         page-break-inside: avoid !important;
     }
 
-    /* Ensure high-contrast text visibility in print */
+    /* High-contrast text clarity rules for laser/inkjet printing */
     #resume-paper-container h2 {
         color: #0f172a !important;
     }

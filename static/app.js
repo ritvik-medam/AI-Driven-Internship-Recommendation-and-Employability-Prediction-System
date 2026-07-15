@@ -882,7 +882,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             data.forEach(c => {
                 const tr = document.createElement('tr');
-                const date = new Date(c.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const cleanDateStr = c.applied_at ? c.applied_at.replace(" ", "T") : "";
+                const dObj = new Date(cleanDateStr);
+                const date = isNaN(dObj.getTime()) ? (c.applied_at || "N/A") : dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
                 const mockGrade = c.interview_score !== null ? 
                     `<span class="clickable-score score-badge" data-email="${c.student_email}" data-role="${c.internship_title}" style="color:var(--accent-green); border-color:rgba(0,245,160,0.3);">${c.interview_score}/100</span>` : 
@@ -985,7 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div><strong>Email:</strong> ${d.student_email}</div>
                     <div><strong>Target Assessment Role:</strong> ${d.role}</div>
                     <div><strong>Verbal Filler Phrases Found:</strong> ${d.filler_words}</div>
-                    <div><strong>Completed At:</strong> ${new Date(d.completed_at).toLocaleString()}</div>
+                    <div><strong>Completed At:</strong> ${d.completed_at ? new Date(d.completed_at.replace(" ", "T")).toLocaleString() : "N/A"}</div>
                 </div>
                 <div class="score-grid">
                     <div class="score-card">

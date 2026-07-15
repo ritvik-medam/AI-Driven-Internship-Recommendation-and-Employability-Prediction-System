@@ -1155,6 +1155,11 @@ h1, h2, h3, h4 {
 
 /* ================== PRINT MEDIA STYLES FOR PDF ================== */
 @media print {
+    @page {
+        size: A4;
+        margin: 15mm 20mm;
+    }
+
     /* Hide everything on the page except the preview container */
     body > *,
     #auth-container,
@@ -1217,13 +1222,12 @@ h1, h2, h3, h4 {
     #resume-paper-container {
         display: block !important;
         box-sizing: border-box !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 210mm !important; /* Standard A4 Width */
-        height: 297mm !important; /* Standard A4 Height */
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
         margin: 0 !important;
-        padding: 20mm !important; /* Standard professional resume margins */
+        padding: 10mm !important; /* Professional margins inside the print area */
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;

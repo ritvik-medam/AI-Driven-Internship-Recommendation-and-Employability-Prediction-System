@@ -304,6 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) el.addEventListener('input', updateLiveResumePreview);
     });
 
+    const themeSelect = document.getElementById('builder-theme');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', () => {
+            const paper = document.getElementById('resume-paper-container');
+            if (paper) {
+                paper.className = 'resume-paper ' + themeSelect.value;
+            }
+        });
+    }
+
     function updateLiveResumePreview() {
         previewName.textContent = currentUserSession ? currentUserSession.name : 'Candidate Name';
         previewEmail.textContent = currentUserSession ? currentUserSession.email : 'email@university.edu';

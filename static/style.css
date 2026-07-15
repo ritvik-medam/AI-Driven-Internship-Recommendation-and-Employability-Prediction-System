@@ -302,6 +302,25 @@ h1, h2, h3, h4 {
 }
 
 /* Forms and Inputs */
+.form-section-header {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.form-section-header i {
+    font-size: 0.95rem;
+}
+
 .input-group {
     display: flex;
     flex-direction: column;
@@ -1084,26 +1103,135 @@ h1, h2, h3, h4 {
     margin-top: 0.15rem;
 }
 
+/* ================== RESUME DESIGN THEME STYLES ================== */
+.resume-text {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #334155 !important;
+    margin-top: 0.25rem;
+}
+.resume-project-desc {
+    font-size: 0.75rem;
+    color: #475569 !important;
+    line-height: 1.35;
+    margin-top: 0.15rem;
+}
+
+/* Corporate Theme (Navy) */
+.resume-paper.theme-corporate {
+    border-top: 6px solid #1e3a8a;
+}
+.resume-paper.theme-corporate .resume-section-title {
+    color: #1e3a8a;
+    border-left-color: #1e3a8a;
+}
+.resume-paper.theme-corporate .resume-header h2 {
+    color: #1e3a8a;
+}
+
+/* Executive Theme (Emerald) */
+.resume-paper.theme-executive {
+    border-top: 6px solid #065f46;
+}
+.resume-paper.theme-executive .resume-section-title {
+    color: #065f46;
+    border-left-color: #065f46;
+}
+.resume-paper.theme-executive .resume-header h2 {
+    color: #065f46;
+}
+
+/* Creative Theme (Purple) */
+.resume-paper.theme-creative {
+    border-top: 6px solid #6d28d9;
+}
+.resume-paper.theme-creative .resume-section-title {
+    color: #6d28d9;
+    border-left-color: #6d28d9;
+}
+.resume-paper.theme-creative .resume-header h2 {
+    color: #6d28d9;
+}
+
 /* ================== PRINT MEDIA STYLES FOR PDF ================== */
 @media print {
-    body * {
-        visibility: hidden;
+    /* Hide everything on the page except the preview container */
+    body > *,
+    #auth-container,
+    #app-container aside,
+    #app-container .app-workspace header,
+    #app-container .app-workspace .panel-header,
+    #app-container .app-workspace form,
+    #app-container .app-workspace .card:not(#resume-preview-card),
+    #app-container .app-workspace .terminal-header,
+    #transcript-modal,
+    #notif-dropdown,
+    #applications-timeline-container,
+    #radar-chart-container {
+        display: none !important;
     }
-    
-    #resume-paper-container, #resume-paper-container * {
-        visibility: visible;
+
+    /* Reset background and container offsets */
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
-    
+
+    #app-container,
+    .app-workspace,
+    main,
+    #resume-builder-panel,
+    #resume-builder-panel .grid-container,
+    #resume-preview-card {
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Position the resume paper at the absolute top-left of the A4 page */
     #resume-paper-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-        background: #fff;
+        display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 210mm !important; /* A4 width */
+        height: 297mm !important; /* A4 height */
+        margin: 0 !important;
+        padding: 20mm !important; /* Professional margins */
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        color: #1e293b !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Ensure high-contrast text visibility in print */
+    #resume-paper-container h2 {
+        color: #0f172a !important;
+    }
+    #resume-paper-container .resume-section-title {
+        color: #0f172a !important;
+        border-left-color: #0f172a !important;
+    }
+    #resume-paper-container .resume-text,
+    #resume-paper-container p,
+    #resume-paper-container span,
+    #resume-paper-container strong {
+        color: #1e293b !important;
     }
 }
 

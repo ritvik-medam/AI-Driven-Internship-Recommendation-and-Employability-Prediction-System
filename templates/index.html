@@ -90,8 +90,11 @@
             <!-- Dynamic Navigation Menus -->
             <div class="sidebar-menu" id="student-menu" style="display: none;">
                 <button class="menu-btn active" data-tab="student-dashboard"><i class="fas fa-user"></i> Placement Matching</button>
+                <button class="menu-btn" data-tab="my-applications-panel"><i class="fas fa-paper-plane"></i> My Applications</button>
                 <button class="menu-btn" data-tab="resume-builder-panel"><i class="fas fa-file-invoice"></i> Resume Builder</button>
                 <button class="menu-btn" data-tab="mock-interview-panel"><i class="fas fa-headset"></i> AI Interview Coach</button>
+                <button class="menu-btn" data-tab="leaderboard-panel"><i class="fas fa-trophy"></i> Leaderboard</button>
+                <button class="menu-btn" data-tab="companies-panel"><i class="fas fa-building"></i> Companies</button>
             </div>
             
             <div class="sidebar-menu" id="recruiter-menu" style="display: none;">
@@ -105,10 +108,16 @@
             <!-- Profile Info Footer -->
             <div class="user-session-card">
                 <div class="user-session-info">
-                    <div id="session-username" style="font-weight: 600; color: #fff;">User Name</div>
+                <div id="session-username" style="font-weight: 600; color: #fff;">User Name</div>
                     <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
                 </div>
-                <button id="logout-btn" title="Logout Account"><i class="fas fa-power-off"></i></button>
+                <div class="sidebar-actions">
+                    <button id="notif-bell-btn" class="notif-bell" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
+                    </button>
+                    <button id="logout-btn" title="Logout Account"><i class="fas fa-power-off"></i></button>
+                </div>
             </div>
             
             <div class="sidebar-footer">
@@ -265,6 +274,30 @@
                                     <!-- Dynamic table lists -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Skill Radar Chart -->
+                    <div class="card col-12" id="radar-chart-container" style="display: none; margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-spider"></i> Skill Match Radar Analysis</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Your skills vs. top internship requirements. Gaps reveal areas to upskill.</p>
+                        <div style="position: relative; height: 380px; width: 100%; max-width: 600px; margin: 0 auto;">
+                            <canvas id="skillRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== MY APPLICATIONS PANEL ================== -->
+                <div id="my-applications-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title">My Application Pipeline</h1>
+                        <p class="panel-subtitle">Track the real-time status of all your submitted internship applications.</p>
+                    </div>
+                    <div id="applications-timeline-container">
+                        <div class="timeline-empty">
+                            <i class="fas fa-inbox" style="font-size: 3rem; color: rgba(255,255,255,0.06);"></i>
+                            <p style="color: var(--text-secondary);">No applications submitted yet. Apply for internships from the Placement Matching dashboard.</p>
                         </div>
                     </div>
                 </div>
@@ -468,6 +501,61 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Interview Performance Trend Graph -->
+                    <div class="card col-12" id="interview-history-container" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Interview Performance Trends</h3>
+                        <div id="interview-history-empty" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-chart-area" style="font-size: 2.5rem; color: rgba(255,255,255,0.06); margin-bottom: 1rem; display: block;"></i>
+                            <p>Complete mock interviews to see your performance trends over time.</p>
+                        </div>
+                        <div id="interview-history-chart-wrap" style="display: none; position: relative; height: 300px; width: 100%;">
+                            <canvas id="interviewTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== LEADERBOARD PANEL ================== -->
+                <div id="leaderboard-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-trophy" style="color: #ffd700;"></i> Student Employability Leaderboard</h1>
+                        <p class="panel-subtitle">See how you rank against peers. Scores are based on CGPA, skills, projects, certifications, and experience.</p>
+                    </div>
+                    <div class="card col-12">
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">Rank</th>
+                                        <th>Student Name</th>
+                                        <th>CGPA</th>
+                                        <th>Skills</th>
+                                        <th>Employability Score</th>
+                                        <th>Badges</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Loading rankings...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== COMPANIES PANEL ================== -->
+                <div id="companies-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-building"></i> Company Profiles & Opportunities</h1>
+                        <p class="panel-subtitle">Explore companies, their culture, and available internship listings.</p>
+                    </div>
+                    <div id="companies-grid" class="companies-grid">
+                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary); grid-column: 1 / -1;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                            <p style="margin-top: 1rem;">Loading company profiles...</p>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -598,6 +686,17 @@
                     <i class="fas fa-file-pdf"></i> Download PDF Scorecard
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
+    <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
+        <div class="notif-dropdown-header">
+            <span><i class="fas fa-bell"></i> Notifications</span>
+            <button id="notif-mark-read-btn" class="notif-mark-read">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list">
+            <div class="notif-empty">No notifications yet.</div>
         </div>
     </div>
 

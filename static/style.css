@@ -1106,3 +1106,432 @@ h1, h2, h3, h4 {
         background: #fff;
     }
 }
+
+/* ============ NOTIFICATION BELL ============ */
+.sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notif-bell {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.notif-bell:hover {
+    color: var(--accent-blue);
+    background: rgba(0, 242, 254, 0.08);
+}
+.notif-badge {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    background: var(--accent-red);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    animation: notifPulse 2s ease-in-out infinite;
+}
+@keyframes notifPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 51, 102, 0); }
+}
+
+/* ============ NOTIFICATION DROPDOWN ============ */
+.notif-dropdown {
+    position: fixed;
+    bottom: 80px;
+    left: 220px;
+    width: 360px;
+    max-height: 420px;
+    background: rgba(16, 20, 38, 0.97);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    overflow: hidden;
+    animation: slideUp 0.25s ease;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.notif-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+}
+.notif-dropdown-header i {
+    color: var(--accent-blue);
+    margin-right: 0.5rem;
+}
+.notif-mark-read {
+    background: transparent;
+    border: none;
+    color: var(--accent-blue);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.notif-mark-read:hover { opacity: 0.7; }
+.notif-list {
+    max-height: 340px;
+    overflow-y: auto;
+}
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s;
+    cursor: default;
+}
+.notif-item:hover { background: rgba(255,255,255,0.03); }
+.notif-item.unread { background: rgba(0, 242, 254, 0.04); }
+.notif-item .notif-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    background: rgba(0, 242, 254, 0.1);
+    color: var(--accent-blue);
+}
+.notif-item .notif-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+.notif-item .notif-time {
+    font-size: 0.65rem;
+    color: rgba(148, 163, 184, 0.5);
+    margin-top: 0.25rem;
+}
+.notif-empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ============ APPLICATION TIMELINE ============ */
+.timeline-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+.timeline-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+.timeline-card:hover {
+    border-color: rgba(0, 242, 254, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.timeline-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+.timeline-role-info h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+.timeline-role-info span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.timeline-match-badge {
+    background: rgba(0, 245, 160, 0.1);
+    border: 1px solid rgba(0, 245, 160, 0.25);
+    color: var(--accent-green);
+    padding: 0.3rem 0.8rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.timeline-pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 1rem;
+}
+.pipeline-step {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: rgba(148, 163, 184, 0.5);
+    white-space: nowrap;
+}
+.pipeline-step.active {
+    color: var(--accent-blue);
+}
+.pipeline-step.completed {
+    color: var(--accent-green);
+}
+.pipeline-step.rejected {
+    color: var(--accent-red);
+}
+.pipeline-step .step-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    border: 2px solid rgba(148, 163, 184, 0.2);
+    background: transparent;
+    flex-shrink: 0;
+}
+.pipeline-step.completed .step-dot {
+    background: rgba(0, 245, 160, 0.15);
+    border-color: var(--accent-green);
+}
+.pipeline-step.active .step-dot {
+    background: rgba(0, 242, 254, 0.15);
+    border-color: var(--accent-blue);
+    animation: stepPulse 2s ease-in-out infinite;
+}
+.pipeline-step.rejected .step-dot {
+    background: rgba(255, 51, 102, 0.15);
+    border-color: var(--accent-red);
+}
+@keyframes stepPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.3); }
+    50% { box-shadow: 0 0 0 5px rgba(0, 242, 254, 0); }
+}
+.pipeline-connector {
+    width: 30px;
+    height: 2px;
+    background: rgba(148, 163, 184, 0.15);
+    flex-shrink: 0;
+}
+.pipeline-connector.completed {
+    background: linear-gradient(90deg, var(--accent-green), rgba(0, 245, 160, 0.3));
+}
+.timeline-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ============ LEADERBOARD ============ */
+.rank-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+}
+.rank-1 {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+.rank-2 {
+    background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.05));
+    color: #c0c0c0;
+    border: 1px solid rgba(192, 192, 192, 0.3);
+}
+.rank-3 {
+    background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05));
+    color: #cd7f32;
+    border: 1px solid rgba(205, 127, 50, 0.3);
+}
+.rank-other {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.lb-score-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.lb-score-fill {
+    height: 6px;
+    border-radius: 99px;
+    background: var(--gradient-glow);
+    transition: width 0.8s ease;
+}
+.lb-score-track {
+    flex-grow: 1;
+    height: 6px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+.lb-score-val {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--accent-blue);
+    min-width: 36px;
+    text-align: right;
+}
+.lb-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 99px;
+    margin-right: 0.3rem;
+    margin-bottom: 0.2rem;
+}
+.lb-highlight-row td {
+    background: rgba(0, 242, 254, 0.04) !important;
+}
+
+/* ============ COMPANY CARDS ============ */
+.companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.25rem;
+}
+.company-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+.company-card:hover {
+    border-color: rgba(155, 81, 224, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+.company-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.company-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.company-card-header h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+}
+.company-card-header .company-industry {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.company-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.company-meta i {
+    color: rgba(0, 242, 254, 0.5);
+    margin-right: 0.3rem;
+}
+.culture-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+}
+.culture-tag {
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    background: rgba(155, 81, 224, 0.1);
+    color: var(--accent-purple);
+    border: 1px solid rgba(155, 81, 224, 0.2);
+}
+.company-internships {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: auto;
+}
+.company-internships h4 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.company-intern-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 0.8rem;
+}
+.company-intern-item:last-child {
+    border-bottom: none;
+}
+.company-intern-item .intern-title {
+    color: #fff;
+    font-weight: 500;
+}
+.company-intern-item .intern-stipend {
+    color: var(--accent-green);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+

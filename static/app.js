@@ -75,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Charts
     let readinessChart = null;
     let forecastingChart = null;
+    let skillRadarChart = null;
+    let interviewTrendChart = null;
 
     // Interview States
     let isInterviewRunning = false;
@@ -131,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.menu-btn[data-tab="student-dashboard"]').classList.add('active');
             document.getElementById('student-dashboard').classList.add('active');
             loadStudentProfileDetails();
+            startNotificationPolling();
         } else if (user.role === 'recruiter') {
             recruiterMenu.style.display = 'flex';
             document.querySelector('.menu-btn[data-tab="employer-panel"]').classList.add('active');
@@ -238,6 +241,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchUniversityDashboard();
             } else if (targetId === 'resume-builder-panel') {
                 loadResumeBuilderData();
+            } else if (targetId === 'my-applications-panel') {
+                fetchMyApplications();
+            } else if (targetId === 'leaderboard-panel') {
+                fetchLeaderboard();
+            } else if (targetId === 'companies-panel') {
+                fetchCompanies();
+            } else if (targetId === 'mock-interview-panel') {
+                fetchInterviewHistory();
             }
             
             if (window.speechSynthesis) {
@@ -569,6 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 applyForInternship(btn, btn.dataset.id, btn.dataset.score);
             });
         });
+
+        // Render skill radar chart
+        renderSkillRadarChart(data.recommendations);
     }
 
     function applyForInternship(button, internshipId, matchScore) {
@@ -1135,6 +1149,458 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 }
+            });
+        });
+    }
+
+    // ====================== PREMIUM FEATURES ======================
+
+    // ----------------- Feature 1: Skill Radar Chart -----------------
+    function renderSkillRadarChart(recommendations) {
+        const container = document.getElementById('radar-chart-container');
+        if (!recommendations || recommendations.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'block';
+
+        // Extract all unique required skills from top 5 internships
+        const allSkills = new Set();
+        const topRecs = recommendations.slice(0, 5);
+        topRecs.forEach(r => {
+            (r.required_skills || '').split(',').forEach(s => {
+                const trimmed = s.trim().toLowerCase();
+                if (trimmed) allSkills.add(trimmed);
+            });
+        });
+
+        const skillLabels = Array.from(allSkills).slice(0, 10);
+        
+        // Student skill levels (1 if they have it, 0 if not)
+        const studentSkillTags = document.querySelectorAll('#res-skills .skill-tag');
+        const studentSkillsSet = new Set();
+        studentSkillTags.forEach(tag => {
+            studentSkillsSet.add(tag.textContent.trim().toLowerCase());
+        });
+        
+        const studentData = skillLabels.map(s => studentSkillsSet.has(s) ? 1 : 0);
+
+        // Average requirement scores for top internships
+        const requirementData = skillLabels.map(skill => {
+            let count = 0;
+            topRecs.forEach(r => {
+                const rSkills = (r.required_skills || '').toLowerCase().split(',').map(s => s.trim());
+                if (rSkills.includes(skill)) count++;
+            });
+            return count / topRecs.length;
+        });
+
+        const ctx = document.getElementById('skillRadarChart').getContext('2d');
+        if (skillRadarChart) skillRadarChart.destroy();
+        skillRadarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: skillLabels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                datasets: [
+                    {
+                        label: 'Your Skills',
+                        data: studentData,
+                        backgroundColor: 'rgba(0, 245, 160, 0.15)',
+                        borderColor: 'rgba(0, 245, 160, 0.8)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#00f5a0',
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Required (Top Internships)',
+                        data: requirementData,
+                        backgroundColor: 'rgba(155, 81, 224, 0.12)',
+                        borderColor: 'rgba(155, 81, 224, 0.7)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#9b51e0',
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: { display: false, stepSize: 0.25 },
+                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.06)' },
+                        pointLabels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 20 }
+                    }
+                }
+            }
+        });
+    }
+
+    // ----------------- Feature 2: Application Timeline -----------------
+    function fetchMyApplications() {
+        const container = document.getElementById('applications-timeline-container');
+        container.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem; color: var(--accent-blue);"></i></div>';
+
+        fetch('/api/student/applications')
+        .then(res => res.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="timeline-empty">
+                        <i class="fas fa-inbox" style="font-size: 3rem; color: rgba(255,255,255,0.06);"></i>
+                        <p style="color: var(--text-secondary); margin-top: 1rem;">No applications submitted yet. Apply for internships from the Placement Matching dashboard.</p>
+                    </div>`;
+                return;
+            }
+
+            const pipelineStages = ['Screening', 'Invite for Test', 'Technical Interview', 'Offered'];
+            container.innerHTML = '';
+
+            data.forEach(app => {
+                const card = document.createElement('div');
+                card.className = 'timeline-card';
+
+                const cleanDate = app.applied_at ? app.applied_at.replace(' ', 'T') : '';
+                const dateObj = new Date(cleanDate);
+                const dateStr = isNaN(dateObj.getTime()) ? (app.applied_at || 'N/A') : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                const isRejected = app.status === 'Rejected';
+                let currentStageIndex = pipelineStages.indexOf(app.status);
+                if (currentStageIndex === -1 && !isRejected) currentStageIndex = 0;
+
+                let pipelineHTML = '';
+                pipelineStages.forEach((stage, i) => {
+                    let stateClass = '';
+                    let icon = '';
+                    if (isRejected) {
+                        stateClass = 'rejected';
+                        icon = '<i class="fas fa-xmark"></i>';
+                    } else if (i < currentStageIndex) {
+                        stateClass = 'completed';
+                        icon = '<i class="fas fa-check"></i>';
+                    } else if (i === currentStageIndex) {
+                        stateClass = 'active';
+                        icon = '<i class="fas fa-circle" style="font-size: 0.4rem;"></i>';
+                    }
+                    pipelineHTML += `
+                        <div class="pipeline-step ${stateClass}">
+                            <div class="step-dot">${icon}</div>
+                            ${stage}
+                        </div>`;
+                    if (i < pipelineStages.length - 1) {
+                        pipelineHTML += `<div class="pipeline-connector ${i < currentStageIndex ? 'completed' : ''}"></div>`;
+                    }
+                });
+
+                const interviewBadge = app.interview_score !== null ? 
+                    `<span style="color: var(--accent-green); font-weight: 600;">${app.interview_score}/100</span>` :
+                    '<span style="color: var(--text-secondary); font-size: 0.75rem;">Not Taken</span>';
+
+                card.innerHTML = `
+                    <div class="timeline-card-header">
+                        <div class="timeline-role-info">
+                            <h3>${app.title}</h3>
+                            <span>${app.company} — ${app.location}</span>
+                        </div>
+                        <div class="timeline-match-badge">${app.match_score}% Match</div>
+                    </div>
+                    <div class="timeline-pipeline">${pipelineHTML}</div>
+                    <div class="timeline-footer">
+                        <span><i class="fas fa-calendar"></i> Applied: ${dateStr}</span>
+                        <span><i class="fas fa-headset"></i> Mock Grade: ${interviewBadge}</span>
+                    </div>`;
+
+                container.appendChild(card);
+            });
+        });
+    }
+
+    // ----------------- Feature 3: Interview Performance Trends -----------------
+    function fetchInterviewHistory() {
+        fetch('/api/interview/history')
+        .then(res => res.json())
+        .then(data => {
+            const emptyDiv = document.getElementById('interview-history-empty');
+            const chartWrap = document.getElementById('interview-history-chart-wrap');
+
+            if (!data || data.length === 0) {
+                emptyDiv.style.display = 'block';
+                chartWrap.style.display = 'none';
+                return;
+            }
+
+            emptyDiv.style.display = 'none';
+            chartWrap.style.display = 'block';
+
+            const labels = data.map((d, i) => `Session ${i + 1}`);
+            const avgScores = data.map(d => d.average_score);
+            const techScores = data.map(d => d.technical_score);
+            const commScores = data.map(d => d.communication_score);
+
+            const ctx = document.getElementById('interviewTrendChart').getContext('2d');
+            if (interviewTrendChart) interviewTrendChart.destroy();
+            interviewTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Overall Score',
+                            data: avgScores,
+                            borderColor: '#00f2fe',
+                            backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#00f2fe'
+                        },
+                        {
+                            label: 'Technical',
+                            data: techScores,
+                            borderColor: '#00f5a0',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00f5a0',
+                            fill: false
+                        },
+                        {
+                            label: 'Communication',
+                            data: commScores,
+                            borderColor: '#9b51e0',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#9b51e0',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Inter' } }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { family: 'Inter' }, stepSize: 20 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 15 }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // ----------------- Feature 4: Leaderboard -----------------
+    function fetchLeaderboard() {
+        const tbody = document.querySelector('#leaderboard-table tbody');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading rankings...</td></tr>';
+
+        fetch('/api/leaderboard')
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">No student profiles found.</td></tr>';
+                return;
+            }
+
+            data.forEach(entry => {
+                const tr = document.createElement('tr');
+                const isMe = currentUserSession && entry.email === currentUserSession.email;
+                if (isMe) tr.className = 'lb-highlight-row';
+
+                let rankClass = 'rank-other';
+                if (entry.rank === 1) rankClass = 'rank-1';
+                else if (entry.rank === 2) rankClass = 'rank-2';
+                else if (entry.rank === 3) rankClass = 'rank-3';
+
+                let badgesHTML = '';
+                (entry.badges || []).forEach(b => {
+                    badgesHTML += `<span class="lb-badge" style="background: ${b.color}15; color: ${b.color}; border: 1px solid ${b.color}30;"><i class="fas ${b.icon}"></i> ${b.label}</span>`;
+                });
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="rank-badge ${rankClass}">${entry.rank}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: #fff;">${entry.name}${isMe ? ' <span style="color: var(--accent-blue); font-size: 0.7rem;">(You)</span>' : ''}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary);">${entry.email}</div>
+                    </td>
+                    <td style="font-weight: 600; color: var(--accent-green);">${entry.cgpa || 'N/A'}</td>
+                    <td>${entry.skills_count} skills</td>
+                    <td>
+                        <div class="lb-score-bar">
+                            <div class="lb-score-track"><div class="lb-score-fill" style="width: ${entry.score}%;"></div></div>
+                            <span class="lb-score-val">${entry.score}</span>
+                        </div>
+                    </td>
+                    <td>${badgesHTML || '<span style="color: var(--text-secondary); font-size: 0.75rem;">None yet</span>'}</td>`;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // ----------------- Feature 5: Notifications -----------------
+    let notifPollingInterval = null;
+
+    function startNotificationPolling() {
+        fetchNotifications();
+        if (notifPollingInterval) clearInterval(notifPollingInterval);
+        notifPollingInterval = setInterval(fetchNotifications, 15000);
+    }
+
+    function fetchNotifications() {
+        fetch('/api/notifications')
+        .then(res => res.json())
+        .then(data => {
+            if (!data || !data.notifications) return;
+            const badge = document.getElementById('notif-badge');
+            const list = document.getElementById('notif-list');
+
+            if (data.unread_count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+            } else {
+                badge.style.display = 'none';
+            }
+
+            if (data.notifications.length === 0) {
+                list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            data.notifications.forEach(n => {
+                const item = document.createElement('div');
+                item.className = `notif-item ${n.is_read ? '' : 'unread'}`;
+                const cleanDate = n.created_at ? n.created_at.replace(' ', 'T') : '';
+                const dObj = new Date(cleanDate);
+                const timeStr = isNaN(dObj.getTime()) ? '' : dObj.toLocaleString();
+                item.innerHTML = `
+                    <div class="notif-icon"><i class="fas ${n.icon || 'fa-bell'}"></i></div>
+                    <div>
+                        <div class="notif-text">${n.message}</div>
+                        <div class="notif-time">${timeStr}</div>
+                    </div>`;
+                list.appendChild(item);
+            });
+        });
+    }
+
+    // Notification bell toggle
+    document.getElementById('notif-bell-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById('notif-dropdown');
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Mark all read
+    document.getElementById('notif-mark-read-btn').addEventListener('click', () => {
+        fetch('/api/notifications/read', { method: 'POST' })
+        .then(() => {
+            document.getElementById('notif-badge').style.display = 'none';
+            document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+        });
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('notif-dropdown');
+        const bell = document.getElementById('notif-bell-btn');
+        if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // ----------------- Feature 6: Company Profiles -----------------
+    const companyColors = {
+        'Google': 'linear-gradient(135deg, #4285f4, #34a853)',
+        'Microsoft': 'linear-gradient(135deg, #00a4ef, #7fba00)',
+        'Meta': 'linear-gradient(135deg, #0081FB, #00C2FF)',
+        'AWS': 'linear-gradient(135deg, #FF9900, #FF6B00)',
+        'Netflix': 'linear-gradient(135deg, #E50914, #B20710)',
+        'OpenAI': 'linear-gradient(135deg, #10A37F, #00D4AA)',
+        'Cisco': 'linear-gradient(135deg, #049FD9, #04629E)',
+        'Apple': 'linear-gradient(135deg, #555555, #000000)'
+    };
+
+    function fetchCompanies() {
+        const grid = document.getElementById('companies-grid');
+        grid.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--text-secondary); grid-column: 1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i></div>';
+
+        fetch('/api/companies')
+        .then(res => res.json())
+        .then(data => {
+            grid.innerHTML = '';
+            if (!data || data.length === 0) {
+                grid.innerHTML = '<div style="text-align:center; padding:3rem; color: var(--text-secondary); grid-column: 1/-1;">No companies found.</div>';
+                return;
+            }
+
+            data.forEach(company => {
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                const logo = company.name.charAt(0);
+                const bgColor = companyColors[company.name] || 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+
+                let cultureHTML = '';
+                (company.culture || []).forEach(c => {
+                    cultureHTML += `<span class="culture-tag">${c}</span>`;
+                });
+
+                let internshipsHTML = '';
+                (company.internships || []).forEach(intern => {
+                    internshipsHTML += `
+                        <div class="company-intern-item">
+                            <div>
+                                <span class="intern-title">${intern.title}</span>
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);"><i class="fas fa-location-dot" style="margin-right: 0.25rem;"></i>${intern.location} • ${intern.duration}</div>
+                            </div>
+                            <span class="intern-stipend">${intern.stipend}</span>
+                        </div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="company-card-header">
+                        <div class="company-logo" style="background: ${bgColor};">${logo}</div>
+                        <div>
+                            <h3>${company.name}</h3>
+                            <span class="company-industry">${company.industry}</span>
+                        </div>
+                    </div>
+                    <div class="company-meta">
+                        <span><i class="fas fa-users"></i>${company.size}</span>
+                        <span><i class="fas fa-location-dot"></i>${company.hq}</span>
+                    </div>
+                    <div class="culture-tags">${cultureHTML}</div>
+                    <div class="company-internships">
+                        <h4><i class="fas fa-briefcase" style="margin-right: 0.35rem;"></i>Open Positions (${company.internships.length})</h4>
+                        ${internshipsHTML}
+                    </div>`;
+                grid.appendChild(card);
             });
         });
     }

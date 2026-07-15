@@ -203,6 +203,18 @@ def init_db():
         completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+
+    # 6. Create Notifications table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_email TEXT NOT NULL,
+        message TEXT NOT NULL,
+        icon TEXT DEFAULT 'fa-bell',
+        is_read INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
     
     # Pre-seed internship opportunities if empty
     cursor.execute("SELECT COUNT(*) FROM internships")
@@ -230,7 +242,42 @@ def init_db():
         ]
         cursor.executemany("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", test_users)
         conn.commit()
-        
+
+    # Pre-seed additional demo students for leaderboard
+    cursor.execute("SELECT COUNT(*) FROM users WHERE role='student'")
+    if cursor.fetchone()[0] < 4:
+        extra_students = [
+            ("Ananya Sharma", "ananya@university.edu", "student123", "student"),
+            ("Karthik Reddy", "karthik@university.edu", "student123", "student"),
+            ("Priya Nair", "priya@university.edu", "student123", "student"),
+            ("Arjun Patel", "arjun@university.edu", "student123", "student"),
+            ("Meera Iyer", "meera@university.edu", "student123", "student")
+        ]
+        for s in extra_students:
+            try:
+                cursor.execute("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", s)
+            except sqlite3.IntegrityError:
+                pass
+        conn.commit()
+
+        # Seed profiles for leaderboard demo
+        demo_profiles = [
+            ("ananya@university.edu", 9.1, "python, machine learning, tensorflow, pandas", 4, 3, 6),
+            ("karthik@university.edu", 8.4, "java, react, javascript, sql, git", 3, 2, 3),
+            ("priya@university.edu", 8.8, "python, aws, docker, kubernetes, linux", 5, 4, 12),
+            ("arjun@university.edu", 7.6, "javascript, html, css, react, node.js", 2, 1, 0),
+            ("meera@university.edu", 9.4, "python, deep learning, pytorch, nlp, algorithms", 5, 5, 8)
+        ]
+        for dp in demo_profiles:
+            uid = cursor.execute("SELECT id FROM users WHERE email = ?", (dp[0],)).fetchone()
+            if uid:
+                try:
+                    cursor.execute("INSERT INTO student_profiles (user_id, cgpa, skills, projects, certifications, experience) VALUES (?, ?, ?, ?, ?, ?)",
+                        (uid[0], dp[1], dp[2], f"{dp[3]} Projects", f"{dp[4]} Certifications", f"{dp[5]} Months"))
+                except sqlite3.IntegrityError:
+                    pass
+        conn.commit()
+
     conn.close()
 
 # Resume Parsing Logic
@@ -697,6 +744,8 @@ def update_application_status():
     )
     conn.commit()
     conn.close()
+    # Send notification to the student
+    insert_notification(email, f'Your application status has been updated to "{new_status}".', 'fa-clipboard-check')
     return jsonify({'success': True, 'message': f'Status updated to {new_status}'})
 
 @app.route('/api/employer_candidates', methods=['GET'])
@@ -833,6 +882,8 @@ def submit_answer():
         )
         conn.commit()
         conn.close()
+        # Send notification to the student
+        insert_notification(student_email, f'Your mock interview for "{role}" has been graded: {calculated_score}%.', 'fa-microphone')
         
     return jsonify(response_data)
 
@@ -900,6 +951,195 @@ def get_university_stats():
         'forecasting': forecasting_data
     }
     return jsonify(stats)
+
+# ----------------- Student Applications Timeline -----------------
+@app.route('/api/student/applications', methods=['GET'])
+def get_student_applications():
+    if 'user_id' not in session:
+        return jsonify([]), 200
+    email = session['email']
+    conn = get_db_connection()
+    rows = conn.execute('''
+        SELECT a.id, a.student_name, a.match_score, a.status, a.applied_at,
+               a.interview_score, i.title, i.company, i.location
+        FROM applications a
+        JOIN internships i ON a.internship_id = i.id
+        WHERE a.student_email = ?
+        ORDER BY a.applied_at DESC
+    ''', (email,)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ----------------- Interview History & Trends -----------------
+@app.route('/api/interview/history', methods=['GET'])
+def get_interview_history():
+    if 'user_id' not in session:
+        return jsonify([]), 200
+    email = session['email']
+    conn = get_db_connection()
+    rows = conn.execute('''
+        SELECT role, average_score, technical_score, communication_score, completed_at
+        FROM interviews
+        WHERE student_email = ?
+        ORDER BY completed_at ASC
+    ''', (email,)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ----------------- Student Leaderboard -----------------
+@app.route('/api/leaderboard', methods=['GET'])
+def get_leaderboard():
+    conn = get_db_connection()
+    # Join users with student_profiles to calculate score
+    rows = conn.execute('''
+        SELECT u.name, u.email, sp.cgpa, sp.skills, sp.projects, sp.certifications, sp.experience
+        FROM users u
+        JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE u.role = 'student'
+    ''').fetchall()
+    
+    leaderboard = []
+    for r in rows:
+        r_dict = dict(r)
+        skills_count = len([s.strip() for s in (r_dict['skills'] or '').split(',') if s.strip()])
+        
+        # Parse projects/certs counts
+        proj_count = 0
+        try:
+            proj_count = int(''.join(filter(str.isdigit, (r_dict['projects'] or '0')[:3])))
+        except:
+            pass
+        cert_count = 0
+        try:
+            cert_count = int(''.join(filter(str.isdigit, (r_dict['certifications'] or '0')[:3])))
+        except:
+            pass
+        exp_months = 0
+        try:
+            exp_months = int(''.join(filter(str.isdigit, (r_dict['experience'] or '0')[:3])))
+        except:
+            pass
+        
+        # Employability formula
+        score = min(100, int(
+            (r_dict['cgpa'] or 0) * 6 +
+            min(skills_count, 8) * 3 +
+            min(proj_count, 5) * 4 +
+            min(cert_count, 5) * 3 +
+            min(exp_months, 12) * 1
+        ))
+        
+        # Badges
+        badges = []
+        if score >= 90:
+            badges.append({'icon': 'fa-crown', 'label': 'Elite', 'color': '#ffd700'})
+        if skills_count >= 6:
+            badges.append({'icon': 'fa-code', 'label': 'Polyglot', 'color': '#00f2fe'})
+        if cert_count >= 3:
+            badges.append({'icon': 'fa-certificate', 'label': 'Certified Pro', 'color': '#9b51e0'})
+        if (r_dict['cgpa'] or 0) >= 9.0:
+            badges.append({'icon': 'fa-star', 'label': 'Scholar', 'color': '#00f5a0'})
+        if exp_months >= 6:
+            badges.append({'icon': 'fa-briefcase', 'label': 'Experienced', 'color': '#f4b41a'})
+        
+        # Check interview count
+        interview_count = conn.execute('SELECT COUNT(*) FROM interviews WHERE student_email = ?', (r_dict['email'],)).fetchone()[0]
+        if interview_count >= 1:
+            badges.append({'icon': 'fa-headset', 'label': 'Interview Ready', 'color': '#ff007f'})
+        
+        leaderboard.append({
+            'name': r_dict['name'],
+            'email': r_dict['email'],
+            'cgpa': r_dict['cgpa'],
+            'skills_count': skills_count,
+            'score': score,
+            'badges': badges
+        })
+    
+    conn.close()
+    leaderboard.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Assign ranks
+    for i, entry in enumerate(leaderboard):
+        entry['rank'] = i + 1
+    
+    return jsonify(leaderboard)
+
+# ----------------- Notifications -----------------
+@app.route('/api/notifications', methods=['GET'])
+def get_notifications():
+    if 'user_id' not in session:
+        return jsonify([]), 200
+    email = session['email']
+    conn = get_db_connection()
+    rows = conn.execute('SELECT * FROM notifications WHERE user_email = ? ORDER BY created_at DESC LIMIT 20', (email,)).fetchall()
+    unread = conn.execute('SELECT COUNT(*) FROM notifications WHERE user_email = ? AND is_read = 0', (email,)).fetchone()[0]
+    conn.close()
+    return jsonify({'notifications': [dict(r) for r in rows], 'unread_count': unread})
+
+@app.route('/api/notifications/read', methods=['POST'])
+def mark_notifications_read():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    email = session['email']
+    conn = get_db_connection()
+    conn.execute('UPDATE notifications SET is_read = 1 WHERE user_email = ?', (email,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+def insert_notification(email, message, icon='fa-bell'):
+    """Helper to insert a notification for a user."""
+    try:
+        conn = get_db_connection()
+        conn.execute('INSERT INTO notifications (user_email, message, icon) VALUES (?, ?, ?)', (email, message, icon))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Notification insert error: {e}")
+
+# ----------------- Company Profiles -----------------
+COMPANY_DATA = {
+    'Google': {'industry': 'Technology', 'culture': ['Innovation', 'Open Culture', 'AI-First'], 'size': '180,000+ employees', 'hq': 'Mountain View, CA'},
+    'Microsoft': {'industry': 'Technology', 'culture': ['Growth Mindset', 'Inclusive', 'Cloud-First'], 'size': '220,000+ employees', 'hq': 'Redmond, WA'},
+    'Meta': {'industry': 'Social Media / Tech', 'culture': ['Move Fast', 'Be Bold', 'Open'], 'size': '70,000+ employees', 'hq': 'Menlo Park, CA'},
+    'AWS': {'industry': 'Cloud Computing', 'culture': ['Customer Obsession', 'Ownership', 'Invent & Simplify'], 'size': '100,000+ employees', 'hq': 'Seattle, WA'},
+    'Netflix': {'industry': 'Entertainment / Tech', 'culture': ['Freedom & Responsibility', 'Context not Control'], 'size': '13,000+ employees', 'hq': 'Los Gatos, CA'},
+    'OpenAI': {'industry': 'AI Research', 'culture': ['Safety-First', 'Research Excellence', 'Collaborative'], 'size': '3,000+ employees', 'hq': 'San Francisco, CA'},
+    'Cisco': {'industry': 'Networking / Cybersecurity', 'culture': ['Inclusive Future', 'Innovation', 'Purpose-Driven'], 'size': '80,000+ employees', 'hq': 'San Jose, CA'},
+    'Apple': {'industry': 'Consumer Electronics / Tech', 'culture': ['Design Excellence', 'Privacy-First', 'Innovation'], 'size': '160,000+ employees', 'hq': 'Cupertino, CA'}
+}
+
+@app.route('/api/companies', methods=['GET'])
+def get_companies():
+    conn = get_db_connection()
+    internships = conn.execute('SELECT * FROM internships ORDER BY company').fetchall()
+    conn.close()
+    
+    companies = {}
+    for i in internships:
+        i_dict = dict(i)
+        company = i_dict['company']
+        if company not in companies:
+            meta = COMPANY_DATA.get(company, {'industry': 'Technology', 'culture': ['Innovation'], 'size': 'N/A', 'hq': 'N/A'})
+            companies[company] = {
+                'name': company,
+                'industry': meta['industry'],
+                'culture': meta['culture'],
+                'size': meta['size'],
+                'hq': meta['hq'],
+                'internships': []
+            }
+        companies[company]['internships'].append({
+            'id': i_dict['id'],
+            'title': i_dict['title'],
+            'required_skills': i_dict['required_skills'],
+            'location': i_dict['location'],
+            'duration': i_dict['duration'],
+            'stipend': i_dict['stipend']
+        })
+    
+    return jsonify(list(companies.values()))
 
 def extract_text_from_pdf(pdf_path):
     text = ""

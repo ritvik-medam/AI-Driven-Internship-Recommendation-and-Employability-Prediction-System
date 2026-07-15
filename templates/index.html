@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Driven Placement & Interview Intelligence Platform</title>
+    
+    <!-- FontAwesome Glyphs -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Cyberpunk Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- ChartJS Visualization Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Left Navigation Sidebar -->
+    <aside>
+        <div class="sidebar-logo">
+            <i class="fas fa-brain"></i>
+            <div class="sidebar-logo-text">Placement<span>Intel</span></div>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <button class="menu-btn active" data-tab="student-panel">
+                <i class="fas fa-user-graduate"></i> Student Dashboard
+            </button>
+            <button class="menu-btn" data-tab="interview-panel">
+                <i class="fas fa-terminal"></i> AI Interview Coach
+            </button>
+            <button class="menu-btn" data-tab="employer-panel">
+                <i class="fas fa-briefcase"></i> Recruiter Desk
+            </button>
+            <button class="menu-btn" data-tab="university-panel">
+                <i class="fas fa-chart-pie"></i> University Director
+            </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div>B.Tech (H) Review 1</div>
+            <div>School of CSE</div>
+            <div><span>MEDAM RITVIK</span></div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace Frame -->
+    <div class="app-workspace">
+        <main>
+            
+            <!-- PANEL 1: STUDENT DASHBOARD -->
+            <div id="student-panel" class="dashboard-panel active">
+                <div class="panel-header">
+                    <h2 class="panel-title">Student Profile Intelligence</h2>
+                    <p class="panel-subtitle">Upload your resume to calculate employability scores, parse skill maps, and generate internship placements.</p>
+                </div>
+                
+                <div class="grid-container">
+                    
+                    <!-- Upload Dropzone -->
+                    <div class="card col-4">
+                        <div class="card-title">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Resume Upload</span>
+                        </div>
+                        <div class="upload-zone" id="upload-zone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p id="file-label">Upload or drag resume (PDF, TXT)</p>
+                            <input type="file" id="resume-input" accept=".pdf,.txt">
+                        </div>
+                        <div class="loader" id="upload-loader"></div>
+                        
+                        <!-- Mini Readiness gauge below upload -->
+                        <div id="mini-readiness-sec" style="margin-top: 1.5rem; display: none;">
+                            <div class="gauge-wrapper">
+                                <div class="gauge-circle">
+                                    <svg>
+                                        <defs>
+                                            <linearGradient id="gaugeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="var(--accent-purple)" />
+                                                <stop offset="100%" stop-color="var(--accent-blue)" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="gauge-bg" cx="65" cy="65" r="55"></circle>
+                                        <circle class="gauge-progress" cx="65" cy="65" r="55"></circle>
+                                    </svg>
+                                    <div class="gauge-value" id="gauge-score-value">0%</div>
+                                </div>
+                                <div class="gauge-label">Employability Index</div>
+                                <span class="badge-readiness" id="readiness-badge">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Default State Placeholder -->
+                    <div class="card col-8" id="profile-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 280px;">
+                        <i class="fas fa-fingerprint" style="font-size: 4rem; color: rgba(255,255,255,0.03); margin-bottom: 1.25rem; animation: pulse 2s infinite;"></i>
+                        <h3 style="color: var(--text-secondary);">Awaiting Profile Parsing</h3>
+                        <p style="color: rgba(255,255,255,0.3); font-size: 0.85rem; max-width: 420px; margin-top: 0.5rem;">Select your resume file in the left portal. Our NLP matching algorithms will extract metrics and generate feedback critique loops.</p>
+                    </div>
+                    
+                    <!-- Main Critique & Parser dashboard view (Visible post-upload) -->
+                    <div class="card col-8" id="critique-report-card" style="display: none;">
+                        <div class="card-title">
+                            <i class="fas fa-shield-halved"></i>
+                            <span>AI Resume Critique & Score Card</span>
+                        </div>
+                        <div class="grid-container" style="margin-bottom: 1rem;">
+                            <!-- Score Progress Indicators -->
+                            <div class="col-6">
+                                <div style="font-size: 0.8rem; margin-bottom: 0.75rem;">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span>Formatting Structure</span>
+                                        <span id="score-format" style="color: var(--accent-blue);">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar"><div class="critique-progress-fill" id="fill-format" style="background: var(--accent-blue); width:0%;"></div></div>
+                                </div>
+                                <div style="font-size: 0.8rem; margin-bottom: 0.75rem;">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span>Certification Volume</span>
+                                        <span id="score-certs" style="color: var(--accent-purple);">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar"><div class="critique-progress-fill" id="fill-certs" style="background: var(--accent-purple); width:0%;"></div></div>
+                                </div>
+                                <div style="font-size: 0.8rem;">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span>Project Complexity</span>
+                                        <span id="score-projects" style="color: var(--accent-green);">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar"><div class="critique-progress-fill" id="fill-projects" style="background: var(--accent-green); width:0%;"></div></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Actionable Critique Checklist -->
+                            <div class="col-6" style="max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Optimization Checklist</div>
+                                <div id="critique-checklist-container">
+                                    <!-- Dynamic items -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Detailed Profile Details (visible post upload) -->
+                <div class="grid-container" id="profile-detailed-container" style="display: none;">
+                    <div class="card col-8">
+                        <div class="card-title">
+                            <i class="fas fa-id-card"></i>
+                            <span>Extracted Candidate Resume Profile</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Full Name</div>
+                                <div id="res-name" style="font-weight: 600; font-size: 0.95rem;">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Email</div>
+                                <div id="res-email" style="font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Cumulative Grade (CGPA)</div>
+                                <div style="font-weight: 600; font-size: 0.95rem;"><span id="res-cgpa">-</span> / 10.0</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Technical Competencies parsed</div>
+                        <div class="skills-container" id="res-skills">
+                            <!-- Dynamic skills tag list -->
+                        </div>
+                    </div>
+                    
+                    <div class="card col-4">
+                        <div class="card-title">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>Suggested Course Mappings</span>
+                        </div>
+                        <div id="skill-gap-courses">
+                            <!-- Dynamic course recommendation list -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Placement recommendations Table -->
+                <div class="grid-container" id="placements-table-container" style="display: none;">
+                    <div class="card col-12">
+                        <div class="card-title">
+                            <i class="fas fa-briefcase"></i>
+                            <span>AI Matching Placements (Sorted by Cosine Similarity)</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="recommendation-table">
+                                <thead>
+                                    <tr>
+                                        <th>Position & Organization</th>
+                                        <th>Match score</th>
+                                        <th>Syllabus overlap</th>
+                                        <th>Details</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Recommended rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: AI INTERVIEW COACH -->
+            <div id="interview-panel" class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">AI Interview Prep Coach</h2>
+                    <p class="panel-subtitle">Select your targeted internship pathway and practice answering real-time technical questions with simulated evaluator grading.</p>
+                </div>
+                
+                <div class="grid-container">
+                    
+                    <!-- Selection Setup -->
+                    <div class="card col-4">
+                        <div class="card-title">
+                            <i class="fas fa-sliders"></i>
+                            <span>Setup Session</span>
+                        </div>
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Target Role</label>
+                            <div class="select-wrapper" style="width: 100%;">
+                                <select class="status-select" id="interview-role-select" style="width: 100%; height: 40px; font-size: 0.85rem;">
+                                    <option value="Machine Learning Intern">Machine Learning Intern</option>
+                                    <option value="Data Scientist Intern">Data Scientist Intern</option>
+                                    <option value="Frontend Developer Intern">Frontend Developer Intern</option>
+                                    <option value="Cloud Architect Intern">Cloud Architect Intern</option>
+                                    <option value="Software Engineer Intern">Software Engineer Intern</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">
+                            <div style="margin-bottom: 0.5rem;"><i class="fas fa-microphone" style="color: var(--accent-blue);"></i> Web-Mic stream inputs verbal responses directly.</div>
+                            <div style="margin-bottom: 0.5rem;"><i class="fas fa-volume-high" style="color: var(--accent-purple);"></i> TTS Voice Synthesizer reads questions out loud.</div>
+                            <div style="margin-bottom: 0.5rem;"><i class="fas fa-triangle-exclamation" style="color: var(--accent-red);"></i> Flags filler words (um, uh, like) to score delivery.</div>
+                            <div><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> Detailed scoring history synched with recruiter ATS dashboards.</div>
+                        </div>
+                        
+                        <button class="btn-primary" id="start-interview-btn" style="width: 100%; height: 42px; justify-content: center; font-size: 0.9rem;">
+                            <i class="fas fa-play"></i> Start Practice Session
+                        </button>
+                    </div>
+                    
+                    <!-- Interactive Coding Terminal -->
+                    <div class="card col-8 terminal-card">
+                        <div class="terminal-header">
+                            <div class="terminal-buttons">
+                                <span class="t-btn t-red"></span>
+                                <span class="t-btn t-yellow"></span>
+                                <span class="t-btn t-green"></span>
+                            </div>
+                            <div class="terminal-title">placement-intel-terminal.sh</div>
+                            <div><i class="fas fa-code-branch" style="font-size: 0.75rem; color: var(--text-secondary);"></i></div>
+                        </div>
+                        
+                        <!-- Terminal logs -->
+                        <div class="terminal-body" id="terminal-body">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">guest@rvuniversity:~$</span> Welcome to AI Placement Coach terminal.
+                            </div>
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">guest@rvuniversity:~$</span> Select target role and click 'Start Practice Session' to initiate.
+                            </div>
+                        </div>
+                        
+                        <!-- Input Row -->
+                        <div class="terminal-input-row">
+                            <span class="terminal-prompt" id="terminal-prompt-str">guest@rvuniversity:~$</span>
+                            <input type="text" class="terminal-input" id="terminal-input-el" placeholder="Type your answer here..." disabled>
+                            
+                            <!-- Hands-free control options -->
+                            <button id="mic-btn" class="btn-secondary" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Speak Answer" disabled>
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button id="speaker-btn" class="btn-secondary active" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Mute/Unmute Audio output">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <button id="replay-btn" class="btn-secondary" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Replay Question Audio" disabled>
+                                <i class="fas fa-redo"></i>
+                            </button>
+
+                            <button class="btn-primary" id="terminal-submit-btn" style="padding: 0.35rem 0.75rem; height: 35px;" disabled>
+                                <i class="fas fa-share"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- PANEL 3: RECRUITER DESK -->
+            <div id="employer-panel" class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Employer Applicant Tracking (ATS)</h2>
+                    <p class="panel-subtitle">Review incoming applications sorted by AI match index. Click score metrics to review dialogue transcripts.</p>
+                </div>
+                
+                <div class="grid-container">
+                    <div class="card col-12">
+                        <div class="card-title" style="justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-users-viewfinder"></i>
+                                <span>Candidate Screening Pipeline</span>
+                            </div>
+                            <span style="font-size: 0.75rem; background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.2); padding: 0.25rem 0.75rem; border-radius: 12px; color: var(--accent-blue);">AI Match Sorter Active</span>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="employer-table">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant Name</th>
+                                        <th>Applied Role</th>
+                                        <th>Resume Score</th>
+                                        <th>Technical Mock Grade</th>
+                                        <th>Pipeline State</th>
+                                        <th>Applied At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: UNIVERSITY DIRECTOR -->
+            <div id="university-panel" class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">University Placement Directorate</h2>
+                    <p class="panel-subtitle">Analyze batch statistics, monitor employability readiness metrics, and view machine learning placement forecasts.</p>
+                </div>
+                
+                <!-- Metrics aggregates -->
+                <div class="grid-container">
+                    <div class="card col-3 stat-box">
+                        <div class="stat-value" id="uni-students">0</div>
+                        <div class="stat-desc">Students Monitored</div>
+                    </div>
+                    <div class="card col-3 stat-box">
+                        <div class="stat-value" id="uni-cgpa">0.0</div>
+                        <div class="stat-desc">Average Batch CGPA</div>
+                    </div>
+                    <div class="card col-3 stat-box">
+                        <div class="stat-value" id="uni-apps">0</div>
+                        <div class="stat-desc">Applications Processed</div>
+                    </div>
+                    <div class="card col-3 stat-box">
+                        <div class="stat-value" id="uni-match">0%</div>
+                        <div class="stat-desc">Average Match Score</div>
+                    </div>
+                </div>
+                
+                <!-- Graphical Forecaster panel -->
+                <div class="grid-container" style="margin-top: 1.5rem;">
+                    <div class="card col-4">
+                        <div class="card-title">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Employability Readiness</span>
+                        </div>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="readinessDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card col-8">
+                        <div class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Regression Placement Forecaster (Next Semester)</span>
+                        </div>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="forecastingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actionable curriculum suggestions -->
+                <div class="grid-container" style="margin-top: 1.5rem;">
+                    <div class="card col-12">
+                        <div class="card-title">
+                            <i class="fas fa-shield-virus"></i>
+                            <span>Curriculum Optimization Plan (Curriculum Deficiencies Detected)</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                            The AI system aggregate analysis mapped top student profile rejections. Integrate these syllabus recommendations to optimize next year's placement indices:
+                        </p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;">
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 12px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 0.5rem;"><i class="fas fa-file-lines"></i> 1. React Web Architecture</div>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">Introduce a 3-credit React development elective in Semester 5 to reduce the **45% UI developer gap** found in matching ATS models.</p>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 12px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 0.5rem;"><i class="fas fa-network-wired"></i> 2. Cloud Native DevOps</div>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">Introduce AWS Academy Cloud Practitioner syllabus parameters and container systems (Docker/Kubernetes) lab testing formats in networks curricula.</p>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 12px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent-green); margin-bottom: 0.5rem;"><i class="fas fa-database"></i> 3. Relational Analytics Databases</div>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">Integrate schema modeling parameters, query execution evaluations, and PostgreSQL installations in database lab sessions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Recruiter Dialogue Transcript Modal Overlay -->
+    <div id="transcript-modal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; margin-bottom:1.5rem;">
+                <h3 style="color:#fff; font-family:'Outfit'; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fas fa-file-invoice" style="color:var(--accent-blue);"></i> Candidate Assessment Audit Log
+                </h3>
+                <span class="close-btn" id="modal-close-btn" style="cursor:pointer; font-size:1.3rem; color:var(--text-secondary); transition:color 0.2s ease;"><i class="fas fa-circle-xmark"></i></span>
+            </div>
+            
+            <div class="grid-container" style="margin-bottom:1.5rem;">
+                <div class="card col-4 stat-box" style="padding:1rem; background: rgba(255,255,255,0.01);">
+                    <div class="stat-value" id="modal-avg-score" style="font-size:1.8rem;">0</div>
+                    <div class="stat-desc" style="font-size:0.7rem;">Average Grade</div>
+                </div>
+                <div class="card col-4 stat-box" style="padding:1rem; background: rgba(255,255,255,0.01);">
+                    <div class="stat-value" id="modal-tech-score" style="font-size:1.8rem; background:linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">0</div>
+                    <div class="stat-desc" style="font-size:0.7rem;">Technical Accuracy</div>
+                </div>
+                <div class="card col-4 stat-box" style="padding:1rem; background: rgba(255,255,255,0.01);">
+                    <div class="stat-value" id="modal-comm-score" style="font-size:1.8rem; background:linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-pink) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">0</div>
+                    <div class="stat-desc" style="font-size:0.7rem;">Clarity Score</div>
+                </div>
+            </div>
+            
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.75rem; font-weight:600;">AUDIT TRANSCRIPT LOGS:</div>
+            <pre id="modal-transcript-text" style="background:#030408; padding:1.25rem; border-radius:12px; font-family:'Fira Code', monospace; font-size:0.85rem; color:#a7f3d0; max-height:220px; overflow-y:auto; border:1px solid rgba(255,255,255,0.05); line-height:1.6; white-space:pre-wrap;"></pre>
+            
+            <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-secondary); border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div>Applicant Email: <span id="modal-student-email" style="color:#fff; font-weight:500;">-</span></div>
+                <div>Filler word flags: <span id="modal-filler-words" style="color:var(--accent-red); font-weight:600;">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

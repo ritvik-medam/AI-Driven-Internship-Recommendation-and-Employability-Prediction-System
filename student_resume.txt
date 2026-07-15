@@ -1,0 +1,32 @@
+MEDAM RITVIK
+Email: ritvik.medam@university.edu
+Phone: +91-9876543210
+Address: Bangalore, Karnataka, India
+
+EDUCATION
+RV University, Bangalore
+Bachelor of Technology (B.Tech) in Computer Science and Engineering (AI/ML)
+CGPA: 8.75 / 10.0 (Expected Graduation: 2027)
+
+TECHNICAL SKILLS
+- Programming Languages: Python, Java, SQL, HTML, CSS, JavaScript
+- Frameworks & Libraries: React, Flask, pandas, numpy, scikit-learn, tensorflow
+- Tools & Cloud: Git, Docker, AWS, MySQL, Linux
+- Core Competencies: Machine Learning, Data Structures, Algorithms, Web Development
+
+PROJECTS
+1. AI-Driven Student Placement Predictor (Python, Flask, scikit-learn)
+   - Developed a machine learning pipeline using Random Forest classifier to predict placement readiness.
+   - Built a Flask web interface showcasing candidate scores and skill gap reports.
+2. E-Commerce Backend Microservices (Node.js, Express, Docker)
+   - Created robust API endpoints for order management and catalog search.
+   - Integrated MySQL and Docker containers for deployment scaling.
+
+CERTIFICATIONS
+- Coursera: Machine Learning Specialization by Andrew Ng
+- AWS Academy: AWS Certified Cloud Practitioner
+
+CO-CURRICULAR ACTIVITIES & EXPERIENCES
+- Placement Representative at School of Computer Science and Engineering
+- Hackathon winner at National level AI Coding Sprint (2025)
+- Active member of the University Cultural and Coding Clubs

@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Trained Machine Learning Model binaries
+models/*.pkl
+
+# Databases and user uploads
+data/*.db
+uploads/
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Thumbs.db

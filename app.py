@@ -5,11 +5,12 @@ import sqlite3
 import pypdf
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
+app.secret_key = 'placement-intel-secret-key-change-in-production'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -18,7 +19,7 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 MODEL_PATH = os.path.join(os.getcwd(), 'models', 'employability_model.pkl')
 
-# Preset lists of skills
+# Preset technical skill words
 SKILL_DICTIONARY = {
     'programming_languages': ['python', 'java', 'c\\+\\+', 'c#', 'javascript', 'typescript', 'sql', 'html', 'css', 'ruby', 'go', 'rust', 'kotlin', 'swift'],
     'frameworks_libraries': ['react', 'node\\.js', 'angular', 'vue\\.js', 'django', 'flask', 'spring boot', 'express', 'bootstrap', 'jquery', 'pandas', 'numpy', 'scikit-learn', 'tensorflow', 'pytorch', 'keras', 'opencv', 'spacy', 'nltk', 'fastapi'],
@@ -50,7 +51,6 @@ COURSE_RECOMMENDATIONS = {
     'data science': 'IBM Data Science Professional Certificate (Coursera)'
 }
 
-# Mock Interview Questions and Answers Guide
 ROLE_INTERVIEW_QUESTIONS = {
     "Machine Learning Intern": [
         {
@@ -133,7 +133,31 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Create Internships table
+    # 1. Create Users Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL
+    )
+    ''')
+
+    # 2. Create Student Profile Table (for Resume Builder)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS student_profiles (
+        user_id INTEGER PRIMARY KEY,
+        cgpa REAL,
+        skills TEXT,
+        projects TEXT,
+        certifications TEXT,
+        experience TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    ''')
+    
+    # 3. Create Internships table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS internships (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,7 +171,7 @@ def init_db():
     )
     ''')
     
-    # 2. Create Applications table
+    # 4. Create Applications table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS applications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,17 +188,7 @@ def init_db():
     )
     ''')
 
-    # Migration checking to dynamically add new columns if necessary
-    cursor.execute("PRAGMA table_info(applications)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'interview_score' not in columns:
-        cursor.execute("ALTER TABLE applications ADD COLUMN interview_score REAL DEFAULT NULL")
-    if 'technical_score' not in columns:
-        cursor.execute("ALTER TABLE applications ADD COLUMN technical_score REAL DEFAULT NULL")
-    if 'communication_score' not in columns:
-        cursor.execute("ALTER TABLE applications ADD COLUMN communication_score REAL DEFAULT NULL")
-
-    # 3. Create Interviews table
+    # 5. Create Interviews table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS interviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,17 +220,25 @@ def init_db():
         cursor.executemany("INSERT INTO internships (title, company, description, required_skills, location, duration, stipend) VALUES (?, ?, ?, ?, ?, ?, ?)", mock_internships)
         conn.commit()
         
+    # Pre-seed default test accounts if empty
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        test_users = [
+            ("Ritvik Medam", "student@university.edu", "student123", "student"),
+            ("Google Recruiter", "recruiter@google.com", "recruiter123", "recruiter"),
+            ("University Admin", "admin@university.edu", "admin123", "university")
+        ]
+        cursor.executemany("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", test_users)
+        conn.commit()
+        
     conn.close()
 
 # Resume Parsing Logic
 def parse_resume_text(text):
     text_lower = text.lower()
-    
-    # 1. Email Extraction
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
     email = email_match.group(0) if email_match else "unknown@university.edu"
     
-    # 2. Name Extraction
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     name = "Ritvik Medam"
     if lines:
@@ -225,7 +247,6 @@ def parse_resume_text(text):
                 name = line
                 break
                 
-    # 3. CGPA Extraction
     cgpa = 7.8
     cgpa_matches = re.findall(r'(?:cgpa|gpa|pointer|percentage)\s*(?::|is)?\s*([4-9]\.\d{1,2}|10\.0|[7-9]\d(?:\.\d+)?)', text_lower)
     if cgpa_matches:
@@ -242,7 +263,6 @@ def parse_resume_text(text):
         if float_matches:
             cgpa = float(float_matches[0])
 
-    # 4. Skill Extraction
     extracted_skills = []
     for category, skill_patterns in SKILL_DICTIONARY.items():
         for pattern in skill_patterns:
@@ -266,17 +286,14 @@ def parse_resume_text(text):
                     
     extracted_skills = list(set(extracted_skills))
     
-    # 5. Projects Extraction
     project_keywords = ['project', 'mini-project', 'capstone', 'developed', 'implemented']
     projects_count = min(5, sum(1 for word in project_keywords if word in text_lower))
     if projects_count == 0:
         projects_count = 2
         
-    # 6. Certifications Extraction
     cert_keywords = ['certification', 'certified', 'certificate', 'credential', 'license']
     certifications_count = min(5, sum(1 for word in cert_keywords if word in text_lower))
     
-    # 7. Experience Months
     experience_months = 0
     exp_matches = re.findall(r'(\d+)\s*(?:months?|yrs?|years?)\s*(?:of)?\s*(?:experience|internship)', text_lower)
     if exp_matches:
@@ -287,7 +304,6 @@ def parse_resume_text(text):
         except ValueError:
             pass
             
-    # 8. Communication & Extracurriculars
     comm_keywords = ['communication', 'presentation', 'leadership', 'teamwork', 'speaker', 'organized', 'seminar', 'debate']
     comm_score = min(5, max(2, sum(1 for word in comm_keywords if word in text_lower)))
     
@@ -306,11 +322,8 @@ def parse_resume_text(text):
         'extracurricular_score': extra_score
     }
 
-# Generate Resume Score and Critique Checklist
 def generate_resume_critique(profile):
     checklist = []
-    
-    # Evaluate Formatting / Structure Index
     formatting_score = 90
     if profile['experience_months'] == 0:
         formatting_score -= 10
@@ -318,37 +331,31 @@ def generate_resume_critique(profile):
     else:
         checklist.append({"task": "Professional experience section included.", "completed": True})
         
-    # Academic score critique
     academic_score = 80 if profile['cgpa'] < 8.0 else (90 if profile['cgpa'] < 9.0 else 98)
     if profile['cgpa'] < 8.5:
         checklist.append({"task": "Aim for a CGPA of 8.5+ to unlock Tier-1 company screening criteria.", "completed": False})
     else:
         checklist.append({"task": "Target academic grade score (>=8.5 CGPA) achieved.", "completed": True})
         
-    # Certifications critique
     cert_score = min(100, 60 + (profile['certifications_count'] * 20))
     if profile['certifications_count'] < 2:
         checklist.append({"task": "Complete at least 2 relevant Cloud, DevOps, or ML certifications (Coursera/Udemy/AWS).", "completed": False})
     else:
         checklist.append({"task": "Industry certifications quota fulfilled.", "completed": True})
         
-    # Project critique
     proj_score = min(100, 50 + (profile['projects_count'] * 20))
     if profile['projects_count'] < 3:
         checklist.append({"task": "Add a third tech stack project (incorporate database deployment parameters).", "completed": False})
     else:
         checklist.append({"task": "Strong technical project index (3+ projects).", "completed": True})
         
-    # Skills checklist
     has_cloud = any(sk in profile['skills'] for sk in ['aws', 'azure', 'gcp', 'docker', 'kubernetes'])
     if not has_cloud:
         checklist.append({"task": "Integrate virtualization or cloud tools (AWS, Docker) to boost cloud readiness.", "completed": False})
     else:
         checklist.append({"task": "Cloud-infrastructure and DevOps tools parsed.", "completed": True})
         
-    # Overall score average
     overall = int((formatting_score + academic_score + cert_score + proj_score) / 4)
-    
     scores = {
         "overall": overall,
         "formatting": formatting_score,
@@ -358,20 +365,15 @@ def generate_resume_critique(profile):
     }
     return {"scores": scores, "checklist": checklist}
 
-# Similarity Recommendation
 def get_recommendations(student_skills, internships):
     if not student_skills:
         return []
-        
     student_skills_str = " ".join(student_skills)
     corpus = [student_skills_str]
-    
     for i in internships:
         corpus.append(i['required_skills'].replace(',', ' '))
-        
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(corpus)
-    
     cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
     scores = cosine_sim[0]
     
@@ -379,7 +381,6 @@ def get_recommendations(student_skills, internships):
     for idx, score in enumerate(scores):
         internship = dict(internships[idx])
         req_skills_list = [s.strip().lower() for s in internship['required_skills'].split(',')]
-        
         matching_skills = [s for s in student_skills if s.lower() in req_skills_list]
         missing_skills = [s for s in req_skills_list if s not in [ms.lower() for ms in student_skills]]
         
@@ -407,7 +408,6 @@ def get_recommendations(student_skills, internships):
             'missing_skills': missing_skills,
             'courses': courses
         })
-        
     recommendations.sort(key=lambda x: x['match_score'], reverse=True)
     return recommendations
 
@@ -416,7 +416,137 @@ def get_recommendations(student_skills, internships):
 def home():
     return render_template('index.html')
 
-# Core APIs
+# ----------------- User Auth APIs -----------------
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request body'}), 400
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'student')
+    
+    if not name or not email or not password:
+        return jsonify({'error': 'All fields are required'}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+            (name, email, password, role)
+        )
+        conn.commit()
+        # Fetch newly created user ID
+        user_id = cursor.lastrowid
+        session['user_id'] = user_id
+        session['role'] = role
+        session['name'] = name
+        session['email'] = email
+        conn.close()
+        return jsonify({'success': True, 'user': {'id': user_id, 'name': name, 'email': email, 'role': role}})
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'error': 'Email address already exists'}), 400
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request body'}), 400
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Missing email or password'}), 400
+        
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password)).fetchone()
+    conn.close()
+    
+    if not row:
+        return jsonify({'error': 'Invalid email or password'}), 401
+        
+    session['user_id'] = row['id']
+    session['role'] = row['role']
+    session['name'] = row['name']
+    session['email'] = row['email']
+    
+    return jsonify({'success': True, 'user': {'id': row['id'], 'name': row['name'], 'email': row['email'], 'role': row['role']}})
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True})
+
+@app.route('/api/auth/session', methods=['GET'])
+def get_session():
+    if 'user_id' in session:
+        return jsonify({
+            'logged_in': True,
+            'user': {
+                'id': session['user_id'],
+                'name': session['name'],
+                'email': session['email'],
+                'role': session['role']
+            }
+        })
+    return jsonify({'logged_in': False})
+
+# ----------------- Student Profile Resume Builder APIs -----------------
+@app.route('/api/student/profile', methods=['GET', 'POST'])
+def handle_student_profile():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized. Please login.'}), 401
+    
+    user_id = session['user_id']
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        cgpa = data.get('cgpa', 7.5)
+        skills = data.get('skills', '')
+        projects = data.get('projects', '')
+        certifications = data.get('certifications', '')
+        experience = data.get('experience', '')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Upsert profile record
+        cursor.execute('''
+            INSERT INTO student_profiles (user_id, cgpa, skills, projects, certifications, experience)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                cgpa = excluded.cgpa,
+                skills = excluded.skills,
+                projects = excluded.projects,
+                certifications = excluded.certifications,
+                experience = excluded.experience
+        ''', (user_id, cgpa, skills, projects, certifications, experience))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Profile saved successfully!'})
+    else:
+        conn = get_db_connection()
+        row = conn.execute('SELECT * FROM student_profiles WHERE user_id = ?', (user_id,)).fetchone()
+        conn.close()
+        
+        if not row:
+            return jsonify({'profile': None})
+            
+        return jsonify({
+            'profile': {
+                'cgpa': row['cgpa'],
+                'skills': row['skills'],
+                'projects': row['projects'],
+                'certifications': row['certifications'],
+                'experience': row['experience']
+            }
+        })
+
+# Core Platform APIs
 @app.route('/api/internships', methods=['GET'])
 def get_internships():
     conn = get_db_connection()
@@ -436,7 +566,6 @@ def upload_resume():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(file_path)
     
-    # Text Extraction
     text = ""
     if file.filename.endswith('.pdf'):
         text = extract_text_from_pdf(file_path)
@@ -449,14 +578,27 @@ def upload_resume():
                 with open(file_path, 'r', encoding='latin-1') as f:
                     text = f.read()
             except Exception as e:
-                return jsonify({'error': f'Failed to read text file: {e}'}), 500
+                return jsonify({'error': f'Failed to read text: {e}'}), 500
                 
     if not text.strip():
         return jsonify({'error': 'Could not extract text from resume.'}), 400
         
     student_profile = parse_resume_text(text)
     
-    # Model placement prediction
+    # Save parsed values to db linked to session if user logged in
+    if 'user_id' in session and session['role'] == 'student':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO student_profiles (user_id, cgpa, skills, projects, certifications, experience)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                cgpa = excluded.cgpa,
+                skills = excluded.skills
+        ''', (session['user_id'], student_profile['cgpa'], ", ".join(student_profile['skills']), f"{student_profile['projects_count']} Projects", f"{student_profile['certifications_count']} Certifications", f"{student_profile['experience_months']} Months"))
+        conn.commit()
+        conn.close()
+        
     employability_score = 50.0
     placement_readiness = "Medium"
     
@@ -488,14 +630,11 @@ def upload_resume():
         except Exception as e:
             print(f"Prediction Error: {e}")
             
-    # Recommendations
     conn = get_db_connection()
     internships = [dict(r) for r in conn.execute('SELECT * FROM internships').fetchall()]
     conn.close()
     
     recommendations = get_recommendations(student_profile['skills'], internships)
-    
-    # Critique Report
     critique_report = generate_resume_critique(student_profile)
     
     return jsonify({
@@ -506,7 +645,6 @@ def upload_resume():
         'critique': critique_report
     })
 
-# Recruitment workflow
 @app.route('/api/apply', methods=['POST'])
 def apply_internship():
     data = request.get_json()
@@ -582,12 +720,10 @@ def start_interview():
         return jsonify({'error': 'Invalid request body'}), 400
         
     role = data.get('role', 'Software Engineer Intern')
-    
     if role not in ROLE_INTERVIEW_QUESTIONS:
         role = "Software Engineer Intern"
         
     questions = ROLE_INTERVIEW_QUESTIONS[role]
-    
     return jsonify({
         'role': role,
         'total_questions': len(questions),
@@ -616,7 +752,7 @@ def submit_answer():
         
     q_data = questions[question_idx]
     
-    # 1. Tech score (keyword checks)
+    # 1. Tech score
     matched_keywords = []
     user_answer_lower = user_answer.lower()
     for kw in q_data['keywords']:
@@ -626,7 +762,7 @@ def submit_answer():
     tech_score = int((len(matched_keywords) / len(q_data['keywords'])) * 100)
     tech_score = min(100, max(0, tech_score))
     
-    # 2. Communication & Filler word analytics
+    # 2. Comm score
     filler_words = ["um", "uh", "like", "basically", "actually", "you know", "sort of"]
     detected_fillers = []
     for fw in filler_words:
@@ -635,17 +771,14 @@ def submit_answer():
             detected_fillers.extend([fw] * matches)
             
     comm_score = 100
-    comm_score -= len(detected_fillers) * 6  # Deduct 6 points per occurrence
-    
+    comm_score -= len(detected_fillers) * 6
     if len(user_answer) < 50:
-         comm_score -= 20  # Length penalty
-         
+         comm_score -= 20
     comm_score = min(100, max(0, comm_score))
     
-    # Combined score
     calculated_score = int((tech_score * 0.7) + (comm_score * 0.3))
     
-    # Dynamic Branching / Conversational follow-ups
+    # Dynamic Branching
     follow_up_prompt = ""
     if question_idx == 0:
         if role == "Machine Learning Intern" or role == "AI Research Intern":
@@ -686,17 +819,14 @@ def submit_answer():
     if not is_finished:
         response_data['next_question'] = questions[next_idx]['question']
     else:
-        # Save transcript to interviews table
         transcript_text = f"Q1: {questions[0]['question']}\nA1: {user_answer}\nGrades - Tech: {tech_score}%, Comm: {comm_score}%\nFiller phrases found: {len(detected_fillers)}"
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Insert interview log
         cursor.execute(
             'INSERT INTO interviews (student_name, student_email, role, average_score, technical_score, communication_score, filler_words, transcript) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             (student_name, student_email, role, float(calculated_score), float(tech_score), float(comm_score), ", ".join(list(set(detected_fillers))), transcript_text)
         )
-        # Sync scores directly with applications table
         cursor.execute(
             'UPDATE applications SET interview_score = ?, technical_score = ?, communication_score = ? WHERE student_email = ? AND internship_id IN (SELECT id FROM internships WHERE title = ?)',
             (float(calculated_score), float(tech_score), float(comm_score), student_email, role)
@@ -706,7 +836,7 @@ def submit_answer():
         
     return jsonify(response_data)
 
-# Fetch Transcript for Recruiter view
+# Fetch Transcript for Recruiter modal view
 @app.route('/api/interview/transcript', methods=['GET'])
 def get_transcript():
     email = request.args.get('email')
@@ -736,7 +866,7 @@ def get_transcript():
         'completed_at': row['completed_at']
     })
 
-# ----------------- University Dashboard analytics -----------------
+# University Dashboard analytics
 @app.route('/api/university_stats', methods=['GET'])
 def get_university_stats():
     conn = get_db_connection()

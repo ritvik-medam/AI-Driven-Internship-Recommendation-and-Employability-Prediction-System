@@ -1,22 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Left navigation tabs
+    // ----------------- Authentication Elements -----------------
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const tabLoginBtn = document.getElementById('tab-login-btn');
+    const tabSignupBtn = document.getElementById('tab-signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Session headers
+    const sessionUsername = document.getElementById('session-username');
+    const sessionUserrole = document.getElementById('session-userrole');
+
+    // Portals navigation menus
+    const studentMenu = document.getElementById('student-menu');
+    const recruiterMenu = document.getElementById('recruiter-menu');
+    const universityMenu = document.getElementById('university-menu');
+    
+    // Core Left Nav tabs
     const menuButtons = document.querySelectorAll('.menu-btn');
     const panels = document.querySelectorAll('.dashboard-panel');
-    
-    // File upload elements
+
+    // ----------------- Student Profile & Upload Elements -----------------
     const uploadZone = document.getElementById('upload-zone');
     const resumeInput = document.getElementById('resume-input');
     const fileLabel = document.getElementById('file-label');
     const uploadLoader = document.getElementById('upload-loader');
     
-    // Student Hub Dynamic Panels
     const profilePlaceholder = document.getElementById('profile-placeholder');
     const critiqueReportCard = document.getElementById('critique-report-card');
     const profileDetailedContainer = document.getElementById('profile-detailed-container');
+    const profileDetailsRow = document.getElementById('profile-details-row');
     const placementsTableContainer = document.getElementById('placements-table-container');
     const miniReadinessSec = document.getElementById('mini-readiness-sec');
 
-    // Mock Interview Elements
+    // ----------------- Resume Builder Elements -----------------
+    const resumeBuilderForm = document.getElementById('resume-builder-form');
+    const exportResumePdfBtn = document.getElementById('export-resume-pdf-btn');
+
+    // Live preview binding targets
+    const previewName = document.getElementById('preview-name');
+    const previewEmail = document.getElementById('preview-email');
+    const previewCgpa = document.getElementById('preview-cgpa');
+    const previewSkills = document.getElementById('preview-skills');
+    const previewExperience = document.getElementById('preview-experience');
+    const previewProj1Title = document.getElementById('preview-proj1-title');
+    const previewProj1Desc = document.getElementById('preview-proj1-desc');
+    const previewProj2Title = document.getElementById('preview-proj2-title');
+    const previewProj2Desc = document.getElementById('preview-proj2-desc');
+    const previewCertifications = document.getElementById('preview-certifications');
+
+    // ----------------- Mock Interview Elements -----------------
     const startInterviewBtn = document.getElementById('start-interview-btn');
     const roleSelect = document.getElementById('interview-role-select');
     const terminalBody = document.getElementById('terminal-body');
@@ -24,24 +58,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalSubmitBtn = document.getElementById('terminal-submit-btn');
     const terminalPromptStr = document.getElementById('terminal-prompt-str');
     
-    // Hands-free controls
+    // Audio toggles
     const micBtn = document.getElementById('mic-btn');
     const speakerBtn = document.getElementById('speaker-btn');
     const replayBtn = document.getElementById('replay-btn');
 
-    // Recruiter Modal
+    // ----------------- Recruiter Modal & Scorecards -----------------
     const transcriptModal = document.getElementById('transcript-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalDownloadReportBtn = document.getElementById('modal-download-report-btn');
+
+    // Active session details
+    let currentUserSession = null;
+    let activeInterviewTranscriptData = null;
 
     // Charts
     let readinessChart = null;
     let forecastingChart = null;
 
-    // Student profile storage
-    let currentStudentProfile = null;
-    let currentRecommendations = [];
-    
-    // Interview State variables
+    // Interview States
     let isInterviewRunning = false;
     let interviewRole = "";
     let currentQuestionIndex = 0;
@@ -50,148 +85,296 @@ document.addEventListener('DOMContentLoaded', () => {
     let nextQuestionText = "";
     let isInterviewFinished = false;
 
-    // Audio Speech synthesis (TTS) & recognition (STT) setup
+    // Audio configs
     let isVoiceOutputEnabled = true;
     let recognition = null;
     let isRecordingInput = false;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
+    // ----------------- Auth State Checks -----------------
+    checkUserSession();
 
-        recognition.onstart = () => {
-            isRecordingInput = true;
-            micBtn.classList.add('recording');
-            terminalInput.placeholder = "Listening... Speak your answer clearly.";
-        };
-
-        recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            terminalInput.value = transcript;
-        };
-
-        recognition.onend = () => {
-            isRecordingInput = false;
-            micBtn.classList.remove('recording');
-            terminalInput.placeholder = "Type your answer here...";
-        };
-
-        recognition.onerror = (e) => {
-            console.error("STT Error:", e.error);
-            isRecordingInput = false;
-            micBtn.classList.remove('recording');
-            terminalInput.placeholder = "Type your answer here...";
-        };
-    } else {
-        micBtn.style.display = 'none'; // Hide if browser lacks STT support
-        console.log("Speech recognition not supported in this browser.");
+    function checkUserSession() {
+        fetch('/api/auth/session')
+        .then(res => res.json())
+        .then(data => {
+            if (data.logged_in) {
+                currentUserSession = data.user;
+                initUserWorkspace(currentUserSession);
+            } else {
+                showAuthPortal();
+            }
+        });
     }
 
-    // Toggle Speak Output (TTS)
-    speakerBtn.addEventListener('click', () => {
-        speakerBtn.classList.toggle('active');
-        isVoiceOutputEnabled = speakerBtn.classList.contains('active');
-        if (!isVoiceOutputEnabled && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-    });
-
-    // Toggle Mic Recording (STT)
-    micBtn.addEventListener('click', () => {
-        if (!recognition || !isInterviewRunning) return;
-        if (isRecordingInput) {
-            recognition.stop();
-        } else {
-            recognition.start();
-        }
-    });
-
-    // Toggle Replay (TTS Repeat)
-    replayBtn.addEventListener('click', () => {
-        if (isInterviewRunning && currentQuestionText) {
-            speakQuestion(currentQuestionText);
-        }
-    });
-
-    // Pre-trigger loading of speech voices to avoid empty async arrays
-    if (window.speechSynthesis) {
-        window.speechSynthesis.getVoices();
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
+    function showAuthPortal() {
+        authContainer.style.display = 'flex';
+        appContainer.style.display = 'none';
     }
 
-    function speakQuestion(text) {
-        if (!isVoiceOutputEnabled || !window.speechSynthesis) return;
-        window.speechSynthesis.cancel(); // Stop current speech
+    function initUserWorkspace(user) {
+        authContainer.style.display = 'none';
+        appContainer.style.display = 'flex';
         
-        // Clean out prompt system symbols for verbal clarity
-        const cleanText = text.replace(/\[SYSTEM\]|\[AI Coach\]|\[AI Interviewer\]/gi, "").trim();
-        const utterance = new SpeechSynthesisUtterance(cleanText);
+        sessionUsername.textContent = user.name;
+        sessionUserrole.textContent = user.role === 'university' ? 'University Director' : `${user.role} workspace`;
+
+        // Reset menu & tab displays
+        studentMenu.style.display = 'none';
+        recruiterMenu.style.display = 'none';
+        universityMenu.style.display = 'none';
         
-        const voices = window.speechSynthesis.getVoices();
-        
-        // Preferred natural voices in order of quality
-        const preferredVoices = [
-            'google us english',
-            'samantha',
-            'daniel',
-            'microsoft zira desktop',
-            'apple'
-        ];
-        
-        let selectedVoice = null;
-        for (const preferred of preferredVoices) {
-            selectedVoice = voices.find(v => v.name.toLowerCase().includes(preferred) && v.lang.includes('en'));
-            if (selectedVoice) break;
+        menuButtons.forEach(btn => btn.classList.remove('active'));
+        panels.forEach(panel => panel.classList.remove('active'));
+
+        if (user.role === 'student') {
+            studentMenu.style.display = 'flex';
+            document.querySelector('.menu-btn[data-tab="student-dashboard"]').classList.add('active');
+            document.getElementById('student-dashboard').classList.add('active');
+            loadStudentProfileDetails();
+        } else if (user.role === 'recruiter') {
+            recruiterMenu.style.display = 'flex';
+            document.querySelector('.menu-btn[data-tab="employer-panel"]').classList.add('active');
+            document.getElementById('employer-panel').classList.add('active');
+            fetchRecruiterCandidates();
+        } else if (user.role === 'university') {
+            universityMenu.style.display = 'flex';
+            document.querySelector('.menu-btn[data-tab="university-panel"]').classList.add('active');
+            document.getElementById('university-panel').classList.add('active');
+            fetchUniversityDashboard();
         }
-        
-        if (!selectedVoice) {
-            selectedVoice = voices.find(v => v.lang.includes('en'));
-        }
-        
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
-        }
-        
-        utterance.rate = 0.90;  // Slightly slower, warm pace
-        utterance.pitch = 1.0;  // Natural vocal tone
-        utterance.volume = 1.0; // Clear volume
-        
-        window.speechSynthesis.speak(utterance);
     }
 
-    // Tab Navigation
+    // Toggle Tab forms
+    tabLoginBtn.addEventListener('click', () => {
+        tabLoginBtn.classList.add('active');
+        tabSignupBtn.classList.remove('active');
+        loginForm.classList.add('active');
+        signupForm.classList.remove('active');
+    });
+
+    tabSignupBtn.addEventListener('click', () => {
+        tabSignupBtn.classList.add('active');
+        tabLoginBtn.classList.remove('active');
+        signupForm.classList.add('active');
+        loginForm.classList.remove('active');
+    });
+
+    // Handle Login Signin
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw new Error(err.error) });
+            return res.json();
+        })
+        .then(data => {
+            currentUserSession = data.user;
+            initUserWorkspace(currentUserSession);
+        })
+        .catch(err => alert(err.message));
+    });
+
+    // Handle Signup Registration
+    signupForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('signup-name').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const role = document.getElementById('signup-role').value;
+
+        fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, role })
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw new Error(err.error) });
+            return res.json();
+        })
+        .then(data => {
+            currentUserSession = data.user;
+            initUserWorkspace(currentUserSession);
+        })
+        .catch(err => alert(err.message));
+    });
+
+    // Handle Logout
+    logoutBtn.addEventListener('click', () => {
+        fetch('/api/auth/logout', { method: 'POST' })
+        .then(() => {
+            currentUserSession = null;
+            showAuthPortal();
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+        });
+    });
+
+    // Global helper helper
+    window.fillDemoAccount = function(email, password) {
+        document.getElementById('login-email').value = email;
+        document.getElementById('login-password').value = password;
+    };
+
+    // ----------------- Tab Navigation -----------------
     menuButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.dataset.tab;
             
-            // Remove active states
             menuButtons.forEach(b => b.classList.remove('active'));
             panels.forEach(p => p.classList.remove('active'));
             
-            // Add active states
             btn.classList.add('active');
             document.getElementById(targetId).classList.add('active');
 
-            // Tab-specific loads
             if (targetId === 'employer-panel') {
                 fetchRecruiterCandidates();
             } else if (targetId === 'university-panel') {
                 fetchUniversityDashboard();
+            } else if (targetId === 'resume-builder-panel') {
+                loadResumeBuilderData();
             }
             
-            // Stop speech synthesis if shifting tabs
             if (window.speechSynthesis) {
                 window.speechSynthesis.cancel();
             }
         });
     });
 
-    // File Upload Zones
+    // ----------------- Student Profile Resume Builder -----------------
+    function loadStudentProfileDetails() {
+        previewName.textContent = currentUserSession.name;
+        previewEmail.textContent = currentUserSession.email;
+    }
+
+    function loadResumeBuilderData() {
+        fetch('/api/student/profile')
+        .then(res => res.json())
+        .then(data => {
+            if (data.profile) {
+                const p = data.profile;
+                document.getElementById('builder-cgpa').value = p.cgpa;
+                document.getElementById('builder-experience').value = p.experience;
+                document.getElementById('builder-skills').value = p.skills;
+                document.getElementById('builder-certifications').value = p.certifications;
+                
+                // Parse projects split
+                const projs = p.projects.split('||');
+                if (projs.length >= 2) {
+                    const pr1 = projs[0].split('::');
+                    const pr2 = projs[1].split('::');
+                    
+                    document.getElementById('builder-project1').value = pr1[0] || '';
+                    document.getElementById('builder-project1-desc').value = pr1[1] || '';
+                    
+                    document.getElementById('builder-project2').value = pr2[0] || '';
+                    document.getElementById('builder-project2-desc').value = pr2[1] || '';
+                }
+                updateLiveResumePreview();
+            } else {
+                updateLiveResumePreview();
+            }
+        });
+    }
+
+    // Live binding update events
+    const fields = [
+        'builder-cgpa', 'builder-experience', 'builder-skills', 
+        'builder-certifications', 'builder-project1', 'builder-project1-desc',
+        'builder-project2', 'builder-project2-desc'
+    ];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateLiveResumePreview);
+    });
+
+    function updateLiveResumePreview() {
+        previewName.textContent = currentUserSession ? currentUserSession.name : 'Candidate Name';
+        previewEmail.textContent = currentUserSession ? currentUserSession.email : 'email@university.edu';
+        
+        previewCgpa.textContent = document.getElementById('builder-cgpa').value || '0.0';
+        previewSkills.textContent = document.getElementById('builder-skills').value || 'None added yet.';
+        previewExperience.textContent = document.getElementById('builder-experience').value || 'No internship logged.';
+        
+        previewProj1Title.textContent = document.getElementById('builder-project1').value || 'Project 1';
+        previewProj1Desc.textContent = document.getElementById('builder-project1-desc').value || 'Description text...';
+        
+        previewProj2Title.textContent = document.getElementById('builder-project2').value || 'Project 2';
+        previewProj2Desc.textContent = document.getElementById('builder-project2-desc').value || 'Description text...';
+        
+        previewCertifications.textContent = document.getElementById('builder-certifications').value || 'None logged.';
+    }
+
+    // Save and Compile Resume profiles
+    resumeBuilderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const cgpa = parseFloat(document.getElementById('builder-cgpa').value);
+        const experience = document.getElementById('builder-experience').value;
+        const skills = document.getElementById('builder-skills').value;
+        const certifications = document.getElementById('builder-certifications').value;
+        
+        const proj1 = document.getElementById('builder-project1').value + '::' + document.getElementById('builder-project1-desc').value;
+        const proj2 = document.getElementById('builder-project2').value + '::' + document.getElementById('builder-project2-desc').value;
+        const projects = proj1 + '||' + proj2;
+
+        fetch('/api/student/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cgpa, experience, skills, certifications, projects })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Resume metrics compiled successfully and synced to placement databases!");
+                // Trigger resume re-parse calculations
+                triggerResumeRecalculations(cgpa, skills, experience, certifications, proj1, proj2);
+            }
+        });
+    });
+
+    function triggerResumeRecalculations(cgpa, skills, experience, certifications, proj1, proj2) {
+        // Construct mock parsing content text
+        const text = `
+            ${currentUserSession.name}
+            Email: ${currentUserSession.email}
+            Academic CGPA: ${cgpa}
+            Experience of years: ${experience}
+            Keywords: ${skills}
+            Certifications completed: ${certifications}
+            Projects developed: ${proj1} and ${proj2}
+        `;
+        
+        const formData = new FormData();
+        const blob = new Blob([text], { type: 'text/plain' });
+        formData.append('resume', blob, 'resume_profile.txt');
+
+        fetch('/api/upload_resume', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            profilePlaceholder.style.display = 'none';
+            critiqueReportCard.style.display = 'block';
+            profileDetailedContainer.style.display = 'flex';
+            profileDetailsRow.style.display = 'flex';
+            placementsTableContainer.style.display = 'block';
+            miniReadinessSec.style.display = 'block';
+            renderStudentResults(data);
+        });
+    }
+
+    // Export PDF print trigger
+    exportResumePdfBtn.addEventListener('click', () => {
+        window.print();
+    });
+
+    // ----------------- Resume Parsing Upload Handlers -----------------
     uploadZone.addEventListener('click', () => resumeInput.click());
     
     uploadZone.addEventListener('dragover', (e) => {
@@ -226,9 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fileLabel.textContent = `Processing: ${file.name}`;
         uploadLoader.style.display = 'block';
         
-        // Clear old view
         critiqueReportCard.style.display = 'none';
         profileDetailedContainer.style.display = 'none';
+        profileDetailsRow.style.display = 'none';
         placementsTableContainer.style.display = 'none';
         miniReadinessSec.style.display = 'none';
         profilePlaceholder.style.display = 'flex';
@@ -241,9 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body: formData
         })
         .then(res => {
-            if (!res.ok) {
-                return res.json().then(e => { throw new Error(e.error || 'Upload error') });
-            }
+            if (!res.ok) return res.json().then(e => { throw new Error(e.error) });
             return res.json();
         })
         .then(data => {
@@ -252,11 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             critiqueReportCard.style.display = 'block';
             profileDetailedContainer.style.display = 'flex';
+            profileDetailsRow.style.display = 'flex';
             placementsTableContainer.style.display = 'block';
             miniReadinessSec.style.display = 'block';
-
-            currentStudentProfile = data.student_profile;
-            currentRecommendations = data.recommendations;
 
             renderStudentResults(data);
         })
@@ -271,12 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const profile = data.student_profile;
         const critique = data.critique;
 
-        // 1. Text elements
         document.getElementById('res-name').textContent = profile.name;
         document.getElementById('res-email').textContent = profile.email;
         document.getElementById('res-cgpa').textContent = profile.cgpa;
 
-        // 2. Skill Cloud
         const skillsContainer = document.getElementById('res-skills');
         skillsContainer.innerHTML = '';
         profile.skills.forEach(sk => {
@@ -286,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
             skillsContainer.appendChild(span);
         });
 
-        // 3. Employability gauge
+        // Gauge values
         const score = data.employability_score;
         const progressCircle = document.querySelector('.gauge-progress');
         const offset = 440 - (score / 100) * 440;
@@ -297,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         readinessBadge.textContent = `${data.placement_readiness} Readiness`;
         readinessBadge.className = 'badge-readiness ' + data.placement_readiness.toLowerCase();
 
-        // 4. Critique Scores progress bars
+        // Sub scores
         document.getElementById('score-format').textContent = `${critique.scores.formatting}%`;
         document.getElementById('fill-format').style.width = `${critique.scores.formatting}%`;
         
@@ -307,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('score-projects').textContent = `${critique.scores.projects}%`;
         document.getElementById('fill-projects').style.width = `${critique.scores.projects}%`;
 
-        // 5. Critique checklist
+        // Recommendation checks
         const checklistContainer = document.getElementById('critique-checklist-container');
         checklistContainer.innerHTML = '';
         critique.checklist.forEach(item => {
@@ -319,12 +496,11 @@ document.addEventListener('DOMContentLoaded', () => {
             checklistContainer.appendChild(div);
         });
 
-        // 6. Placements list
+        // Placement Recommendations table
         const recomTableBody = document.querySelector('#recommendation-table tbody');
         recomTableBody.innerHTML = '';
         data.recommendations.forEach(rec => {
             const tr = document.createElement('tr');
-            
             const reqSkills = rec.required_skills.split(',');
             let skillsHTML = '';
             reqSkills.forEach(sk => {
@@ -355,10 +531,9 @@ document.addEventListener('DOMContentLoaded', () => {
             recomTableBody.appendChild(tr);
         });
 
-        // 7. Course Recommendations
+        // Curated Learn links
         const courseContainer = document.getElementById('skill-gap-courses');
         courseContainer.innerHTML = '';
-        
         let courseSet = new Set();
         let courseList = [];
         data.recommendations.slice(0, 3).forEach(rec => {
@@ -371,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (courseList.length === 0) {
-            courseContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--accent-green);"><i class="fas fa-circle-check"></i> Profile skills fully optimized for this role!</div>';
+            courseContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--accent-green);"><i class="fas fa-circle-check"></i> Skills perfectly optimized!</div>';
         } else {
             courseList.slice(0, 4).forEach(item => {
                 const card = document.createElement('div');
@@ -397,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyForInternship(button, internshipId, matchScore) {
-        if (!currentStudentProfile) return;
+        if (!currentUserSession) return;
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting';
 
@@ -405,8 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                student_name: currentStudentProfile.name,
-                student_email: currentStudentProfile.email,
+                student_name: currentUserSession.name,
+                student_email: currentUserSession.email,
                 internship_id: parseInt(internshipId),
                 match_score: parseFloat(matchScore)
             })
@@ -422,13 +597,102 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ----------------- Mock Interview Chat System -----------------
-    startInterviewBtn.addEventListener('click', () => {
-        if (!currentStudentProfile) {
-            alert("A student profile must be registered first. Please go to 'Student Dashboard' and upload a resume.");
-            return;
-        }
+    // ----------------- Mock Interview Terminal -----------------
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
 
+        recognition.onstart = () => {
+            isRecordingInput = true;
+            micBtn.classList.add('recording');
+            terminalInput.placeholder = "Listening... Speak your answer clearly.";
+        };
+
+        recognition.onresult = (e) => {
+            terminalInput.value = e.results[0][0].transcript;
+        };
+
+        recognition.onend = () => {
+            isRecordingInput = false;
+            micBtn.classList.remove('recording');
+            terminalInput.placeholder = "Type your answer here...";
+        };
+
+        recognition.onerror = (e) => {
+            console.error("STT Error:", e.error);
+            isRecordingInput = false;
+            micBtn.classList.remove('recording');
+            terminalInput.placeholder = "Type your answer here...";
+        };
+    } else {
+        micBtn.style.display = 'none';
+    }
+
+    // Toggle Audio speaker
+    speakerBtn.addEventListener('click', () => {
+        speakerBtn.classList.toggle('active');
+        isVoiceOutputEnabled = speakerBtn.classList.contains('active');
+        if (!isVoiceOutputEnabled && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    });
+
+    // Toggle Microphone recording
+    micBtn.addEventListener('click', () => {
+        if (!recognition || !isInterviewRunning) return;
+        if (isRecordingInput) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    });
+
+    // Toggle repeat question audio
+    replayBtn.addEventListener('click', () => {
+        if (isInterviewRunning && currentQuestionText) {
+            speakQuestion(currentQuestionText);
+        }
+    });
+
+    // Pre-trigger loading of voices
+    if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
+    }
+
+    function speakQuestion(text) {
+        if (!isVoiceOutputEnabled || !window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        
+        const cleanText = text.replace(/\[SYSTEM\]|\[AI Coach\]|\[AI Interviewer\]/gi, "").trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoices = ['google us english', 'samantha', 'daniel', 'microsoft zira desktop', 'apple'];
+        
+        let selectedVoice = null;
+        for (const preferred of preferredVoices) {
+            selectedVoice = voices.find(v => v.name.toLowerCase().includes(preferred) && v.lang.includes('en'));
+            if (selectedVoice) break;
+        }
+        
+        if (!selectedVoice) selectedVoice = voices.find(v => v.lang.includes('en'));
+        if (selectedVoice) utterance.voice = selectedVoice;
+        
+        utterance.rate = 0.90;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Start practice round
+    startInterviewBtn.addEventListener('click', () => {
         if (isInterviewRunning) return;
         
         interviewRole = roleSelect.value;
@@ -440,10 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="terminal-system-msg">[SYSTEM] Starting technical assessment framework for ${interviewRole}...</span>
             </div>
             <div class="terminal-line">
-                <span class="terminal-system-msg">[SYSTEM] Parsing candidates skills profile: ${currentStudentProfile.name}...</span>
-            </div>
-            <div class="terminal-line">
-                <span class="terminal-system-msg">[SYSTEM] Audio voice readouts: ${isVoiceOutputEnabled ? 'Enabled' : 'Muted'} (Microphone active).</span>
+                <span class="terminal-system-msg">[SYSTEM] Fetching candidate details: ${currentUserSession.name}...</span>
             </div>
         `;
         
@@ -458,14 +719,14 @@ document.addEventListener('DOMContentLoaded', () => {
             isWaitingForNext = false;
             isInterviewFinished = false;
             terminalSubmitBtn.innerHTML = '<i class="fas fa-share"></i> Send';
-            
+
             currentQuestionIndex = data.question_index;
             startInterviewBtn.innerHTML = '<i class="fas fa-headset"></i> Interviewing...';
             
             terminalInput.disabled = false;
             terminalSubmitBtn.disabled = false;
             if (recognition) micBtn.disabled = false;
-            terminalPromptStr.textContent = `${currentStudentProfile.name.toLowerCase().replace(' ', '')}@rvuniversity:~$`;
+            terminalPromptStr.textContent = `${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$`;
             terminalInput.focus();
 
             appendTerminalLine('AI Coach', data.question);
@@ -483,10 +744,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function submitTerminalAnswer() {
         if (!isInterviewRunning) return;
 
-        // Flow 1: If we are currently showing evaluation and waiting for the user to progress
         if (isWaitingForNext) {
             if (isInterviewFinished) {
-                // End interview cleanups
+                // End interview
                 isInterviewRunning = false;
                 startInterviewBtn.disabled = false;
                 startInterviewBtn.innerHTML = '<i class="fas fa-play"></i> Start Practice Session';
@@ -503,14 +763,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 replayBtn.disabled = true;
                 currentQuestionText = "";
                 
-                // Reset states
                 isWaitingForNext = false;
                 isInterviewFinished = false;
                 terminalSubmitBtn.innerHTML = '<i class="fas fa-share"></i> Send';
             } else {
-                // Progress to the next question
+                // Progress
                 isWaitingForNext = false;
-                
                 terminalInput.disabled = false;
                 terminalSubmitBtn.disabled = false;
                 if (recognition) micBtn.disabled = false;
@@ -528,7 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Flow 2: Normal submit response flow
         const text = terminalInput.value.trim();
         if (!text) return;
 
@@ -555,8 +812,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 role: interviewRole,
                 question_index: currentQuestionIndex,
                 answer: text,
-                student_name: currentStudentProfile.name,
-                student_email: currentStudentProfile.email
+                student_name: currentUserSession.name,
+                student_email: currentUserSession.email
             })
         })
         .then(res => res.json())
@@ -576,7 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             terminalBody.appendChild(scoreCard);
             
-            // Save next question details but do not display yet
             if (data.is_finished) {
                 isInterviewFinished = true;
                 nextQuestionText = "";
@@ -590,7 +846,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 nextQuestionText = nextQ;
             }
 
-            // Set waiting state and modify send button to Next Question
             isWaitingForNext = true;
             terminalSubmitBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Next Question';
             terminalSubmitBtn.disabled = false;
@@ -603,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const line = document.createElement('div');
         line.className = 'terminal-line';
         if (sender === 'You') {
-            line.innerHTML = `<span class="terminal-prompt">${currentStudentProfile.name.toLowerCase().replace(' ', '')}@rvuniversity:~$</span> <span style="color:#fff;">${text}</span>`;
+            line.innerHTML = `<span class="terminal-prompt">${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$</span> <span style="color:#fff;">${text}</span>`;
         } else {
             line.innerHTML = `<span style="color:var(--accent-purple); font-weight:600;">[AI Interviewer]</span> <span class="terminal-ai-text">${text}</span>`;
         }
@@ -660,14 +915,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.appendChild(tr);
             });
 
-            // Status change events
             document.querySelectorAll('.recruiter-status-select').forEach(sel => {
                 sel.addEventListener('change', () => {
                     updateCandidateStatus(sel.dataset.email, sel.dataset.id, sel.value);
                 });
             });
 
-            // Click events on grades to open transcript logs
             document.querySelectorAll('.clickable-score').forEach(btn => {
                 btn.addEventListener('click', () => {
                     openCandidateTranscript(btn.dataset.email, btn.dataset.role);
@@ -679,19 +932,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function openCandidateTranscript(email, role) {
         fetch(`/api/interview/transcript?email=${email}&role=${role}`)
         .then(res => {
-            if (!res.ok) {
-                return res.json().then(e => { throw new Error(e.error) });
-            }
+            if (!res.ok) return res.json().then(e => { throw new Error(e.error) });
             return res.json();
         })
         .then(data => {
+            activeInterviewTranscriptData = data;
+            
             document.getElementById('modal-avg-score').textContent = `${data.average_score}%`;
             document.getElementById('modal-tech-score').textContent = `${data.technical_score}%`;
             document.getElementById('modal-comm-score').textContent = `${data.communication_score}%`;
             document.getElementById('modal-student-email').textContent = data.student_email;
             document.getElementById('modal-filler-words').textContent = data.filler_words;
             
-            // Format log lines with color
             document.getElementById('modal-transcript-text').textContent = data.transcript;
 
             transcriptModal.style.display = "block";
@@ -701,7 +953,67 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Modal Close operations
+    // Modal PDF Exporter
+    modalDownloadReportBtn.addEventListener('click', () => {
+        if (!activeInterviewTranscriptData) return;
+        const d = activeInterviewTranscriptData;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>AI Assessment Scorecard - ${d.student_name}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
+                    .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
+                    .header h2 { margin: 0; font-size: 24px; color: #0f172a; }
+                    .header p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; }
+                    .score-grid { display: flex; justify-content: space-around; margin: 25px 0; }
+                    .score-card { text-align: center; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; width: 30%; background: #f8fafc; }
+                    .score-val { font-size: 28px; font-weight: 800; color: #2563eb; margin-bottom: 5px; }
+                    .transcript-box { background: #0f172a; color: #38bdf8; font-family: monospace; padding: 20px; border-radius: 12px; white-space: pre-wrap; font-size: 13px; max-height: 400px; overflow-y: auto; border: 1px solid #1e293b; }
+                    .meta-info { font-size: 14px; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>AI Mock Assessment Report Card</h2>
+                    <p>RV Placement & Employability Verification System</p>
+                </div>
+                <div class="meta-info">
+                    <div><strong>Candidate Name:</strong> ${d.student_name}</div>
+                    <div><strong>Email:</strong> ${d.student_email}</div>
+                    <div><strong>Target Assessment Role:</strong> ${d.role}</div>
+                    <div><strong>Verbal Filler Phrases Found:</strong> ${d.filler_words}</div>
+                    <div><strong>Completed At:</strong> ${new Date(d.completed_at).toLocaleString()}</div>
+                </div>
+                <div class="score-grid">
+                    <div class="score-card">
+                        <div class="score-val">${d.average_score}%</div>
+                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Overall Grade</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-val" style="color:#16a34a;">${d.technical_score}%</div>
+                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Technical accuracy</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-val" style="color:#7c3aed;">${d.communication_score}%</div>
+                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Clarity index</div>
+                    </div>
+                </div>
+                <h3>Dialogue Transcript Auditing Logs:</h3>
+                <div class="transcript-box">${d.transcript}</div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    });
+
     modalCloseBtn.addEventListener('click', () => {
         transcriptModal.style.display = "none";
     });
@@ -721,12 +1033,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 internship_id: parseInt(intId),
                 status: statusVal
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                console.log(`Status updated to: ${statusVal}`);
-            }
         });
     }
 
@@ -777,7 +1083,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Forecasting linear curves
             const fore = data.forecasting;
             const ctxFore = document.getElementById('forecastingChart').getContext('2d');
             if (forecastingChart) forecastingChart.destroy();

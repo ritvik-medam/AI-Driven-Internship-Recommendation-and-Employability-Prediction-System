@@ -90,6 +90,8 @@
             <!-- Dynamic Navigation Menus -->
             <div class="sidebar-menu" id="student-menu" style="display: none;">
                 <button class="menu-btn active" data-tab="student-dashboard"><i class="fas fa-user"></i> Placement Matching</button>
+                <button class="menu-btn" data-tab="career-advisor-panel"><i class="fas fa-route"></i> Career Advisor</button>
+                <button class="menu-btn" data-tab="market-insights-panel"><i class="fas fa-chart-simple"></i> Market Insights</button>
                 <button class="menu-btn" data-tab="my-applications-panel"><i class="fas fa-paper-plane"></i> My Applications</button>
                 <button class="menu-btn" data-tab="resume-builder-panel"><i class="fas fa-file-invoice"></i> Resume Builder</button>
                 <button class="menu-btn" data-tab="mock-interview-panel"><i class="fas fa-headset"></i> AI Interview Coach</button>
@@ -112,6 +114,7 @@
                     <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
                 </div>
                 <div class="sidebar-actions">
+                    <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-moon"></i></button>
                     <button id="notif-bell-btn" class="notif-bell" title="Notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
@@ -285,6 +288,169 @@
                             <canvas id="skillRadarChart"></canvas>
                         </div>
                     </div>
+
+                    <!-- Peer Comparison Analytics -->
+                    <div class="grid-container" id="peer-comparison-container" style="display: none; margin-top: 1.5rem;">
+                        <div class="card col-6" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-spider"></i> You vs. Cohort Average</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Comparison of your skills, project, certification, and CGPA metrics.</p>
+                            <div style="position: relative; height: 260px; width: 100%;">
+                                <canvas id="peerRadarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card col-6" style="height: 380px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-percent"></i> Cohort Percentile Rank</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Your overall position compared to all students in the university.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; flex-grow: 1;">
+                                <div class="percentile-badge-wrapper" style="text-align: center;">
+                                    <div class="percentile-ring" style="width: 140px; height: 140px; border-radius: 50%; border: 8px solid rgba(0,242,254,0.1); border-top-color: var(--accent-blue); display: flex; align-items: center; justify-content: center; position: relative;">
+                                        <div class="percentile-val" id="percentile-text" style="font-size: 1.6rem; font-weight: 800; color: #fff;">Top 50%</div>
+                                    </div>
+                                </div>
+                                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">Rank Position Insights</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="percentile-feedback">Complete profile & mock interviews to improve.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== AI CAREER PATH ADVISOR PANEL ================== -->
+                <div id="career-advisor-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-route" style="color: var(--accent-blue);"></i> AI Career Path Advisor</h1>
+                        <p class="panel-subtitle">Plan your learning journey based on role matching and skill gap analysis.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Left settings card -->
+                        <div class="card col-4" style="height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-sliders"></i> Select Target Path</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Select your desired career path to generate your customized roadmap.</p>
+                                
+                                <div class="input-group" style="margin-bottom: 1.25rem;">
+                                    <label>Target Role</label>
+                                    <select id="roadmap-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <option value="Software Engineer Intern">Software Engineer Intern</option>
+                                        <option value="Machine Learning Intern">Machine Learning Intern</option>
+                                        <option value="Data Scientist Intern">Data Scientist Intern</option>
+                                        <option value="Cloud Architect Intern">Cloud Architect Intern</option>
+                                        <option value="Frontend Developer Intern">Frontend Developer Intern</option>
+                                        <option value="AI Research Intern">AI Research Intern</option>
+                                        <option value="Cybersecurity Specialist Intern">Cybersecurity Specialist Intern</option>
+                                        <option value="Product Management Intern">Product Management Intern</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;"><i class="fas fa-lightbulb" style="color: #ffd700;"></i> Legend</div>
+                                <div style="display: grid; grid-template-columns: 12px 1fr; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); align-items: center;">
+                                    <div style="background: var(--accent-green); border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Learned Skill (Found in resume)</div>
+                                    <div style="background: #f5a623; border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Gap Skill (Needs to be acquired)</div>
+                                    <div style="background: var(--accent-blue); border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Target Skill / Role Node</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Flowchart Visualization -->
+                        <div class="card col-8" style="height: 480px; display: flex; flex-direction: column;">
+                            <h3 class="card-title"><i class="fas fa-diagram-project"></i> Path Visualization Map</h3>
+                            <div id="roadmap-visualization-wrap" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
+                                <div class="roadmap-canvas-bg" style="position: absolute; width: 100%; height: 100%; pointer-events: none; opacity: 0.05; background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px); background-size: 20px 20px;"></div>
+                                <div id="roadmap-flow-container" style="display: flex; align-items: center; justify-content: space-around; width: 100%; z-index: 2; overflow-x: auto; padding: 1rem; gap: 2rem; position: relative;">
+                                    <!-- Dynamic roadmap nodes -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations Table -->
+                    <div class="card col-12" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Curated Learning Recommendations</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Actionable steps to bridge detected skill gaps and achieve target readiness.</p>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="roadmap-courses-table">
+                                <thead>
+                                    <tr>
+                                        <th>Skill / Gap Area</th>
+                                        <th>Suggested Actions / Course</th>
+                                        <th>Estimated Effort</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic learning recommendations -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== SMART JOB MARKET INSIGHTS PANEL ================== -->
+                <div id="market-insights-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-chart-simple" style="color: var(--accent-purple);"></i> Job Market Intelligence Dashboard</h1>
+                        <p class="panel-subtitle">Monitor trending industry skills, salary distributions, and hiring indicators.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Stat Box 1 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-postings">1,420</div>
+                            <div class="stat-desc">Active Tech Placements</div>
+                        </div>
+                        <!-- Stat Box 2 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-interviews">48</div>
+                            <div class="stat-desc">Interviews Conducted Today</div>
+                        </div>
+                        <!-- Stat Box 3 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-offers">12</div>
+                            <div class="stat-desc">Offers Extended This Week</div>
+                        </div>
+                        <!-- Stat Box 4 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-success">84%</div>
+                            <div class="stat-desc">Recruiter Action Rate</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Heatmap/Skills card -->
+                        <div class="card col-6" style="height: 380px; display: flex; flex-direction: column;">
+                            <h3 class="card-title"><i class="fas fa-fire" style="color: #ff4757;"></i> High-Demand Skills Heatmap</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Skills with highest volume of placement requirements currently.</p>
+                            <div class="skills-demand-grid" id="market-heatmap-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; flex-grow: 1; align-content: start; overflow-y: auto;">
+                                <!-- Dynamic heat tiles -->
+                            </div>
+                        </div>
+                        
+                        <!-- Sectors growth -->
+                        <div class="card col-6" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-chart-line"></i> Industry Sector Growth Indexes</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Hiring expansion rates across technology business sectors.</p>
+                            <div style="position: relative; height: 260px; width: 100%;">
+                                <canvas id="marketSectorsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card col-12" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-sack-dollar"></i> Placement Salary Distributions</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Comparative monthly stipend rates by role index (fresher entry-level brackets).</p>
+                        <div style="position: relative; height: 320px; width: 100%;">
+                            <canvas id="marketSalaryChart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -368,6 +534,27 @@
                                         <option value="theme-executive">Modern Executive (Emerald & Charcoal)</option>
                                         <option value="theme-creative">Creative Developer (Royal Purple & Charcoal)</option>
                                     </select>
+                                </div>
+
+                                <!-- Section 5: Cover Letter Generator -->
+                                <div class="form-section-header"><i class="fas fa-file-pen"></i> AI Cover Letter Generator</div>
+                                <div style="display: flex; gap: 1rem; align-items: flex-end; width: 100%;">
+                                    <div class="input-group" style="flex-grow: 1;">
+                                        <label>Target Internship Opportunity</label>
+                                        <select id="cover-letter-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                            <option value="">-- Click Save/Compile to Load Options --</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-secondary" id="generate-cover-btn" style="height: 38px; margin-bottom: 4px; padding: 0 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 8px;">
+                                        <i class="fas fa-wand-magic-sparkles"></i> Generate
+                                    </button>
+                                </div>
+                                <div class="input-group" id="cover-letter-result-group" style="display: none; margin-top: 0.5rem;">
+                                    <label>Tailored Letter Draft</label>
+                                    <textarea id="builder-cover-letter" rows="8" style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.15); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem; border-radius: 8px;" placeholder="Your cover letter text..."></textarea>
+                                    <button type="button" class="btn-secondary" id="export-cover-pdf-btn" style="margin-top: 0.5rem; justify-content: center; width: 100%;">
+                                        <i class="fas fa-file-pdf"></i> Export Cover Letter PDF
+                                    </button>
                                 </div>
 
                                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -528,6 +715,28 @@
                         <div id="interview-history-chart-wrap" style="display: none; position: relative; height: 300px; width: 100%;">
                             <canvas id="interviewTrendChart"></canvas>
                         </div>
+                        
+                        <!-- Performance Scorecard History Table -->
+                        <div id="interview-history-table-wrap" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600; color: #fff;"><i class="fas fa-award"></i> Verification Certificates & History</h4>
+                            <div class="table-wrapper">
+                                <table class="custom-table" id="interview-sessions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Role Practice Session</th>
+                                            <th>Date & Time</th>
+                                            <th>Technical</th>
+                                            <th>Communication</th>
+                                            <th>Overall Grade</th>
+                                            <th>Action / Certificate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dynamic list of past sessions -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -582,12 +791,33 @@
                         <p class="panel-subtitle">Review incoming placement profiles, audit technical interview transcript scorecards, and update recruitment status.</p>
                     </div>
 
-                    <div class="card col-12">
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                        <button id="view-mode-table-btn" class="btn-primary active" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-table"></i> Table View</button>
+                        <button id="view-mode-kanban-btn" class="btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-columns"></i> Kanban Pipeline</button>
+                        
+                        <div id="kanban-bulk-actions" style="display: none; gap: 0.5rem; align-items: center; margin-left: 1.5rem;">
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Selected (<span id="bulk-select-count">0</span>):</span>
+                            <select id="bulk-status-select" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.35rem 0.5rem; border-radius:6px; font-size:0.8rem; outline:none;">
+                                <option value="">-- Change Stage --</option>
+                                <option value="Screening">Move to Screening</option>
+                                <option value="Interviewing">Move to Interviewing</option>
+                                <option value="Shortlisted">Move to Shortlisted</option>
+                                <option value="Offered">Move to Offered</option>
+                                <option value="Rejected">Move to Rejected</option>
+                            </select>
+                            <button id="bulk-apply-btn" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px;">Apply</button>
+                        </div>
+                        
+                        <button id="comparison-toggle-btn" class="btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; margin-left: auto;"><i class="fas fa-code-compare"></i> Compare Applicants</button>
+                    </div>
+
+                    <div class="card col-12" id="recruiter-table-card">
                         <h3 class="card-title"><i class="fas fa-users"></i> Applicant Monitoring Desk</h3>
                         <div class="table-wrapper">
                             <table class="custom-table" id="employer-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="select-all-candidates-checkbox"></th>
                                         <th>Applicant Student Details</th>
                                         <th>Target Role</th>
                                         <th>Match Index</th>
@@ -600,6 +830,49 @@
                                     <!-- Dynamic applicant lists -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Kanban Board Container -->
+                    <div id="recruiter-kanban-container" style="display: none; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; width: 100%;">
+                        <div class="kanban-column" data-status="Screening" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Screening</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-screening-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Interviewing" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Interviewing</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-interviewing-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Shortlisted" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Shortlisted</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-shortlisted-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Offered" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Offered</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-offered-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Rejected" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Rejected</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-rejected-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
                         </div>
                     </div>
                 </div>
@@ -701,6 +974,116 @@
                 <button type="button" class="btn-primary" id="modal-download-report-btn" style="flex-grow: 1; justify-content: center; padding: 0.75rem;">
                     <i class="fas fa-file-pdf"></i> Download PDF Scorecard
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
+    <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
+        <div class="notif-dropdown-header">
+            <span><i class="fas fa-bell"></i> Notifications</span>
+            <button id="notif-mark-read-btn" class="notif-mark-read">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list">
+            <div class="notif-empty">No notifications yet.</div>
+        </div>
+    </div>
+
+    <!-- Hidden printable container for cover letter -->
+    <div id="cover-letter-paper-container" class="resume-paper" style="display: none; background: #fff; padding: 25mm 20mm; color: #000; font-family: 'Outfit', sans-serif; box-shadow: none;">
+        <div id="cover-letter-print-text" style="white-space: pre-wrap; line-height: 1.6; font-size: 1rem; color: #000;"></div>
+    </div>
+
+    <!-- 5. ONBOARDING TOUR MODAL OVERLAY -->
+    <div id="onboarding-tour-overlay" class="tour-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif;">
+        <div class="tour-card" id="tour-card-el" style="background: #0f1225; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 1rem;">
+            <div class="tour-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <span class="tour-step-indicator" id="tour-step-idx" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold;">Step 1 of 5</span>
+                <button id="tour-skip-btn" class="tour-skip-btn" style="background: transparent; border: none; color: var(--accent-red); font-size: 0.8rem; cursor: pointer; font-weight: bold;">Skip Tour</button>
+            </div>
+            <div class="tour-body">
+                <h4 class="tour-title" id="tour-title-el" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.5rem;">Welcome to PlacementIntel!</h4>
+                <p class="tour-text" id="tour-text-el" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">Let's walk you through the key modules of the system.</p>
+            </div>
+            <div class="tour-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                <button id="tour-prev-btn" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: none; border-radius: 6px;">Back</button>
+                <button id="tour-next-btn" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; margin-left: auto;">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. CERTIFICATE VERIFICATION MODAL -->
+    <div id="certificate-modal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-certificate" style="color: #ffd700;"></i> Employability Verification Certificate
+                </h3>
+                <button id="cert-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="certificate-print-area" style="background: #fff; padding: 2.5rem; border: 8px double #ffd700; border-radius: 10px; color: #0f172a; text-align: center; font-family: 'Georgia', serif; position: relative; margin-bottom: 1.5rem;">
+                <div style="font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin-bottom: 1rem; font-family: 'Outfit', sans-serif; font-weight: 700;">Certificate of Completion</div>
+                <div style="font-size: 0.85rem; font-style: italic; color: #64748b; margin-bottom: 1.5rem;">This credentials verify that</div>
+                <div style="font-size: 1.8rem; font-weight: bold; color: #1e293b; border-bottom: 2px solid #cbd5e1; display: inline-block; padding: 0 2rem 0.5rem 2rem; margin-bottom: 1.5rem;" id="cert-student-name">Ritvik Medam</div>
+                <div style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 1.5rem;">
+                    has successfully achieved an average grade of <strong id="cert-score-val" style="color: #0f172a; font-size: 1.1rem;">85%</strong> on the <br>
+                    <strong id="cert-role-val" style="color: #1e293b; font-size: 1rem;">Machine Learning Intern</strong> Mock Assessment.<br>
+                    Demonstrating competent core tech logic and communication metrics.
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8;" id="cert-date-val">Verified on 2026-07-17</div>
+                <div style="position: absolute; bottom: 15px; right: 20px; font-family: sans-serif; font-size: 0.55rem; color: #cbd5e1;">Verification Code: PI-MOCK-3942</div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn-primary" id="print-cert-btn" style="flex-grow: 1; justify-content: center; padding: 0.75rem; border-radius: 8px;">
+                    <i class="fas fa-print"></i> Print Official Certificate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. CANDIDATE COMPARISON MODAL -->
+    <div id="candidate-comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-code-compare" style="color: var(--accent-blue);"></i> Side-by-Side Candidate Comparison
+                </h3>
+                <button id="compare-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="grid-container" style="gap: 1.5rem;">
+                <!-- Left selections and scores -->
+                <div class="card col-5" style="display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Select Applicants to Compare</h4>
+                    
+                    <div class="input-group">
+                        <label>Candidate A</label>
+                        <select id="compare-candidate-a" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Candidate B</label>
+                        <select id="compare-candidate-b" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;" id="compare-summary-metrics">
+                        <!-- Dynamic compared stats comparison -->
+                    </div>
+                </div>
+                
+                <!-- Comparison Radar Chart -->
+                <div class="card col-7" style="height: 380px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Overlay Index Radar</h4>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="candidateCompareChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

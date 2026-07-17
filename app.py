@@ -1141,6 +1141,375 @@ def get_companies():
     
     return jsonify(list(companies.values()))
 
+# ================== NEW v3.0 PREMIUM SERVICES DATA & ENDPOINTS ==================
+
+CAREER_ROADMAP_DATA = {
+    "Software Engineer Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Git & Version Control", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Data Structures & Algorithms", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "Node.js & Express", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Learn Node.js Complete Course (Codecademy)"},
+            {"id": "g2", "label": "Relational Databases (MySQL/PostgreSQL)", "type": "gap", "status": "gap", "time": "1 week", "course": "SQL for Data Science (Coursera)"},
+            {"id": "t1", "label": "System Design Basics", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Machine Learning Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Python Programming", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Pandas & NumPy", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "Scikit-Learn (ML Models)", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Applied Data Science with Python (Coursera)"},
+            {"id": "g2", "label": "TensorFlow/PyTorch (Deep Learning)", "type": "gap", "status": "gap", "time": "3 weeks", "course": "Deep Learning Specialization by Andrew Ng (Coursera)"},
+            {"id": "t1", "label": "MLOps & Model Deployment", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Data Scientist Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Python & SQL", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Exploratory Data Analysis", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "Statistical Hypothesis Testing", "type": "gap", "status": "gap", "time": "1 week", "course": "Applied Data Science with Python (Coursera)"},
+            {"id": "g2", "label": "Supervised & Unsupervised Learning", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Machine Learning Specialization by Andrew Ng (Coursera)"},
+            {"id": "t1", "label": "Data Visualization & Dashboards", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Cloud Architect Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Linux Commands", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Basic Networking (TCP/IP)", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "AWS Cloud Foundations", "type": "gap", "status": "gap", "time": "2 weeks", "course": "AWS Certified Cloud Practitioner Training (AWS)"},
+            {"id": "g2", "label": "Docker Containerization", "type": "gap", "status": "gap", "time": "1 week", "course": "Docker Technologies for DevOps (Udemy)"},
+            {"id": "t1", "label": "Infrastructure as Code (Terraform)", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Frontend Developer Intern": {
+        "nodes": [
+            {"id": "c1", "label": "HTML & CSS", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "JavaScript ES6+", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "React Framework Core", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Modern React with Redux (Udemy)"},
+            {"id": "g2", "label": "Figma Translation & Styling", "type": "gap", "status": "gap", "time": "1 week", "course": "Figma UI/UX Design Essentials (Udemy)"},
+            {"id": "t1", "label": "State Management & Next.js", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "AI Research Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Python & Linear Algebra", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Machine Learning Foundations", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "PyTorch / Deep Learning", "type": "gap", "status": "gap", "time": "3 weeks", "course": "Deep Neural Networks with PyTorch (edX)"},
+            {"id": "g2", "label": "Natural Language Processing (Transformers)", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Deep Learning Specialization by Andrew Ng (Coursera)"},
+            {"id": "t1", "label": "LLM Optimization & Fine-tuning", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Cybersecurity Specialist Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Computer Networks", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Linux Security Basics", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "Vulnerability Assessment", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Google Cybersecurity Professional Certificate (Coursera)"},
+            {"id": "g2", "label": "Network Sniffing & Auditing", "type": "gap", "status": "gap", "time": "1 week", "course": "Google Cybersecurity Professional Certificate (Coursera)"},
+            {"id": "t1", "label": "Penetration Testing (Kali Linux)", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    },
+    "Product Management Intern": {
+        "nodes": [
+            {"id": "c1", "label": "Communication Skills", "type": "fundamental", "status": "learned"},
+            {"id": "c2", "label": "Basic SQL Queries", "type": "fundamental", "status": "learned"},
+            {"id": "g1", "label": "Agile & Scrum Methodologies", "type": "gap", "status": "gap", "time": "1 week", "course": "Product Management Intern Course (Coursera)"},
+            {"id": "g2", "label": "Product Roadmapping & Wireframes", "type": "gap", "status": "gap", "time": "2 weeks", "course": "Google UX Design Professional Certificate (Coursera)"},
+            {"id": "t1", "label": "Market Analysis & KPI Tracking", "type": "target", "status": "target"}
+        ],
+        "edges": [
+            {"from": "c1", "to": "c2"},
+            {"from": "c2", "to": "g1"},
+            {"from": "g1", "to": "g2"},
+            {"from": "g2", "to": "t1"}
+        ]
+    }
+}
+
+@app.route('/api/career-path', methods=['GET'])
+def get_career_path():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    role = request.args.get('role', 'Software Engineer Intern')
+    
+    conn = get_db_connection()
+    profile = conn.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+    
+    student_skills = []
+    if profile and profile['skills']:
+        student_skills = [s.strip().lower() for s in profile['skills'].split(',') if s.strip()]
+        
+    roadmap = CAREER_ROADMAP_DATA.get(role, CAREER_ROADMAP_DATA['Software Engineer Intern'])
+    
+    # Dynamically update status based on student's actual skills
+    updated_nodes = []
+    for node in roadmap['nodes']:
+        n = node.copy()
+        if n['type'] == 'gap':
+            # Check if student already has this skill (simple keyword match)
+            skill_label = n['label'].lower()
+            if any(s in skill_label for s in student_skills):
+                n['status'] = 'learned'
+                n['type'] = 'fundamental'
+        updated_nodes.append(n)
+        
+    return jsonify({
+        'nodes': updated_nodes,
+        'edges': roadmap['edges']
+    })
+
+@app.route('/api/market-insights', methods=['GET'])
+def get_market_insights():
+    # Return mockup real-time market data
+    market_data = {
+        'trending_skills': [
+            {'skill': 'Python', 'demand': 95, 'growth': '+12%'},
+            {'skill': 'React', 'demand': 88, 'growth': '+8%'},
+            {'skill': 'Docker', 'demand': 76, 'growth': '+15%'},
+            {'skill': 'AWS', 'demand': 84, 'growth': '+18%'},
+            {'skill': 'Machine Learning', 'demand': 90, 'growth': '+20%'},
+            {'skill': 'SQL', 'demand': 82, 'growth': '+4%'},
+            {'skill': 'Node.js', 'demand': 70, 'growth': '+6%'},
+            {'skill': 'Kubernetes', 'demand': 65, 'growth': '+22%'}
+        ],
+        'salary_distribution': [
+            {'role': 'Machine Learning Intern', 'min': 50000, 'avg': 65000, 'max': 85000},
+            {'role': 'Data Scientist Intern', 'min': 45000, 'avg': 55000, 'max': 75000},
+            {'role': 'Software Engineer Intern', 'min': 35000, 'avg': 48000, 'max': 65000},
+            {'role': 'Cloud Architect Intern', 'min': 45000, 'avg': 58000, 'max': 75000},
+            {'role': 'Frontend Developer Intern', 'min': 30000, 'avg': 42000, 'max': 55000}
+        ],
+        'industry_growth': [
+            {'sector': 'AI & Research', 'growth': 35},
+            {'sector': 'Cloud & Infra', 'growth': 22},
+            {'sector': 'Web Development', 'growth': 12},
+            {'sector': 'Cybersecurity', 'growth': 18},
+            {'sector': 'Data & Analytics', 'growth': 28}
+        ],
+        'hiring_pulse': {
+            'active_postings': 1420,
+            'interviews_today': 48,
+            'offers_released': 12,
+            'success_rate': '84%'
+        }
+    }
+    return jsonify(market_data)
+
+@app.route('/api/generate-cover-letter', methods=['POST'])
+def generate_cover_letter():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    role_title = data.get('role_title', 'Software Engineer Intern')
+    company_name = data.get('company_name', 'Tech Corp')
+    
+    conn = get_db_connection()
+    profile = conn.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+    
+    cgpa = 8.0
+    skills = "Python, SQL, JavaScript"
+    experience = "Fresher"
+    projects = "Placement Intel portal"
+    
+    if profile:
+        cgpa = profile['cgpa'] or cgpa
+        skills = profile['skills'] or skills
+        experience = profile['experience'] or experience
+        projects = profile['projects'] or projects
+        
+    student_name = session['name']
+    student_email = session['email']
+    
+    # Generate structured text
+    letter = f"""Dear Hiring Manager at {company_name},
+
+I am writing to express my strong interest in the {role_title} position. As a Computer Science & Engineering student with a CGPA of {cgpa}, I am eager to apply my technical skill set to your engineering challenges.
+
+During my studies, I have developed expertise in {skills}. My hands-on projects, including {projects}, allowed me to build end-to-end solutions, optimize performance, and collaborate on design structures. Furthermore, my background in {experience} has prepared me for the fast-paced environment at {company_name}.
+
+I am particularly drawn to your organization's commitment to innovation and look forward to contributing my problem-solving abilities to your team. Thank you for your time and consideration.
+
+Sincerely,
+{student_name}
+{student_email}"""
+
+    return jsonify({
+        'success': True,
+        'cover_letter': letter
+    })
+
+@app.route('/api/peer-comparison', methods=['GET'])
+def get_peer_comparison():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    conn = get_db_connection()
+    # Fetch all students score
+    all_profiles = conn.execute('''
+        SELECT sp.cgpa, sp.skills, sp.projects, sp.certifications, sp.experience, u.id as user_id
+        FROM student_profiles sp
+        JOIN users u ON sp.user_id = u.id
+        WHERE u.role = 'student'
+    ''').fetchall()
+    
+    # Calculate scores
+    scores = []
+    user_score = 50
+    user_metrics = {'cgpa': 7.5, 'skills': 3, 'projects': 2, 'certs': 1, 'experience': 0}
+    
+    for r in all_profiles:
+        skills_count = len([s.strip() for s in (r['skills'] or '').split(',') if s.strip()])
+        proj_count = 0
+        try: proj_count = int(''.join(filter(str.isdigit, (r['projects'] or '0')[:3])))
+        except: pass
+        cert_count = 0
+        try: cert_count = int(''.join(filter(str.isdigit, (r['certifications'] or '0')[:3])))
+        except: pass
+        exp_months = 0
+        try: exp_months = int(''.join(filter(str.isdigit, (r['experience'] or '0')[:3])))
+        except: pass
+        
+        score = min(100, int(
+            (r['cgpa'] or 0) * 6 +
+            min(skills_count, 8) * 3 +
+            min(proj_count, 5) * 4 +
+            min(cert_count, 5) * 3 +
+            min(exp_months, 12) * 1
+        ))
+        scores.append(score)
+        
+        if r['user_id'] == session['user_id']:
+            user_score = score
+            user_metrics = {
+                'cgpa': r['cgpa'] or 0.0,
+                'skills': skills_count,
+                'projects': proj_count,
+                'certs': cert_count,
+                'experience': exp_months
+            }
+            
+    # Cohort averages
+    if len(all_profiles) > 0:
+        avg_cgpa = round(sum(r['cgpa'] or 0.0 for r in all_profiles) / len(all_profiles), 2)
+        avg_skills = round(sum(len([s.strip() for s in (r['skills'] or '').split(',') if s.strip()]) for r in all_profiles) / len(all_profiles), 1)
+        avg_projects = 2.5
+        avg_certs = 1.8
+        avg_exp = 3.5
+    else:
+        avg_cgpa, avg_skills, avg_projects, avg_certs, avg_exp = 7.6, 4.0, 2.5, 1.8, 3.5
+        
+    scores.sort()
+    percentile = 50.0
+    if len(scores) > 0:
+        less_than_user = sum(1 for s in scores if s < user_score)
+        percentile = round((less_than_user / len(scores)) * 100, 1)
+        if percentile == 0: percentile = 10.0 # visual floor
+        
+    conn.close()
+    
+    return jsonify({
+        'user_score': user_score,
+        'percentile': percentile,
+        'user_metrics': user_metrics,
+        'cohort_averages': {
+            'cgpa': avg_cgpa,
+            'skills': avg_skills,
+            'projects': avg_projects,
+            'certs': avg_certs,
+            'experience': avg_exp
+        }
+    })
+
+@app.route('/api/interview/certificates', methods=['GET'])
+def get_interview_certificates():
+    if 'user_id' not in session:
+        return jsonify([]), 200
+        
+    email = session['email']
+    conn = get_db_connection()
+    # Fetch all interviews for this student with average_score >= 70
+    rows = conn.execute('''
+        SELECT id, role, average_score, completed_at
+        FROM interviews
+        WHERE student_email = ? AND average_score >= 70
+        ORDER BY completed_at DESC
+    ''', (email,)).fetchall()
+    conn.close()
+    
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/apply/bulk_update', methods=['POST'])
+def bulk_update_applications():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid body'}), 400
+        
+    emails = data.get('emails', [])
+    internship_ids = data.get('internship_ids', [])
+    new_status = data.get('status')
+    
+    if not emails or not internship_ids or not new_status:
+        return jsonify({'error': 'Missing emails, internship IDs or status'}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    for email, int_id in zip(emails, internship_ids):
+        cursor.execute(
+            'UPDATE applications SET status = ? WHERE student_email = ? AND internship_id = ?',
+            (new_status, email, int_id)
+        )
+        insert_notification(email, f'Your application status has been updated to "{new_status}".', 'fa-clipboard-check')
+        
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': f'Bulk updated {len(emails)} candidate statuses to {new_status}'})
+
+
 def extract_text_from_pdf(pdf_path):
     text = ""
     try:

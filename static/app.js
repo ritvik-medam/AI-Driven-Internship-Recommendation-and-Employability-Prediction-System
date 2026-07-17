@@ -77,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let forecastingChart = null;
     let skillRadarChart = null;
     let interviewTrendChart = null;
+    let peerRadarChart = null;
+    let marketSectorsChart = null;
+    let marketSalaryChart = null;
+    let candidateCompareChart = null;
 
     // Interview States
     let isInterviewRunning = false;
@@ -134,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('student-dashboard').classList.add('active');
             loadStudentProfileDetails();
             startNotificationPolling();
+            setTimeout(startOnboardingTour, 1000);
         } else if (user.role === 'recruiter') {
             recruiterMenu.style.display = 'flex';
             document.querySelector('.menu-btn[data-tab="employer-panel"]').classList.add('active');
@@ -249,6 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchCompanies();
             } else if (targetId === 'mock-interview-panel') {
                 fetchInterviewHistory();
+            } else if (targetId === 'career-advisor-panel') {
+                fetchCareerRoadmap();
+            } else if (targetId === 'market-insights-panel') {
+                fetchMarketInsights();
             }
             
             if (window.speechSynthesis) {
@@ -593,6 +602,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render skill radar chart
         renderSkillRadarChart(data.recommendations);
+
+        // Fetch peer comparison analytics
+        fetchPeerComparison();
+
+        // Populate cover letter opportunity options
+        populateCoverLetterRoles(data.recommendations);
     }
 
     function applyForInternship(button, internshipId, matchScore) {
@@ -891,16 +906,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------- Employer Recruiter Board -----------------
+    let currentCandidatesList = [];
+
     function fetchRecruiterCandidates() {
         const tableBody = document.querySelector('#employer-table tbody');
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Syncing applicant list...</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Syncing applicant list...</td></tr>';
 
         fetch('/api/employer_candidates')
         .then(res => res.json())
         .then(data => {
+            currentCandidatesList = data;
             tableBody.innerHTML = '';
+            
+            // Reset Select-All checkbox
+            const selectAllCheckbox = document.getElementById('select-all-candidates-checkbox');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            updateBulkActionsDisplay();
+
+            // Populate comparison selectors
+            populateComparisonSelects(data);
+
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No active applications in the queue.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No active applications in the queue.</td></tr>';
                 return;
             }
 
@@ -911,10 +938,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const date = isNaN(dObj.getTime()) ? (c.applied_at || "N/A") : dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
                 const mockGrade = c.interview_score !== null ? 
-                    `<span class="clickable-score score-badge" data-email="${c.student_email}" data-role="${c.internship_title}" style="color:var(--accent-green); border-color:rgba(0,245,160,0.3);">${c.interview_score}/100</span>` : 
+                    `<span class="clickable-score score-badge" data-email="${c.student_email}" data-role="${c.internship_title}" style="color:var(--accent-green); border-color:rgba(0,245,160,0.3); cursor:pointer;">${c.interview_score}/100</span>` : 
                     '<span style="color:var(--text-secondary); font-size:0.75rem;">Not Taken</span>';
                 
-                const statusOptions = ['Screening', 'Invite for Test', 'Technical Interview', 'Offered', 'Rejected'];
+                const statusOptions = ['Screening', 'Interviewing', 'Shortlisted', 'Offered', 'Rejected'];
                 let optionsHTML = '';
                 statusOptions.forEach(opt => {
                     const sel = opt === c.status ? 'selected' : '';
@@ -922,6 +949,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 tr.innerHTML = `
+                    <td><input type="checkbox" class="candidate-checkbox" data-email="${c.student_email}" data-id="${c.internship_id}"></td>
                     <td style="font-weight:600;">
                         <div style="color: #fff;">${c.student_name}</div>
                         <div style="font-size:0.75rem; color: var(--text-secondary);">${c.student_email}</div>
@@ -941,6 +969,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.appendChild(tr);
             });
 
+            // Wire individual checkbox listeners
+            document.querySelectorAll('.candidate-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateBulkActionsDisplay);
+            });
+
             document.querySelectorAll('.recruiter-status-select').forEach(sel => {
                 sel.addEventListener('change', () => {
                     updateCandidateStatus(sel.dataset.email, sel.dataset.id, sel.value);
@@ -952,6 +985,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     openCandidateTranscript(btn.dataset.email, btn.dataset.role);
                 });
             });
+
+            // Sync the Kanban View
+            renderRecruiterKanban(data);
         });
     }
 
@@ -1419,6 +1455,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
+            // Render interview sessions table & certificates
+            renderInterviewHistoryTable(data);
         });
     }
 
@@ -1611,6 +1650,744 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${internshipsHTML}
                     </div>`;
                 grid.appendChild(card);
+            });
+        });
+    }
+
+    // ==========================================================================
+    // v3.0 PREMIUM SERVICES - JS ENGINES
+    // ==========================================================================
+
+    // ----------------- AI Career Path Advisor -----------------
+    document.getElementById('roadmap-role-select').addEventListener('change', fetchCareerRoadmap);
+
+    function fetchCareerRoadmap() {
+        const role = document.getElementById('roadmap-role-select').value;
+        const container = document.getElementById('roadmap-flow-container');
+        container.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--accent-blue);"></i>';
+
+        fetch(`/api/career-path?role=${encodeURIComponent(role)}`)
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = '';
+            
+            // Build the visual nodes connected horizontally
+            data.nodes.forEach((node, idx) => {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = `roadmap-node status-${node.status}`;
+                nodeEl.innerHTML = `
+                    <div class="roadmap-node-label">${node.label}</div>
+                    <div class="roadmap-node-type">${node.type}</div>
+                `;
+                container.appendChild(nodeEl);
+                
+                // Add connect arrow if not the last node
+                if (idx < data.nodes.length - 1) {
+                    const arrowEl = document.createElement('div');
+                    arrowEl.className = 'roadmap-connector-arrow';
+                    arrowEl.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                    container.appendChild(arrowEl);
+                }
+            });
+
+            // Populate recommendations table
+            const tbody = document.querySelector('#roadmap-courses-table tbody');
+            tbody.innerHTML = '';
+            
+            const gaps = data.nodes.filter(n => n.type === 'gap');
+            if (gaps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--accent-green); font-weight:600; padding:1.5rem;"><i class="fas fa-check-circle"></i> No skill gaps detected for this path! You are fully job-ready.</td></tr>';
+                return;
+            }
+
+            gaps.forEach(node => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 700; color: #fff;">${node.label}</td>
+                    <td>
+                        <div style="font-size:0.9rem; color:#fff; font-weight:600;">${node.course}</div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Self-paced syllabus study with project implementation parameters.</div>
+                    </td>
+                    <td><span class="score-badge" style="background:rgba(245,166,35,0.1); color:#f5a623; border: 1px solid rgba(245,166,35,0.25);">${node.time}</span></td>
+                    <td><span class="score-badge" style="background:rgba(255,71,87,0.1); color:#ff4757; border: 1px solid rgba(255,71,87,0.25);">Gap Area</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // ----------------- Smart Job Market Insights -----------------
+    function fetchMarketInsights() {
+        fetch('/api/market-insights')
+        .then(res => res.json())
+        .then(data => {
+            // Update KPIs
+            document.getElementById('market-postings').textContent = data.hiring_pulse.active_postings;
+            document.getElementById('market-interviews').textContent = data.hiring_pulse.interviews_today;
+            document.getElementById('market-offers').textContent = data.hiring_pulse.offers_released;
+            document.getElementById('market-success').textContent = data.hiring_pulse.success_rate;
+
+            // Render Heatmap Tiles
+            const heatmap = document.getElementById('market-heatmap-grid');
+            heatmap.innerHTML = '';
+            data.trending_skills.forEach(item => {
+                const tile = document.createElement('div');
+                let heatClass = 'heat-low';
+                if (item.demand >= 90) heatClass = 'heat-high';
+                else if (item.demand >= 75) heatClass = 'heat-medium';
+                
+                tile.className = `heat-tile ${heatClass}`;
+                tile.innerHTML = `
+                    <div class="heat-tile-name">${item.skill}</div>
+                    <div class="heat-tile-val">Demand: ${item.demand}% (${item.growth})</div>
+                `;
+                heatmap.appendChild(tile);
+            });
+
+            // Sector Growth Chart
+            const ctxSec = document.getElementById('marketSectorsChart').getContext('2d');
+            if (marketSectorsChart) marketSectorsChart.destroy();
+            marketSectorsChart = new Chart(ctxSec, {
+                type: 'bar',
+                data: {
+                    labels: data.industry_growth.map(d => d.sector),
+                    datasets: [{
+                        label: 'Hiring Growth Index (%)',
+                        data: data.industry_growth.map(d => d.growth),
+                        backgroundColor: [
+                            'rgba(0, 242, 254, 0.7)',
+                            'rgba(155, 81, 224, 0.7)',
+                            'rgba(0, 245, 160, 0.7)',
+                            'rgba(255, 71, 87, 0.7)',
+                            'rgba(245, 166, 35, 0.7)'
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Salary distribution chart
+            const ctxSal = document.getElementById('marketSalaryChart').getContext('2d');
+            if (marketSalaryChart) marketSalaryChart.destroy();
+            marketSalaryChart = new Chart(ctxSal, {
+                type: 'line',
+                data: {
+                    labels: data.salary_distribution.map(d => d.role),
+                    datasets: [
+                        {
+                            label: 'Minimum Stipend (₹/mo)',
+                            data: data.salary_distribution.map(d => d.min),
+                            borderColor: 'rgba(255, 71, 87, 0.8)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Average Stipend (₹/mo)',
+                            data: data.salary_distribution.map(d => d.avg),
+                            borderColor: 'rgba(0, 242, 254, 0.8)',
+                            backgroundColor: 'rgba(0, 242, 254, 0.05)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Maximum Stipend (₹/mo)',
+                            data: data.salary_distribution.map(d => d.max),
+                            borderColor: 'rgba(0, 245, 160, 0.8)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        });
+    }
+
+    // ----------------- Peer Comparison Analytics -----------------
+    function fetchPeerComparison() {
+        const container = document.getElementById('peer-comparison-container');
+        container.style.display = 'grid';
+
+        fetch('/api/peer-comparison')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('percentile-text').textContent = `Top ${data.percentile}%`;
+            
+            let msg = '';
+            if (data.percentile <= 20) msg = 'Outstanding performance! You are leading the cohort index.';
+            else if (data.percentile <= 50) msg = 'Above average bracket. Complete more certifications to hit top 10%.';
+            else msg = 'Below median rank. Upskill using missing skill guidelines to boost positioning.';
+            document.getElementById('percentile-feedback').textContent = msg;
+
+            // Render Peer Radar Chart
+            const ctxPeer = document.getElementById('peerRadarChart').getContext('2d');
+            if (peerRadarChart) peerRadarChart.destroy();
+
+            const u = data.user_metrics;
+            const c = data.cohort_averages;
+
+            peerRadarChart = new Chart(ctxPeer, {
+                type: 'radar',
+                data: {
+                    labels: ['CGPA Index', 'Skills Parsed', 'Projects', 'Certifications', 'Experience (Months)'],
+                    datasets: [
+                        {
+                            label: 'Your Metric',
+                            data: [u.cgpa, u.skills, u.projects, u.certs, u.experience],
+                            borderColor: 'rgba(0, 242, 254, 1)',
+                            backgroundColor: 'rgba(0, 242, 254, 0.2)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Cohort Average',
+                            data: [c.cgpa, c.skills, c.projects, c.certs, c.experience],
+                            borderColor: 'rgba(155, 81, 224, 1)',
+                            backgroundColor: 'rgba(155, 81, 224, 0.1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                            ticks: { display: false }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // ----------------- Cover Letter Engine -----------------
+    function populateCoverLetterRoles(recommendations) {
+        const select = document.getElementById('cover-letter-role-select');
+        select.innerHTML = '<option value="">-- Select Target Internship --</option>';
+        if (!recommendations || recommendations.length === 0) return;
+        
+        recommendations.forEach(rec => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify({ role: rec.title, company: rec.company });
+            opt.textContent = `${rec.title} at ${rec.company}`;
+            select.appendChild(opt);
+        });
+    }
+
+    document.getElementById('generate-cover-btn').addEventListener('click', () => {
+        const val = document.getElementById('cover-letter-role-select').value;
+        if (!val) {
+            alert('Please select a target internship first.');
+            return;
+        }
+        
+        const data = JSON.parse(val);
+        const btn = document.getElementById('generate-cover-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating';
+        
+        fetch('/api/generate-cover-letter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                role_title: data.role,
+                company_name: data.company
+            })
+        })
+        .then(res => res.json())
+        .then(resData => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate';
+            
+            document.getElementById('cover-letter-result-group').style.display = 'block';
+            document.getElementById('builder-cover-letter').value = resData.cover_letter;
+        });
+    });
+
+    document.getElementById('export-cover-pdf-btn').addEventListener('click', () => {
+        const text = document.getElementById('builder-cover-letter').value;
+        if (!text.trim()) return;
+        
+        // Populate printable print-text block
+        document.getElementById('cover-letter-print-text').textContent = text;
+        
+        // Hide resume paper during this specific print job
+        const originalResumeStyle = document.getElementById('resume-paper-container').style.display;
+        document.getElementById('resume-paper-container').style.display = 'none';
+        
+        // Show cover letter paper
+        document.getElementById('cover-letter-paper-container').style.display = 'block';
+        
+        window.print();
+        
+        // Restore elements
+        document.getElementById('resume-paper-container').style.display = originalResumeStyle;
+        document.getElementById('cover-letter-paper-container').style.display = 'none';
+    });
+
+    // ----------------- Light/Dark Theme Switcher -----------------
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('theme-light');
+        themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+    
+    themeBtn.addEventListener('click', () => {
+        if (document.body.classList.contains('theme-light')) {
+            document.body.classList.remove('theme-light');
+            localStorage.setItem('theme', 'dark');
+            themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        } else {
+            document.body.classList.add('theme-light');
+            localStorage.setItem('theme', 'light');
+            themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    });
+
+    // ----------------- Onboarding Tour -----------------
+    const tourSteps = [
+        {
+            title: "Resume Parser & Analytics",
+            text: "Upload your resume PDF to calculate placement readiness scores and job matches instantly.",
+            elementId: "upload-zone"
+        },
+        {
+            title: "Interactive Resume Builder",
+            text: "Generate premium corporate resume templates or craft matching cover letters.",
+            elementId: "resume-builder-panel"
+        },
+        {
+            title: "AI Interview Practice",
+            text: "Prepare with realistic verbal mock assessments and review clarity rating graphs.",
+            elementId: "mock-interview-panel"
+        },
+        {
+            title: "Job Market Trends",
+            text: "Inspect real-time skill demand heatmaps and entry-level stipend curves.",
+            elementId: "market-insights-panel"
+        },
+        {
+            title: "Employability Leaderboard",
+            text: "Check rankings and earn polyglot, scholar, or interview-ready badges.",
+            elementId: "leaderboard-panel"
+        }
+    ];
+
+    let currentTourStep = 0;
+    
+    function startOnboardingTour() {
+        if (localStorage.getItem('tour_completed')) return;
+        
+        currentTourStep = 0;
+        document.getElementById('onboarding-tour-overlay').style.display = 'flex';
+        showTourStep(0);
+    }
+    
+    function showTourStep(idx) {
+        const step = tourSteps[idx];
+        document.getElementById('tour-step-idx').textContent = `Step ${idx + 1} of ${tourSteps.length}`;
+        document.getElementById('tour-title-el').textContent = step.title;
+        document.getElementById('tour-text-el').textContent = step.text;
+        
+        // Remove previous spotlight class
+        document.querySelectorAll('.tour-spotlight').forEach(el => el.classList.remove('tour-spotlight'));
+        
+        // Target spotlight highlight
+        const target = document.getElementById(step.elementId) || document.querySelector(`[data-tab="${step.elementId}"]`);
+        if (target) {
+            target.classList.add('tour-spotlight');
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        document.getElementById('tour-prev-btn').style.display = idx > 0 ? 'inline-block' : 'none';
+        document.getElementById('tour-next-btn').textContent = idx === tourSteps.length - 1 ? 'Finish' : 'Next';
+    }
+
+    document.getElementById('tour-next-btn').addEventListener('click', () => {
+        if (currentTourStep < tourSteps.length - 1) {
+            currentTourStep++;
+            showTourStep(currentTourStep);
+        } else {
+            closeTour();
+        }
+    });
+
+    document.getElementById('tour-prev-btn').addEventListener('click', () => {
+        if (currentTourStep > 0) {
+            currentTourStep--;
+            showTourStep(currentTourStep);
+        }
+    });
+
+    document.getElementById('tour-skip-btn').addEventListener('click', closeTour);
+    
+    function closeTour() {
+        document.getElementById('onboarding-tour-overlay').style.display = 'none';
+        document.querySelectorAll('.tour-spotlight').forEach(el => el.classList.remove('tour-spotlight'));
+        localStorage.setItem('tour_completed', 'true');
+    }
+
+    // ----------------- Recruiter Kanban Pipeline -----------------
+    const viewTableBtn = document.getElementById('view-mode-table-btn');
+    const viewKanbanBtn = document.getElementById('view-mode-kanban-btn');
+    const recruiterTableCard = document.getElementById('recruiter-table-card');
+    const recruiterKanbanContainer = document.getElementById('recruiter-kanban-container');
+
+    viewTableBtn.addEventListener('click', () => {
+        viewTableBtn.classList.add('active');
+        viewTableBtn.classList.replace('btn-secondary', 'btn-primary');
+        viewKanbanBtn.classList.remove('active');
+        viewKanbanBtn.classList.replace('btn-primary', 'btn-secondary');
+        
+        recruiterTableCard.style.display = 'block';
+        recruiterKanbanContainer.style.display = 'none';
+        document.getElementById('kanban-bulk-actions').style.display = 'none';
+    });
+
+    viewKanbanBtn.addEventListener('click', () => {
+        viewKanbanBtn.classList.add('active');
+        viewKanbanBtn.classList.replace('btn-secondary', 'btn-primary');
+        viewTableBtn.classList.remove('active');
+        viewTableBtn.classList.replace('btn-primary', 'btn-secondary');
+        
+        recruiterTableCard.style.display = 'none';
+        recruiterKanbanContainer.style.display = 'flex';
+        updateBulkActionsDisplay();
+    });
+
+    function renderRecruiterKanban(candidates) {
+        const stages = ['Screening', 'Interviewing', 'Shortlisted', 'Offered', 'Rejected'];
+        
+        stages.forEach(stage => {
+            const colWrapper = document.getElementById(`kanban-${stage.toLowerCase()}-cards`);
+            colWrapper.innerHTML = '';
+            
+            const list = candidates.filter(c => c.status === stage);
+            
+            // Update count badges
+            colWrapper.parentElement.querySelector('.count-badge').textContent = list.length;
+            
+            if (list.length === 0) {
+                colWrapper.innerHTML = `<div style="text-align:center; padding:1.5rem; font-size:0.75rem; color:var(--text-secondary); border: 1px dashed rgba(255,255,255,0.02); border-radius:8px;">Empty</div>`;
+                return;
+            }
+
+            list.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'kanban-card';
+                card.draggable = true;
+                
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', c.student_email);
+                    e.dataTransfer.setData('internship-id', c.internship_id);
+                    card.classList.add('dragging');
+                });
+                
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+
+                const gradeHTML = c.interview_score !== null ? 
+                    `<span style="color:var(--accent-green); font-weight:700;">Grade: ${c.interview_score}</span>` : 
+                    `<span style="color:var(--text-secondary);">No Mock</span>`;
+
+                card.innerHTML = `
+                    <div class="kanban-card-title">${c.student_name}</div>
+                    <div class="kanban-card-role">${c.internship_title}</div>
+                    <div class="kanban-card-meta">
+                        <span class="score-badge">${c.match_score}% Match</span>
+                        ${gradeHTML}
+                    </div>
+                `;
+                
+                colWrapper.appendChild(card);
+            });
+        });
+
+        initKanbanDragAndDrop();
+    }
+
+    function initKanbanDragAndDrop() {
+        const columns = document.querySelectorAll('.kanban-column');
+        columns.forEach(col => {
+            col.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            col.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const email = e.dataTransfer.getData('text/plain');
+                const intIdStr = e.dataTransfer.getData('internship-id');
+                const newStatus = col.dataset.status;
+                
+                if (email && intIdStr) {
+                    const intId = parseInt(intIdStr);
+                    updateCandidateStatus(email, intId, newStatus);
+                }
+            });
+        });
+    }
+
+    // ----------------- Candidate Comparison Modal -----------------
+    const comparisonModal = document.getElementById('candidate-comparison-modal');
+    const compareCloseBtn = document.getElementById('compare-modal-close-btn');
+
+    document.getElementById('comparison-toggle-btn').addEventListener('click', () => {
+        comparisonModal.style.display = 'block';
+        updateComparisonChart();
+    });
+
+    compareCloseBtn.addEventListener('click', () => {
+        comparisonModal.style.display = 'none';
+    });
+
+    document.getElementById('compare-candidate-a').addEventListener('change', updateComparisonChart);
+    document.getElementById('compare-candidate-b').addEventListener('change', updateComparisonChart);
+
+    function populateComparisonSelects(candidates) {
+        const selectA = document.getElementById('compare-candidate-a');
+        const selectB = document.getElementById('compare-candidate-b');
+        
+        selectA.innerHTML = '<option value="">-- Select Candidate A --</option>';
+        selectB.innerHTML = '<option value="">-- Select Candidate B --</option>';
+        
+        candidates.forEach(c => {
+            const optA = document.createElement('option');
+            optA.value = c.student_email;
+            optA.textContent = `${c.student_name} (${c.internship_title})`;
+            selectA.appendChild(optA);
+            
+            const optB = document.createElement('option');
+            optB.value = c.student_email;
+            optB.textContent = `${c.student_name} (${c.internship_title})`;
+            selectB.appendChild(optB);
+        });
+    }
+
+    function updateComparisonChart() {
+        const emailA = document.getElementById('compare-candidate-a').value;
+        const emailB = document.getElementById('compare-candidate-b').value;
+        
+        const candidateA = currentCandidatesList.find(c => c.student_email === emailA);
+        const candidateB = currentCandidatesList.find(c => c.student_email === emailB);
+        
+        const summary = document.getElementById('compare-summary-metrics');
+        summary.innerHTML = '';
+        
+        const datasets = [];
+        
+        if (candidateA) {
+            datasets.push({
+                label: candidateA.student_name,
+                data: [
+                    candidateA.match_score,
+                    candidateA.interview_score || 0,
+                    candidateA.technical_score || 0,
+                    candidateA.communication_score || 0
+                ],
+                borderColor: 'rgba(0, 242, 254, 1)',
+                backgroundColor: 'rgba(0, 242, 254, 0.15)',
+                borderWidth: 2
+            });
+            summary.innerHTML += `<div style="padding:0.35rem 0; border-bottom:1px solid var(--border-color);"><strong>${candidateA.student_name}</strong>: Match Index ${candidateA.match_score}%, Interview Grade ${candidateA.interview_score || 'N/A'}/100</div>`;
+        }
+        
+        if (candidateB) {
+            datasets.push({
+                label: candidateB.student_name,
+                data: [
+                    candidateB.match_score,
+                    candidateB.interview_score || 0,
+                    candidateB.technical_score || 0,
+                    candidateB.communication_score || 0
+                ],
+                borderColor: 'rgba(155, 81, 224, 1)',
+                backgroundColor: 'rgba(155, 81, 224, 0.15)',
+                borderWidth: 2
+            });
+            summary.innerHTML += `<div style="padding:0.35rem 0;"><strong>${candidateB.student_name}</strong>: Match Index ${candidateB.match_score}%, Interview Grade ${candidateB.interview_score || 'N/A'}/100</div>`;
+        }
+        
+        const ctx = document.getElementById('candidateCompareChart').getContext('2d');
+        if (candidateCompareChart) candidateCompareChart.destroy();
+        
+        candidateCompareChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Match Score', 'Interview Score', 'Technical Accuracy', 'Clarity Score'],
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        pointLabels: { color: '#94a3b8', font: { size: 11 } },
+                        ticks: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // ----------------- Bulk Select Action -----------------
+    const selectAllCheckbox = document.getElementById('select-all-candidates-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+            const checked = selectAllCheckbox.checked;
+            document.querySelectorAll('.candidate-checkbox').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateBulkActionsDisplay();
+        });
+    }
+
+    function updateBulkActionsDisplay() {
+        const checkedBoxes = document.querySelectorAll('.candidate-checkbox:checked');
+        const count = checkedBoxes.length;
+        document.getElementById('bulk-select-count').textContent = count;
+        
+        const bulkDiv = document.getElementById('kanban-bulk-actions');
+        if (count > 0) {
+            bulkDiv.style.display = 'flex';
+        } else {
+            bulkDiv.style.display = 'none';
+        }
+    }
+
+    document.getElementById('bulk-apply-btn').addEventListener('click', () => {
+        const newStatus = document.getElementById('bulk-status-select').value;
+        if (!newStatus) {
+            alert('Please select a target stage.');
+            return;
+        }
+        
+        const checkedBoxes = document.querySelectorAll('.candidate-checkbox:checked');
+        const emails = [];
+        const internshipIds = [];
+        
+        checkedBoxes.forEach(cb => {
+            emails.push(cb.dataset.email);
+            internshipIds.push(parseInt(cb.dataset.id));
+        });
+        
+        fetch('/api/apply/bulk_update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                emails: emails,
+                internship_ids: internshipIds,
+                status: newStatus
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            fetchRecruiterCandidates();
+        });
+    });
+
+    // ----------------- Certificates History Table & Verification Modal -----------------
+    const certModal = document.getElementById('certificate-modal');
+    const certModalClose = document.getElementById('cert-modal-close-btn');
+
+    certModalClose.addEventListener('click', () => {
+        certModal.style.display = 'none';
+    });
+
+    document.getElementById('print-cert-btn').addEventListener('click', () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Verification Certificate</title>
+                <style>
+                    body { margin: 0; padding: 40px; background: #fff; }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                ${document.getElementById('certificate-print-area').outerHTML}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    });
+
+    function renderInterviewHistoryTable(sessions) {
+        const tableWrap = document.getElementById('interview-history-table-wrap');
+        const tbody = document.querySelector('#interview-sessions-table tbody');
+        tbody.innerHTML = '';
+        
+        if (!sessions || sessions.length === 0) {
+            tableWrap.style.display = 'none';
+            return;
+        }
+        
+        tableWrap.style.display = 'block';
+        
+        sessions.forEach(session => {
+            const tr = document.createElement('tr');
+            
+            const cleanDateStr = session.completed_at ? session.completed_at.replace(" ", "T") : "";
+            const dObj = new Date(cleanDateStr);
+            const date = isNaN(dObj.getTime()) ? (session.completed_at || "N/A") : dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            const certBtn = session.average_score >= 70 ? 
+                `<button class="btn-primary cert-view-btn" data-name="${currentUserSession.name}" data-score="${session.average_score}" data-role="${session.role}" data-date="${date}" style="padding:0.25rem 0.5rem; font-size:0.75rem; border-radius:6px; border:none; cursor:pointer;"><i class="fas fa-certificate"></i> View Certificate</button>` :
+                `<span style="color:var(--text-secondary); font-size:0.75rem;"><i class="fas fa-lock" style="margin-right:0.25rem;"></i>Requires >=70%</span>`;
+                
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: #fff;">${session.role}</td>
+                <td style="color:var(--text-secondary); font-size:0.8rem;">${date}</td>
+                <td><span class="score-badge" style="color:var(--accent-green); border-color:rgba(0,245,160,0.2);">${session.technical_score}%</span></td>
+                <td><span class="score-badge" style="color:var(--accent-purple); border-color:rgba(155,81,224,0.2);">${session.communication_score}%</span></td>
+                <td><span class="score-badge" style="font-weight:700;">${session.average_score}%</span></td>
+                <td>${certBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        document.querySelectorAll('.cert-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('cert-student-name').textContent = btn.dataset.name;
+                document.getElementById('cert-score-val').textContent = `${btn.dataset.score}%`;
+                document.getElementById('cert-role-val').textContent = btn.dataset.role;
+                document.getElementById('cert-date-val').textContent = `Verified on ${btn.dataset.date.split(',')[0]}`;
+                document.getElementById('certificate-modal').style.display = 'block';
             });
         });
     }

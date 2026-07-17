@@ -215,6 +215,30 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+
+    # 7. Create Interview Slots table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS interview_slots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recruiter_email TEXT NOT NULL,
+        slot_date TEXT NOT NULL,
+        slot_time TEXT NOT NULL,
+        interviewer_name TEXT NOT NULL,
+        booked_by_student_email TEXT,
+        status TEXT DEFAULT 'Available'
+    )
+    ''')
+
+    # Pre-seed interview slots if empty
+    cursor.execute("SELECT COUNT(*) FROM interview_slots")
+    if cursor.fetchone()[0] == 0:
+        mock_slots = [
+            ("recruiter@google.com", "2026-07-20", "10:00 AM", "Sundar Pichai", None, "Available"),
+            ("recruiter@google.com", "2026-07-20", "02:00 PM", "Jeff Dean", None, "Available"),
+            ("recruiter@google.com", "2026-07-21", "11:30 AM", "Sanjay Ghemawat", None, "Available")
+        ]
+        cursor.executemany("INSERT INTO interview_slots (recruiter_email, slot_date, slot_time, interviewer_name, booked_by_student_email, status) VALUES (?, ?, ?, ?, ?, ?)", mock_slots)
+        conn.commit()
     
     # Pre-seed internship opportunities if empty
     cursor.execute("SELECT COUNT(*) FROM internships")
@@ -1508,6 +1532,271 @@ def bulk_update_applications():
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'message': f'Bulk updated {len(emails)} candidate statuses to {new_status}'})
+
+
+# ================== NEW v3.1 PREMIUM SUBSYSTEMS ENDPOINTS ==================
+
+@app.route('/api/chatbot/query', methods=['POST'])
+def chatbot_query():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request body'}), 400
+        
+    query = data.get('query', '').strip().lower()
+    
+    # Matching rules
+    reply = "I'm your AI placement coach. Try asking about 'resume tips', 'mock interviews', 'career roadmaps', or 'improving CGPA'!"
+    
+    if "resume" in query or "cv" in query:
+        reply = "Resume Checklist:\n1. Keep it to a single page.\n2. Put technical skills at the top.\n3. Quantify project impacts (e.g. 'Improved efficiency by 24%').\n4. Select Classic Corporate or Creative themes in our Resume Builder tab to export styled formats!"
+    elif "interview" in query or "practice" in query or "coach" in query:
+        reply = "Interview Coach Guidelines:\n1. Choose your target internship role in the AI Interview Coach tab.\n2. Practice verbal questions, answer using the mic button.\n3. Make sure to minimize crutch/filler words like 'um', 'like', or 'actually' to secure clarity badges!"
+    elif "roadmap" in query or "career" in query or "skills gap" in query:
+        reply = "Our AI Career Advisor uses node flowchart visuals to trace skill gaps between your resume and the target internship requirements, curating learning links for you. Try out the 'Career Advisor' tab!"
+    elif "cgpa" in query or "grades" in query:
+        reply = "CGPA plays a heavy role in early recruiter screening indexes. Aim for >= 8.5 CGPA to unlock elite Tier-1 job lists, or complete 3+ cloud/DevOps certifications to compensate!"
+    elif "hi" in query or "hello" in query or "welcome" in query:
+        reply = "Hello! I am your PlacementIntel AI Advisor. How can I help you take your career prep to the next level today?"
+    elif "jobs" in query or "salary" in query or "stipend" in query:
+        reply = "We track placement trends! Software roles average ₹48k/mo, whereas AI/ML roles average ₹65k/mo stipends. Go to the 'Market Insights' tab to see salary curves!"
+        
+    return jsonify({
+        'success': True,
+        'reply': reply
+    })
+
+@app.route('/api/sandbox/run', methods=['POST'])
+def sandbox_run():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    data = request.get_json()
+    problem_id = data.get('problem_id', 'two_sum')
+    code = data.get('code', '')
+    
+    # Restrict code size
+    if len(code) > 2000:
+        return jsonify({'success': False, 'output': 'Code limit exceeded.', 'passed': False})
+        
+    passed = False
+    output = ""
+    
+    # We will simulate local exec safely
+    loc = {}
+    try:
+        # Restricted execution context
+        exec(code, {'__builtins__': {
+            'range': range, 'len': len, 'print': lambda *args: None, 
+            'int': int, 'str': str, 'list': list, 'dict': dict, 
+            'float': float, 'bool': bool, 'abs': abs, 'min': min, 'max': max, 'sum': sum
+        }}, loc)
+        
+        if problem_id == 'two_sum':
+            if 'two_sum' not in loc:
+                output = "Error: Function 'two_sum(nums, target)' not found."
+            else:
+                f = loc['two_sum']
+                test1 = f([2, 7, 11, 15], 9) == [0, 1] or f([2, 7, 11, 15], 9) == (0, 1)
+                test2 = f([3, 2, 4], 6) == [1, 2] or f([3, 2, 4], 6) == (1, 2)
+                test3 = f([3, 3], 6) == [0, 1] or f([3, 3], 6) == (0, 1)
+                
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: two_sum([2,7,11,15], 9) -> [0,1] (Pass)\nTest 2: two_sum([3,2,4], 6) -> [1,2] (Pass)\nTest 3: two_sum([3,3], 6) -> [0,1] (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: two_sum([2,7,11,15], 9) returned {f([2,7,11,15], 9)}"
+                    
+        elif problem_id == 'fizzbuzz':
+            if 'fizzbuzz' not in loc:
+                output = "Error: Function 'fizzbuzz(n)' not found."
+            else:
+                f = loc['fizzbuzz']
+                test1 = f(3) == ["1", "2", "Fizz"]
+                test2 = f(5) == ["1", "2", "Fizz", "4", "Buzz"]
+                test3 = f(15)[-1] == "FizzBuzz"
+                
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: fizzbuzz(3) -> ['1','2','Fizz'] (Pass)\nTest 2: fizzbuzz(5) -> ['1','2','Fizz','4','Buzz'] (Pass)\nTest 3: fizzbuzz(15)[14] -> 'FizzBuzz' (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: fizzbuzz(5) returned {f(5)}"
+                    
+        elif problem_id == 'palindrome':
+            if 'is_palindrome' not in loc:
+                output = "Error: Function 'is_palindrome(s)' not found."
+            else:
+                f = loc['is_palindrome']
+                test1 = f("A man, a plan, a canal: Panama") == True
+                test2 = f("race a car") == False
+                test3 = f(" ") == True
+                
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: is_palindrome('A man, a plan, a canal: Panama') -> True (Pass)\nTest 2: is_palindrome('race a car') -> False (Pass)\nTest 3: is_palindrome(' ') -> True (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: is_palindrome('race a car') returned {f('race a car')}"
+                    
+    except Exception as e:
+        output = f"Runtime Execution Error: {e}"
+        
+    if passed and session.get('role') == 'student':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        profile = cursor.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+        if profile:
+            insert_notification(session['email'], f"Coding Challenge '{problem_id.upper()}' solved successfully! Employability index updated.", "fa-code")
+        conn.commit()
+        conn.close()
+        
+    return jsonify({
+        'success': True,
+        'output': output,
+        'passed': passed
+    })
+
+@app.route('/api/scheduler/slots', methods=['GET', 'POST'])
+def handle_scheduler_slots():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    role = session['role']
+    conn = get_db_connection()
+    
+    if request.method == 'POST':
+        if role != 'recruiter':
+            conn.close()
+            return jsonify({'error': 'Only recruiters can create interview slots'}), 403
+            
+        data = request.get_json()
+        slot_date = data.get('slot_date')
+        slot_time = data.get('slot_time')
+        interviewer_name = data.get('interviewer_name')
+        
+        if not slot_date or not slot_time or not interviewer_name:
+            conn.close()
+            return jsonify({'error': 'Missing slot date, time or interviewer name'}), 400
+            
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO interview_slots (recruiter_email, slot_date, slot_time, interviewer_name, status) VALUES (?, ?, ?, ?, ?)',
+            (session['email'], slot_date, slot_time, interviewer_name, 'Available')
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Interview slot posted successfully!'})
+        
+    else:
+        if role == 'student':
+            slots = conn.execute('SELECT * FROM interview_slots WHERE status = "Available" OR booked_by_student_email = ?', (session['email'],)).fetchall()
+        else:
+            slots = conn.execute('SELECT * FROM interview_slots WHERE recruiter_email = ?', (session['email'],)).fetchall()
+            
+        conn.close()
+        return jsonify([dict(s) for s in slots])
+
+@app.route('/api/scheduler/book', methods=['POST'])
+def book_scheduler_slot():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    if session['role'] != 'student':
+        return jsonify({'error': 'Only students can book interview slots'}), 403
+        
+    data = request.get_json()
+    slot_id = data.get('slot_id')
+    
+    if not slot_id:
+        return jsonify({'error': 'Missing slot ID'}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    slot = cursor.execute('SELECT * FROM interview_slots WHERE id = ?', (slot_id,)).fetchone()
+    if not slot:
+        conn.close()
+        return jsonify({'error': 'Slot not found'}), 404
+        
+    if slot['status'] != 'Available':
+        conn.close()
+        return jsonify({'error': 'Slot is already booked'}), 400
+        
+    cursor.execute(
+        'UPDATE interview_slots SET booked_by_student_email = ?, status = ? WHERE id = ?',
+        (session['email'], 'Booked', slot_id)
+    )
+    cursor.execute(
+        'UPDATE applications SET status = ? WHERE student_email = ?',
+        ('Interviewing', session['email'])
+    )
+    conn.commit()
+    conn.close()
+    
+    insert_notification(session['email'], f"Your mock interview slot with {slot['interviewer_name']} on {slot['slot_date']} has been confirmed.", "fa-calendar-check")
+    insert_notification(slot['recruiter_email'], f"Candidate {session['email']} has booked the interview slot on {slot['slot_date']} at {slot['slot_time']}.", "fa-calendar-check")
+    
+    return jsonify({'success': True, 'message': 'Interview slot booked successfully!'})
+
+@app.route('/api/university/export', methods=['GET'])
+def university_export_csv():
+    if 'user_id' not in session or session['role'] != 'university':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    import io
+    import csv
+    from flask import Response
+    
+    conn = get_db_connection()
+    
+    students_query = '''
+        SELECT u.name, u.email, sp.cgpa, sp.skills, sp.projects, sp.certifications, sp.experience
+        FROM users u
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE u.role = 'student'
+    '''
+    rows = conn.execute(students_query).fetchall()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['Student Name', 'Email Address', 'CGPA', 'Skills', 'Projects Count', 'Certifications Count', 'Experience Months', 'Employability Score'])
+    
+    for r in rows:
+        r_dict = dict(r)
+        skills_count = len([s.strip() for s in (r_dict['skills'] or '').split(',') if s.strip()])
+        proj_count = 0
+        try: proj_count = int(''.join(filter(str.isdigit, (r_dict['projects'] or '0')[:3])))
+        except: pass
+        cert_count = 0
+        try: cert_count = int(''.join(filter(str.isdigit, (r_dict['certifications'] or '0')[:3])))
+        except: pass
+        exp_months = 0
+        try: exp_months = int(''.join(filter(str.isdigit, (r_dict['experience'] or '0')[:3])))
+        except: pass
+        
+        score = min(100, int(
+            (r_dict['cgpa'] or 0) * 6 +
+            min(skills_count, 8) * 3 +
+            min(proj_count, 5) * 4 +
+            min(cert_count, 5) * 3 +
+            min(exp_months, 12) * 1
+        ))
+        
+        writer.writerow([
+            r_dict['name'],
+            r_dict['email'],
+            r_dict['cgpa'] or 'N/A',
+            r_dict['skills'] or 'None',
+            proj_count,
+            cert_count,
+            exp_months,
+            f"{score}%"
+        ])
+        
+    conn.close()
+    
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = 'attachment; filename=placement_cohort_report.csv'
+    return response
 
 
 def extract_text_from_pdf(pdf_path):

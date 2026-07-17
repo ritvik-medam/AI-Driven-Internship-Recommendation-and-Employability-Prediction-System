@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('student-dashboard').classList.add('active');
             loadStudentProfileDetails();
             startNotificationPolling();
+            fetchStudentSlots();
             setTimeout(startOnboardingTour, 1000);
         } else if (user.role === 'recruiter') {
             recruiterMenu.style.display = 'flex';
@@ -258,6 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchCareerRoadmap();
             } else if (targetId === 'market-insights-panel') {
                 fetchMarketInsights();
+            } else if (targetId === 'mock-coding-panel') {
+                fetchSandboxProblem();
             }
             
             if (window.speechSynthesis) {
@@ -988,6 +991,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Sync the Kanban View
             renderRecruiterKanban(data);
+
+            // Fetch created interview slots
+            fetchRecruiterSlots();
         });
     }
 
@@ -2389,6 +2395,314 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('cert-date-val').textContent = `Verified on ${btn.dataset.date.split(',')[0]}`;
                 document.getElementById('certificate-modal').style.display = 'block';
             });
+        });
+    }
+
+    // ==========================================================================
+    // v3.1 SUBSYSTEMS - SANDBOX, SCHEDULER, EXPORTER, CHATBOT ENGINE
+    // ==========================================================================
+
+    // ----------------- Mock Coding Sandbox -----------------
+    const codingProblems = {
+        two_sum: {
+            description: `Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.<br><br>
+You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.<br><br>
+<strong>Example 1:</strong><br>
+Input: nums = [2,7,11,15], target = 9<br>
+Output: [0,1]`,
+            signature: "def two_sum(nums, target):\n    # Write python logic here\n    pass",
+            template: "def two_sum(nums, target):\n    # TODO: Implement\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []"
+        },
+        fizzbuzz: {
+            description: `Given an integer <code>n</code>, return <em>a string array answer (1-indexed) where</em>:<br><br>
+- <code>answer[i] == "Fizz"</code> if <code>i</code> is divisible by 3.<br>
+- <code>answer[i] == "Buzz"</code> if <code>i</code> is divisible by 5.<br>
+- <code>answer[i] == "FizzBuzz"</code> if <code>i</code> is divisible by 3 and 5.<br>
+- <code>answer[i] == str(i)</code> if none of the above conditions are true.`,
+            signature: "def fizzbuzz(n):\n    # Write python logic here\n    pass",
+            template: "def fizzbuzz(n):\n    # TODO: Implement\n    res = []\n    for i in range(1, n + 1):\n        if i % 3 == 0 and i % 5 == 0:\n            res.append('FizzBuzz')\n        elif i % 3 == 0:\n            res.append('Fizz')\n        elif i % 5 == 0:\n            res.append('Buzz')\n        else:\n            res.append(str(i))\n    return res"
+        },
+        palindrome: {
+            description: `A phrase is a <strong>palindrome</strong> if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward.<br><br>
+Given a string <code>s</code>, return <code>true</code> if it is a palindrome, or <code>false</code> otherwise.`,
+            signature: "def is_palindrome(s):\n    # Write python logic here\n    pass",
+            template: "def is_palindrome(s):\n    # TODO: Implement\n    clean = [c.lower() for c in s if c.isalnum()]\n    return clean == clean[::-1]"
+        }
+    };
+
+    function fetchSandboxProblem() {
+        const problemId = document.getElementById('sandbox-problem-select').value;
+        const problem = codingProblems[problemId];
+        
+        document.getElementById('sandbox-problem-description').innerHTML = problem.description;
+        document.getElementById('sandbox-expected-signature').textContent = problem.signature;
+        document.getElementById('sandbox-code-editor').value = problem.template;
+        
+        document.getElementById('sandbox-console-log').textContent = '';
+        document.getElementById('sandbox-run-status').textContent = '';
+    }
+
+    const selectProb = document.getElementById('sandbox-problem-select');
+    if (selectProb) {
+        selectProb.addEventListener('change', fetchSandboxProblem);
+    }
+
+    const runCodeBtn = document.getElementById('sandbox-run-btn');
+    if (runCodeBtn) {
+        runCodeBtn.addEventListener('click', () => {
+            const problemId = document.getElementById('sandbox-problem-select').value;
+            const code = document.getElementById('sandbox-code-editor').value;
+            const statusEl = document.getElementById('sandbox-run-status');
+            const logEl = document.getElementById('sandbox-console-log');
+            
+            runCodeBtn.disabled = true;
+            runCodeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing';
+            statusEl.textContent = '';
+            logEl.textContent = 'Running tests in sandbox...';
+            
+            fetch('/api/sandbox/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ problem_id: problemId, code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                runCodeBtn.disabled = false;
+                runCodeBtn.innerHTML = '<i class="fas fa-play"></i> Run Code';
+                
+                logEl.textContent = data.output;
+                if (data.passed) {
+                    statusEl.textContent = 'PASS';
+                    statusEl.style.color = 'var(--accent-green)';
+                } else {
+                    statusEl.textContent = 'FAIL';
+                    statusEl.style.color = 'var(--accent-red)';
+                }
+            })
+            .catch(err => {
+                runCodeBtn.disabled = false;
+                runCodeBtn.innerHTML = '<i class="fas fa-play"></i> Run Code';
+                logEl.textContent = `Error: ${err.message}`;
+                statusEl.textContent = 'ERROR';
+                statusEl.style.color = 'var(--accent-red)';
+            });
+        });
+    }
+
+    // ----------------- Recruiter Interview Scheduler -----------------
+    const slotForm = document.getElementById('recruiter-post-slot-form');
+    if (slotForm) {
+        slotForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = document.getElementById('slot-date-input').value;
+            const time = document.getElementById('slot-time-input').value;
+            const name = document.getElementById('slot-interviewer-input').value;
+            
+            fetch('/api/scheduler/slots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    slot_date: date,
+                    slot_time: time,
+                    interviewer_name: name
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                slotForm.reset();
+                fetchRecruiterSlots();
+            });
+        });
+    }
+
+    function fetchRecruiterSlots() {
+        const tbody = document.querySelector('#recruiter-slots-table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading slots...</td></tr>';
+        
+        fetch('/api/scheduler/slots')
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">No slots created yet. Use the form above to add slots.</td></tr>';
+                return;
+            }
+            
+            data.forEach(slot => {
+                const tr = document.createElement('tr');
+                const bookedCol = slot.booked_by_student_email ? `<span style="color:#fff;">${slot.booked_by_student_email}</span>` : '<span style="color:var(--text-secondary);">Unbooked</span>';
+                const statusCol = slot.status === 'Booked' ? 
+                    `<span class="score-badge" style="color:var(--accent-green); border-color:rgba(0,245,160,0.25);">Booked</span>` :
+                    `<span class="score-badge" style="color:var(--accent-blue); border-color:rgba(0,242,254,0.25);">Available</span>`;
+                    
+                tr.innerHTML = `
+                    <td style="color:#fff; font-weight:600;">${slot.slot_date}</td>
+                    <td>${slot.slot_time}</td>
+                    <td>${slot.interviewer_name}</td>
+                    <td>${bookedCol}</td>
+                    <td>${statusCol}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // ----------------- Student Interview Booking Scheduler -----------------
+    function fetchStudentSlots() {
+        const grid = document.getElementById('student-slots-grid');
+        if (!grid) return;
+        grid.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.5rem; color:var(--accent-blue);"></i>';
+        
+        fetch('/api/scheduler/slots')
+        .then(res => res.json())
+        .then(data => {
+            grid.innerHTML = '';
+            document.getElementById('student-scheduler-card').style.display = 'block';
+            
+            if (data.length === 0) {
+                grid.innerHTML = '<div style="color:var(--text-secondary); font-size:0.85rem;">No technical assessment slots available currently. Check back later!</div>';
+                return;
+            }
+            
+            data.forEach(slot => {
+                const card = document.createElement('div');
+                card.className = 'scheduler-slot-card';
+                
+                const isBookedByMe = slot.booked_by_student_email === currentUserSession.email;
+                let actionBtnHTML = '';
+                
+                if (slot.status === 'Booked') {
+                    if (isBookedByMe) {
+                        actionBtnHTML = `<button class="btn-primary" style="width:100%; font-size:0.75rem; background:var(--accent-green); border:none;" disabled><i class="fas fa-check-circle"></i> Booked by You</button>`;
+                    } else {
+                        actionBtnHTML = `<button class="btn-secondary" style="width:100%; font-size:0.75rem;" disabled>Booked</button>`;
+                    }
+                } else {
+                    actionBtnHTML = `<button class="btn-primary book-slot-btn" data-id="${slot.id}" style="width:100%; font-size:0.75rem;"><i class="fas fa-calendar-plus"></i> Reserve Slot</button>`;
+                }
+                
+                card.innerHTML = `
+                    <div class="scheduler-slot-date">${slot.slot_date}</div>
+                    <div class="scheduler-slot-time">${slot.slot_time}</div>
+                    <div class="scheduler-slot-interviewer"><i class="fas fa-user-tie" style="margin-right:0.35rem;"></i>${slot.interviewer_name}</div>
+                    <div style="margin-top:0.5rem;">${actionBtnHTML}</div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            document.querySelectorAll('.book-slot-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const slotId = parseInt(btn.dataset.id);
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking';
+                    
+                    fetch('/api/scheduler/book', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ slot_id: slotId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        fetchStudentSlots();
+                    });
+                });
+            });
+        });
+    }
+
+    // ----------------- Floating AI Assistant Chatbot -----------------
+    const chatTrigger = document.getElementById('chatbot-float-trigger');
+    const chatWindow = document.getElementById('chatbot-window');
+    const chatClose = document.getElementById('chatbot-close-btn');
+    const chatSend = document.getElementById('chatbot-send-btn');
+    const chatInput = document.getElementById('chatbot-input-el');
+    const chatBody = document.getElementById('chatbot-chat-body');
+
+    if (chatTrigger) {
+        chatTrigger.addEventListener('click', () => {
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'flex';
+                chatTrigger.style.transform = 'scale(0.9) rotate(45deg)';
+            } else {
+                chatWindow.style.display = 'none';
+                chatTrigger.style.transform = 'none';
+            }
+        });
+        
+        chatClose.addEventListener('click', () => {
+            chatWindow.style.display = 'none';
+            chatTrigger.style.transform = 'none';
+        });
+
+        chatSend.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+    }
+
+    function sendChatMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+        
+        chatInput.value = '';
+        
+        // Append user bubble
+        const userDiv = document.createElement('div');
+        userDiv.className = 'chat-msg user-msg';
+        userDiv.textContent = text;
+        chatBody.appendChild(userDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+        // Typing placeholder
+        const typeDiv = document.createElement('div');
+        typeDiv.className = 'chat-msg ai-msg';
+        typeDiv.style.alignSelf = 'flex-start';
+        typeDiv.style.background = 'rgba(255,255,255,0.03)';
+        typeDiv.style.border = '1px solid var(--border-color)';
+        typeDiv.style.padding = '0.6rem 0.8rem';
+        typeDiv.style.borderRadius = '10px';
+        typeDiv.style.fontSize = '0.8rem';
+        typeDiv.style.maxWidth = '85%';
+        typeDiv.style.color = '#cbd5e1';
+        typeDiv.style.lineHeight = '1.4';
+        typeDiv.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Coach typing...';
+        chatBody.appendChild(typeDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+        fetch('/api/chatbot/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            typeDiv.remove();
+            
+            const replyDiv = document.createElement('div');
+            replyDiv.className = 'chat-msg ai-msg';
+            replyDiv.style.alignSelf = 'flex-start';
+            replyDiv.style.background = 'rgba(255,255,255,0.03)';
+            replyDiv.style.border = '1px solid var(--border-color)';
+            replyDiv.style.padding = '0.6rem 0.8rem';
+            replyDiv.style.borderRadius = '10px';
+            replyDiv.style.fontSize = '0.8rem';
+            replyDiv.style.maxWidth = '85%';
+            replyDiv.style.color = '#cbd5e1';
+            replyDiv.style.lineHeight = '1.4';
+            replyDiv.style.whiteSpace = 'pre-wrap';
+            replyDiv.textContent = data.reply;
+            
+            chatBody.appendChild(replyDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        });
+    }
+
+    // ----------------- University Director Exporter -----------------
+    const exportBtn = document.getElementById('export-cohort-csv-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            window.location.href = '/api/university/export';
         });
     }
 });

@@ -95,6 +95,7 @@
                 <button class="menu-btn" data-tab="my-applications-panel"><i class="fas fa-paper-plane"></i> My Applications</button>
                 <button class="menu-btn" data-tab="resume-builder-panel"><i class="fas fa-file-invoice"></i> Resume Builder</button>
                 <button class="menu-btn" data-tab="mock-interview-panel"><i class="fas fa-headset"></i> AI Interview Coach</button>
+                <button class="menu-btn" data-tab="mock-coding-panel"><i class="fas fa-code"></i> Coding Sandbox</button>
                 <button class="menu-btn" data-tab="leaderboard-panel"><i class="fas fa-trophy"></i> Leaderboard</button>
                 <button class="menu-btn" data-tab="companies-panel"><i class="fas fa-building"></i> Companies</button>
             </div>
@@ -313,6 +314,67 @@
                                     <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">Rank Position Insights</div>
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);" id="percentile-feedback">Complete profile & mock interviews to improve.</div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Booking Scheduler -->
+                    <div class="card col-12" id="student-scheduler-card" style="display: none; margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-calendar-check"></i> Book Technical Interview Slot</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Recruiters have opened technical assessment slots. Select a preferred interviewer slot to lock in bookings.</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;" id="student-slots-grid">
+                            <!-- Dynamic slots cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== MOCK CODING SANDBOX PANEL ================== -->
+                <div id="mock-coding-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-code" style="color: var(--accent-blue);"></i> Interactive Coding Sandbox</h1>
+                        <p class="panel-subtitle">Practice coding challenges and run local unit test parameters.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Problem details card -->
+                        <div class="card col-5" style="height: 520px; display: flex; flex-direction: column; justify-content: space-between; padding: 1.25rem;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-book-open"></i> Choose Coding Challenge</h3>
+                                <div class="input-group" style="margin-bottom: 1.25rem;">
+                                    <label>Select Challenge</label>
+                                    <select id="sandbox-problem-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <option value="two_sum">Two Sum (Array Hashmap)</option>
+                                        <option value="fizzbuzz">FizzBuzz (Modulo loop)</option>
+                                        <option value="palindrome">Valid Palindrome (String parsing)</option>
+                                    </select>
+                                </div>
+                                <div id="sandbox-problem-description" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; max-height: 250px; overflow-y: auto;">
+                                    <!-- Dynamic description details -->
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.85rem; border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary);">
+                                <strong>Expected Signature:</strong>
+                                <pre id="sandbox-expected-signature" style="font-family: monospace; color:#fff; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; margin-top: 0.25rem; margin-bottom: 0;"></pre>
+                            </div>
+                        </div>
+                        
+                        <!-- IDE compiler card -->
+                        <div class="card col-7" style="height: 520px; display: flex; flex-direction: column; padding: 1.25rem;">
+                            <h3 class="card-title"><i class="fas fa-terminal"></i> Python Editor Workspace</h3>
+                            
+                            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <textarea id="sandbox-code-editor" style="flex-grow: 1; width: 100%; font-family: monospace; font-size: 0.82rem; background: #030408; border: 1px solid var(--border-color); color: #a7f3d0; padding: 0.75rem; border-radius: 8px; resize: none; line-height: 1.5; outline: none;" placeholder="# Write your python code here..."></textarea>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <button class="btn-primary" id="sandbox-run-btn" style="padding: 0.5rem 1.25rem; border-radius: 8px; border: none; cursor: pointer;"><i class="fas fa-play"></i> Run Code</button>
+                                    <span id="sandbox-run-status" style="font-size: 0.8rem; font-weight: 600;"></span>
+                                </div>
+                            </div>
+                            
+                            <div style="height: 140px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-secondary);">Execution Console Output</div>
+                                <pre id="sandbox-console-log" style="flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.78rem; margin: 0; color: #fff; white-space: pre-wrap;"></pre>
                             </div>
                         </div>
                     </div>
@@ -875,14 +937,53 @@
                             <div class="kanban-cards-wrapper" id="kanban-rejected-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
                         </div>
                     </div>
+
+                    <div class="card col-12" id="recruiter-scheduler-card" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-calendar-plus"></i> Post Available Interview Slots</h3>
+                        <form id="recruiter-post-slot-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                            <div class="input-group" style="flex: 1; min-width: 150px;">
+                                <label>Date</label>
+                                <input type="date" id="slot-date-input" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 120px;">
+                                <label>Time Slot</label>
+                                <input type="text" id="slot-time-input" placeholder="e.g. 10:00 AM" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 180px;">
+                                <label>Interviewer Name</label>
+                                <input type="text" id="slot-interviewer-input" placeholder="Sundar Pichai" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="height: 38px; border-radius: 8px; padding: 0 1.25rem;"><i class="fas fa-plus"></i> Add Slot</button>
+                        </form>
+                        
+                        <h4 style="font-size: 0.95rem; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color:#fff;">Created Slots</h4>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="recruiter-slots-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Interviewer</th>
+                                        <th>Booked By Candidate</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
 
-                <!-- ================== UNIVERSITY DIRECTOR PANEL ================== -->
                 <div id="university-panel" class="dashboard-panel">
-                    <div class="panel-header">
-                        <h1 class="panel-title">University Placement Analytics</h1>
-                        <p class="panel-subtitle">Monitor readiness metrics, audit cohort performance indices, and project placement improvements.</p>
+                    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h1 class="panel-title">University Placement Analytics</h1>
+                            <p class="panel-subtitle">Monitor readiness metrics, audit cohort performance indices, and project placement improvements.</p>
+                        </div>
+                        <button class="btn-primary" id="export-cohort-csv-btn" style="padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-file-csv"></i> Export Cohort Report</button>
                     </div>
 
                     <div class="grid-container">
@@ -1096,6 +1197,30 @@
         </div>
         <div id="notif-list" class="notif-list">
             <div class="notif-empty">No notifications yet.</div>
+        </div>
+    </div>
+
+    <!-- 8. FLOATING AI ASSISTANT CHATBOT -->
+    <div id="chatbot-float-trigger" class="chatbot-trigger" style="position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,242,254,0.3); z-index: 9999; transition: transform 0.2s;">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    
+    <div id="chatbot-window" class="chatbot-window" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 340px; height: 420px; background: #0f1225; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999; flex-direction: column; overflow: hidden; font-family: 'Outfit', sans-serif;">
+        <div style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%;"></div>
+                <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">AI Placement Assistant</span>
+            </div>
+            <button id="chatbot-close-btn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem;"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="chatbot-chat-body" style="flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="chat-msg ai-msg" style="align-self: flex-start; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.8rem; max-width: 85%; color: #cbd5e1; line-height: 1.4;">
+                Hello! I am your AI placement helper. Ask me about resume builder formats, interview preps, skills gap, or trending salaries!
+            </div>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); padding: 0.5rem; background: rgba(0,0,0,0.2); display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" id="chatbot-input-el" placeholder="Type a message..." style="flex-grow: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            <button class="btn-primary" id="chatbot-send-btn" style="padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; border: none; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 

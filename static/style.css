@@ -6,7 +6,7 @@
     --bg-card: rgba(18, 24, 46, 0.72);
     --border-color: rgba(255, 255, 255, 0.12);
     --text-primary: #f1f5f9;
-    --text-secondary: #b8c7db;
+    --text-secondary: #d0d8e5;
     
     /* Neon gradients */
     --accent-blue: #00f2fe;
@@ -332,7 +332,7 @@ h1, h2, h3, h4 {
 
 .input-group label {
     font-size: 0.8rem;
-    color: #cbd5e1;
+    color: #dce3ed;
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -354,6 +354,13 @@ h1, h2, h3, h4 {
     border-color: var(--accent-blue);
     box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
     background: rgba(255, 255, 255, 0.05);
+}
+.input-group input::placeholder, .input-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+.input-group select option {
+    background-color: #0e1326;
+    color: #f1f5f9;
 }
 
 /* Upload Dropzone */
@@ -741,7 +748,7 @@ h1, h2, h3, h4 {
     border-bottom: 1px solid var(--border-color);
     padding: 1rem 0.75rem;
     font-weight: 600;
-    color: #cbd5e1;
+    color: #dce3ed;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -752,7 +759,7 @@ h1, h2, h3, h4 {
     border-bottom: 1px solid var(--border-color);
     font-size: 0.85rem;
     vertical-align: middle;
-    color: #d1d9e6;
+    color: #dce3ed;
 }
 
 .custom-table tr:hover {
@@ -926,8 +933,8 @@ h1, h2, h3, h4 {
 }
 
 .auth-card {
-    background: rgba(16, 20, 38, 0.8);
-    border: 1px solid rgba(0, 242, 254, 0.15);
+    background: rgba(20, 26, 48, 0.98);
+    border: 1px solid rgba(0, 242, 254, 0.3);
     border-radius: 24px;
     padding: 2.5rem;
     width: 100%;
@@ -1692,6 +1699,7 @@ h1, h2, h3, h4 {
 /* ================== LIGHT THEME OVERRIDES ================== */
 body.theme-light {
     --bg-dark: #f8fafc;
+    --bg-card: #ffffff;
     --card-bg: #ffffff;
     --border-color: #cbd5e1;
     --text-primary: #1e293b;
@@ -1702,6 +1710,13 @@ body.theme-light {
 }
 body.theme-light aside {
     background: #0f172a; /* Keep sidebar dark for premium high contrast look */
+}
+body.theme-light select option {
+    background-color: #ffffff;
+    color: #1e293b;
+}
+body.theme-light input::placeholder, body.theme-light textarea::placeholder {
+    color: #94a3b8;
 }
 body.theme-light .card {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);

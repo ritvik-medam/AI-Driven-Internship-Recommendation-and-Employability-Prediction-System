@@ -1058,15 +1058,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="score-grid">
                     <div class="score-card">
                         <div class="score-val">${d.average_score}%</div>
-                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Overall Grade</div>
+                        <div style="font-size:12px; color:#94a3b8; text-transform:uppercase;">Overall Grade</div>
                     </div>
                     <div class="score-card">
                         <div class="score-val" style="color:#16a34a;">${d.technical_score}%</div>
-                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Technical accuracy</div>
+                        <div style="font-size:12px; color:#94a3b8; text-transform:uppercase;">Technical accuracy</div>
                     </div>
                     <div class="score-card">
                         <div class="score-val" style="color:#7c3aed;">${d.communication_score}%</div>
-                        <div style="font-size:12px; color:#64748b; text-transform:uppercase;">Clarity index</div>
+                        <div style="font-size:12px; color:#94a3b8; text-transform:uppercase;">Clarity index</div>
                     </div>
                 </div>
                 <h3>Dialogue Transcript Auditing Logs:</h3>
@@ -1145,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                            labels: { color: '#d0d8e5', font: { family: 'Inter', size: 10 } }
                         }
                     }
                 }
@@ -1187,17 +1187,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { color: '#94a3b8', font: { family: 'Inter' } }
+                            ticks: { color: '#d0d8e5', font: { family: 'Inter' } }
                         },
                         y: {
                             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#94a3b8', font: { family: 'Inter' }, stepSize: 20 }
+                            ticks: { color: '#d0d8e5', font: { family: 'Inter' }, stepSize: 20 }
                         }
                     },
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                            labels: { color: '#d0d8e5', font: { family: 'Inter', size: 10 } }
                         }
                     }
                 }
@@ -1284,13 +1284,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         ticks: { display: false, stepSize: 0.25 },
                         grid: { color: 'rgba(255, 255, 255, 0.06)' },
                         angleLines: { color: 'rgba(255, 255, 255, 0.06)' },
-                        pointLabels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
+                        pointLabels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 } }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 20 }
+                        labels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 }, padding: 20 }
                     }
                 }
             }
@@ -1444,19 +1444,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { color: '#94a3b8', font: { family: 'Inter' } }
+                            ticks: { color: '#d0d8e5', font: { family: 'Inter' } }
                         },
                         y: {
                             min: 0,
                             max: 100,
                             grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#94a3b8', font: { family: 'Inter' }, stepSize: 20 }
+                            ticks: { color: '#d0d8e5', font: { family: 'Inter' }, stepSize: 20 }
                         }
                     },
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 15 }
+                            labels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 }, padding: 15 }
                         }
                     }
                 }
@@ -1778,8 +1778,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         legend: { display: false }
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        x: { grid: { display: false }, ticks: { color: '#d0d8e5' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#d0d8e5' } }
                     }
                 }
             });
@@ -1823,11 +1823,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#94a3b8' } }
+                        legend: { labels: { color: '#d0d8e5' } }
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        x: { grid: { display: false }, ticks: { color: '#d0d8e5' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#d0d8e5' } }
                     }
                 }
             });
@@ -1882,13 +1882,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                        legend: { position: 'bottom', labels: { color: '#d0d8e5' } }
                     },
                     scales: {
                         r: {
                             angleLines: { color: 'rgba(255,255,255,0.05)' },
                             grid: { color: 'rgba(255,255,255,0.05)' },
-                            pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                            pointLabels: { color: '#d0d8e5', font: { size: 10 } },
                             ticks: { display: false }
                         }
                     }
@@ -2257,13 +2257,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                    legend: { position: 'bottom', labels: { color: '#d0d8e5' } }
                 },
                 scales: {
                     r: {
                         angleLines: { color: 'rgba(255,255,255,0.05)' },
                         grid: { color: 'rgba(255,255,255,0.05)' },
-                        pointLabels: { color: '#94a3b8', font: { size: 11 } },
+                        pointLabels: { color: '#d0d8e5', font: { size: 11 } },
                         ticks: { display: false }
                     }
                 }
@@ -2664,7 +2664,7 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
         typeDiv.style.borderRadius = '10px';
         typeDiv.style.fontSize = '0.8rem';
         typeDiv.style.maxWidth = '85%';
-        typeDiv.style.color = '#cbd5e1';
+        typeDiv.style.color = '#e2e8f0';
         typeDiv.style.lineHeight = '1.4';
         typeDiv.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Coach typing...';
         chatBody.appendChild(typeDiv);
@@ -2688,7 +2688,7 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
             replyDiv.style.borderRadius = '10px';
             replyDiv.style.fontSize = '0.8rem';
             replyDiv.style.maxWidth = '85%';
-            replyDiv.style.color = '#cbd5e1';
+            replyDiv.style.color = '#e2e8f0';
             replyDiv.style.lineHeight = '1.4';
             replyDiv.style.whiteSpace = 'pre-wrap';
             replyDiv.textContent = data.reply;

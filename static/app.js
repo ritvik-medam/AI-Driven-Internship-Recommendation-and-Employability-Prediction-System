@@ -1,3 +1,59 @@
+// ==========================================================================
+// CUSTOM GLASSMORPHIC TOAST NOTIFICATION SYSTEM & ALERT OVERRIDE
+// ==========================================================================
+(function() {
+    let container = null;
+
+    function ensureContainer() {
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+    }
+
+    window.showToast = function(message, type = 'info') {
+        ensureContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        let iconClass = 'fa-info-circle';
+        if (type === 'success') iconClass = 'fa-check-circle';
+        else if (type === 'error') iconClass = 'fa-exclamation-circle';
+        else if (type === 'warning') iconClass = 'fa-triangle-exclamation';
+        
+        toast.innerHTML = `
+            <i class="fas ${iconClass} toast-icon" style="color: var(--accent-${type === 'info' ? 'blue' : type === 'success' ? 'green' : type === 'error' ? 'red' : 'yellow'});"></i>
+            <div class="toast-message">${message}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('fading');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 5000);
+    };
+
+    // Override default window.alert with custom glassmorphic toast
+    window.alert = function(message) {
+        let type = 'info';
+        const msgLower = String(message).toLowerCase();
+        if (msgLower.includes('success') || msgLower.includes('complete') || msgLower.includes('sync') || msgLower.includes('verified') || msgLower.includes('added') || msgLower.includes('created')) {
+            type = 'success';
+        } else if (msgLower.includes('fail') || msgLower.includes('error') || msgLower.includes('cannot') || msgLower.includes('could not') || msgLower.includes('invalid') || msgLower.includes('please check')) {
+            type = 'error';
+        } else if (msgLower.includes('please') || msgLower.includes('select') || msgLower.includes('warn') || msgLower.includes('select a target')) {
+            type = 'warning';
+        }
+        window.showToast(message, type);
+    };
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------- Authentication Elements -----------------
     const authContainer = document.getElementById('auth-container');

@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlacementIntel | AI Placement & Interview Platform</title>
+    <!-- CSS and Fonts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for university statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- 1. AUTHENTICATION OVERLAY PANEL -->
+    <div id="auth-container" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span class="auth-title-text">Placement<span>Intel</span></span>
+            </div>
+            
+            <div class="auth-tabs">
+                <button id="tab-login-btn" class="auth-tab-btn active">Sign In</button>
+                <button id="tab-signup-btn" class="auth-tab-btn">Sign Up</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active">
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="login-email" placeholder="name@university.edu" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary auth-submit-btn">
+                    <i class="fas fa-right-to-bracket"></i> Sign In
+                </button>
+                <div class="auth-helper">
+                    <span>Quick Seed Logins (Click to autofill):</span>
+                    <div class="demo-badges">
+                        <span class="demo-badge" onclick="fillDemoAccount('student@university.edu','student123')">Student</span>
+                        <span class="demo-badge" onclick="fillDemoAccount('recruiter@google.com','recruiter123')">Recruiter</span>
+                        <span class="demo-badge" onclick="fillDemoAccount('admin@university.edu','admin123')">Admin</span>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form">
+                <div class="input-group">
+                    <label><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="signup-name" placeholder="John Doe" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="signup-email" placeholder="name@university.edu" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="signup-password" placeholder="••••••••" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-id-card"></i> Account Type</label>
+                    <select id="signup-role" required>
+                        <option value="student">Student Profile</option>
+                        <option value="recruiter">Recruiter Desk</option>
+                        <option value="university">University Director</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary auth-submit-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APPLICATION WORKSPACE -->
+    <div id="app-container" style="display: none; width: 100%;">
+        
+        <!-- Left Side Navigation Dashboard Layout -->
+        <aside>
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <div class="sidebar-logo-text">Placement<span>Intel</span></div>
+            </div>
+            
+            <!-- Dynamic Navigation Menus -->
+            <div class="sidebar-menu" id="student-menu" style="display: none;">
+                <button class="menu-btn active" data-tab="student-dashboard"><i class="fas fa-user"></i> Placement Matching</button>
+                <button class="menu-btn" data-tab="career-advisor-panel"><i class="fas fa-route"></i> Career Advisor</button>
+                <button class="menu-btn" data-tab="market-insights-panel"><i class="fas fa-chart-simple"></i> Market Insights</button>
+                <button class="menu-btn" data-tab="my-applications-panel"><i class="fas fa-paper-plane"></i> My Applications</button>
+                <button class="menu-btn" data-tab="resume-builder-panel"><i class="fas fa-file-invoice"></i> Resume Builder</button>
+                <button class="menu-btn" data-tab="mock-interview-panel"><i class="fas fa-headset"></i> AI Interview Coach</button>
+                <button class="menu-btn" data-tab="mock-coding-panel"><i class="fas fa-code"></i> Coding Sandbox</button>
+                <button class="menu-btn" data-tab="leaderboard-panel"><i class="fas fa-trophy"></i> Leaderboard</button>
+                <button class="menu-btn" data-tab="companies-panel"><i class="fas fa-building"></i> Companies</button>
+            </div>
+            
+            <div class="sidebar-menu" id="recruiter-menu" style="display: none;">
+                <button class="menu-btn active" data-tab="employer-panel"><i class="fas fa-briefcase"></i> Recruiter Desk</button>
+            </div>
+            
+            <div class="sidebar-menu" id="university-menu" style="display: none;">
+                <button class="menu-btn active" data-tab="university-panel"><i class="fas fa-chart-line"></i> Analytics Director</button>
+            </div>
+
+            <!-- Profile Info Footer -->
+            <div class="user-session-card">
+                <div class="user-session-info">
+                <div id="session-username" style="font-weight: 600; color: #fff;">User Name</div>
+                    <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-moon"></i></button>
+                    <button id="notif-bell-btn" class="notif-bell" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
+                    </button>
+                    <button id="logout-btn" title="Logout Account"><i class="fas fa-power-off"></i></button>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                RV Placement v2.0 © <span>2026</span>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Contents -->
+        <div class="app-workspace">
+            <main>
+
+                <!-- ================== STUDENT PROFILE DASHBOARD ================== -->
+                <div id="student-dashboard" class="dashboard-panel active">
+                    <div class="panel-header">
+                        <h1 class="panel-title">Internship & Employability Matching</h1>
+                        <p class="panel-subtitle">Upload your resume PDF to calculate placement readiness scores and job matches.</p>
+                    </div>
+
+                    <div class="grid-container">
+                        <!-- Upload Card -->
+                        <div class="card col-4">
+                            <h3 class="card-title"><i class="fas fa-cloud-arrow-up"></i> Resume Parser</h3>
+                            <div class="upload-zone" id="upload-zone">
+                                <i class="fas fa-file-pdf"></i>
+                                <p id="file-label">Upload or drag resume (PDF, TXT)</p>
+                                <input type="file" id="resume-input" accept=".pdf,.txt">
+                            </div>
+                            <div class="loader" id="upload-loader"></div>
+                            
+                            <div id="mini-readiness-sec" style="margin-top: 1.5rem; display: none; text-align: center;">
+                                <div id="readiness-badge" class="badge-readiness medium">Medium Readiness</div>
+                            </div>
+                        </div>
+
+                        <!-- Critique Checklist Card -->
+                        <div class="card col-4" id="critique-report-card" style="display: none;">
+                            <h3 class="card-title"><i class="fas fa-list-check"></i> Resume Recommendations</h3>
+                            <div id="critique-checklist-container">
+                                <!-- Dynamic check marks -->
+                            </div>
+                        </div>
+
+                        <!-- Score card metrics -->
+                        <div class="card col-4" id="profile-detailed-container" style="display: none; flex-direction: column; gap: 1.5rem;">
+                            <!-- Readiness score gauge -->
+                            <div class="gauge-wrapper">
+                                <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600;">Employability Score</h3>
+                                <div class="gauge-circle">
+                                    <svg viewBox="0 0 150 150">
+                                        <defs>
+                                            <linearGradient id="gaugeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#00f2fe" />
+                                                <stop offset="100%" stop-color="#9b51e0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="gauge-bg" cx="75" cy="75" r="70"></circle>
+                                        <circle class="gauge-progress" cx="75" cy="75" r="70"></circle>
+                                    </svg>
+                                    <div class="gauge-value" id="gauge-score-value">0%</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sub-grades Progress -->
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                        <span>Formatting Index</span>
+                                        <span id="score-format">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar">
+                                        <div class="critique-progress-fill" id="fill-format" style="width: 0%; background: var(--accent-blue);"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                        <span>Certifications Grade</span>
+                                        <span id="score-certs">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar">
+                                        <div class="critique-progress-fill" id="fill-certs" style="width: 0%; background: var(--accent-purple);"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                        <span>Projects Index</span>
+                                        <span id="score-projects">0%</span>
+                                    </div>
+                                    <div class="critique-progress-bar">
+                                        <div class="critique-progress-fill" id="fill-projects" style="width: 0%; background: var(--accent-green);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Overview card -->
+                    <div class="grid-container" id="profile-placeholder" style="min-height: 250px;">
+                        <div class="card col-12" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--text-secondary);">
+                            <i class="fas fa-file-lines" style="font-size: 3rem; margin-bottom: 1rem; color: rgba(255,255,255,0.06);"></i>
+                            <p>No active student profile logged. Upload a resume file to generate placement scores and internship listings.</p>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Resume parsing analysis -->
+                    <div class="grid-container" id="profile-details-row" style="display: none;">
+                        <div class="card col-8">
+                            <h3 class="card-title"><i class="fas fa-address-card"></i> Student Parsing Details</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Parsed Candidate Name</div>
+                                    <div id="res-name" style="font-weight: 600; font-size: 1.1rem; color: #fff;">Ritvik Medam</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Registered Email</div>
+                                    <div id="res-email" style="font-weight: 600; font-size: 1.1rem; color: #fff;">ritvik.medam@university.edu</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Extracted Academic CGPA</div>
+                                    <div id="res-cgpa" style="font-weight: 600; font-size: 1.1rem; color: var(--accent-green);">7.85</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.5rem;">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Technical Keyword Matches</div>
+                                <div class="skills-container" id="res-skills">
+                                    <!-- Dynamic skill tags -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Gap Curated Courses -->
+                        <div class="card col-4">
+                            <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Skill Gap Bridging Courses</h3>
+                            <div id="skill-gap-courses" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Dynamic courses recommendations -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Placement lists -->
+                    <div class="card col-12" id="placements-table-container" style="display: none; margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-briefcase"></i> Recommended Internships (Ranked by AI Match Score)</h3>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="recommendation-table">
+                                <thead>
+                                    <tr>
+                                        <th>Internship Role & Company</th>
+                                        <th>Match Index</th>
+                                        <th>Required vs. Parsed Skills</th>
+                                        <th>Location & Stipend</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic table lists -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Skill Radar Chart -->
+                    <div class="card col-12" id="radar-chart-container" style="display: none; margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-spider"></i> Skill Match Radar Analysis</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Your skills vs. top internship requirements. Gaps reveal areas to upskill.</p>
+                        <div style="position: relative; height: 380px; width: 100%; max-width: 600px; margin: 0 auto;">
+                            <canvas id="skillRadarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Peer Comparison Analytics -->
+                    <div class="grid-container" id="peer-comparison-container" style="display: none; margin-top: 1.5rem;">
+                        <div class="card col-6" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-spider"></i> You vs. Cohort Average</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Comparison of your skills, project, certification, and CGPA metrics.</p>
+                            <div style="position: relative; height: 260px; width: 100%;">
+                                <canvas id="peerRadarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card col-6" style="height: 380px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-percent"></i> Cohort Percentile Rank</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Your overall position compared to all students in the university.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; flex-grow: 1;">
+                                <div class="percentile-badge-wrapper" style="text-align: center;">
+                                    <div class="percentile-ring" style="width: 140px; height: 140px; border-radius: 50%; border: 8px solid rgba(0,242,254,0.1); border-top-color: var(--accent-blue); display: flex; align-items: center; justify-content: center; position: relative;">
+                                        <div class="percentile-val" id="percentile-text" style="font-size: 1.6rem; font-weight: 800; color: #fff;">Top 50%</div>
+                                    </div>
+                                </div>
+                                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">Rank Position Insights</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="percentile-feedback">Complete profile & mock interviews to improve.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Booking Scheduler -->
+                    <div class="card col-12" id="student-scheduler-card" style="display: none; margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-calendar-check"></i> Book Technical Interview Slot</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Recruiters have opened technical assessment slots. Select a preferred interviewer slot to lock in bookings.</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;" id="student-slots-grid">
+                            <!-- Dynamic slots cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== MOCK CODING SANDBOX PANEL ================== -->
+                <div id="mock-coding-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-code" style="color: var(--accent-blue);"></i> Interactive Coding Sandbox</h1>
+                        <p class="panel-subtitle">Practice coding challenges and run local unit test parameters.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Problem details card -->
+                        <div class="card col-5" style="height: 520px; display: flex; flex-direction: column; justify-content: space-between; padding: 1.25rem;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-book-open"></i> Choose Coding Challenge</h3>
+                                <div class="input-group" style="margin-bottom: 1.25rem;">
+                                    <label>Select Challenge</label>
+                                    <select id="sandbox-problem-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <option value="two_sum">Two Sum (Array Hashmap)</option>
+                                        <option value="fizzbuzz">FizzBuzz (Modulo loop)</option>
+                                        <option value="palindrome">Valid Palindrome (String parsing)</option>
+                                    </select>
+                                </div>
+                                <div id="sandbox-problem-description" style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.6; max-height: 250px; overflow-y: auto;">
+                                    <!-- Dynamic description details -->
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.85rem; border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary);">
+                                <strong>Expected Signature:</strong>
+                                <pre id="sandbox-expected-signature" style="font-family: monospace; color:#fff; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; margin-top: 0.25rem; margin-bottom: 0;"></pre>
+                            </div>
+                        </div>
+                        
+                        <!-- IDE compiler card -->
+                        <div class="card col-7" style="height: 520px; display: flex; flex-direction: column; padding: 1.25rem;">
+                            <h3 class="card-title"><i class="fas fa-terminal"></i> Python Editor Workspace</h3>
+                            
+                            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <textarea id="sandbox-code-editor" style="flex-grow: 1; width: 100%; font-family: monospace; font-size: 0.82rem; background: #030408; border: 1px solid var(--border-color); color: #a7f3d0; padding: 0.75rem; border-radius: 8px; resize: none; line-height: 1.5; outline: none;" placeholder="# Write your python code here..."></textarea>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <button class="btn-primary" id="sandbox-run-btn" style="padding: 0.5rem 1.25rem; border-radius: 8px; border: none; cursor: pointer;"><i class="fas fa-play"></i> Run Code</button>
+                                    <span id="sandbox-run-status" style="font-size: 0.8rem; font-weight: 600;"></span>
+                                </div>
+                            </div>
+                            
+                            <div style="height: 140px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-secondary);">Execution Console Output</div>
+                                <pre id="sandbox-console-log" style="flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.78rem; margin: 0; color: #fff; white-space: pre-wrap;"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== AI CAREER PATH ADVISOR PANEL ================== -->
+                <div id="career-advisor-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-route" style="color: var(--accent-blue);"></i> AI Career Path Advisor</h1>
+                        <p class="panel-subtitle">Plan your learning journey based on role matching and skill gap analysis.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Left settings card -->
+                        <div class="card col-4" style="height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 class="card-title"><i class="fas fa-sliders"></i> Select Target Path</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Select your desired career path to generate your customized roadmap.</p>
+                                
+                                <div class="input-group" style="margin-bottom: 1.25rem;">
+                                    <label>Target Role</label>
+                                    <select id="roadmap-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <option value="Software Engineer Intern">Software Engineer Intern</option>
+                                        <option value="Machine Learning Intern">Machine Learning Intern</option>
+                                        <option value="Data Scientist Intern">Data Scientist Intern</option>
+                                        <option value="Cloud Architect Intern">Cloud Architect Intern</option>
+                                        <option value="Frontend Developer Intern">Frontend Developer Intern</option>
+                                        <option value="AI Research Intern">AI Research Intern</option>
+                                        <option value="Cybersecurity Specialist Intern">Cybersecurity Specialist Intern</option>
+                                        <option value="Product Management Intern">Product Management Intern</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;"><i class="fas fa-lightbulb" style="color: #ffd700;"></i> Legend</div>
+                                <div style="display: grid; grid-template-columns: 12px 1fr; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); align-items: center;">
+                                    <div style="background: var(--accent-green); border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Learned Skill (Found in resume)</div>
+                                    <div style="background: #f5a623; border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Gap Skill (Needs to be acquired)</div>
+                                    <div style="background: var(--accent-blue); border-radius: 50%; height: 12px; width: 12px;"></div>
+                                    <div>Target Skill / Role Node</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Flowchart Visualization -->
+                        <div class="card col-8" style="height: 480px; display: flex; flex-direction: column;">
+                            <h3 class="card-title"><i class="fas fa-diagram-project"></i> Path Visualization Map</h3>
+                            <div id="roadmap-visualization-wrap" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;">
+                                <div class="roadmap-canvas-bg" style="position: absolute; width: 100%; height: 100%; pointer-events: none; opacity: 0.05; background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px); background-size: 20px 20px;"></div>
+                                <div id="roadmap-flow-container" style="display: flex; align-items: center; justify-content: space-around; width: 100%; z-index: 2; overflow-x: auto; padding: 1rem; gap: 2rem; position: relative;">
+                                    <!-- Dynamic roadmap nodes -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations Table -->
+                    <div class="card col-12" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Curated Learning Recommendations</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Actionable steps to bridge detected skill gaps and achieve target readiness.</p>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="roadmap-courses-table">
+                                <thead>
+                                    <tr>
+                                        <th>Skill / Gap Area</th>
+                                        <th>Suggested Actions / Course</th>
+                                        <th>Estimated Effort</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic learning recommendations -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== SMART JOB MARKET INSIGHTS PANEL ================== -->
+                <div id="market-insights-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-chart-simple" style="color: var(--accent-purple);"></i> Job Market Intelligence Dashboard</h1>
+                        <p class="panel-subtitle">Monitor trending industry skills, salary distributions, and hiring indicators.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Stat Box 1 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-postings">1,420</div>
+                            <div class="stat-desc">Active Tech Placements</div>
+                        </div>
+                        <!-- Stat Box 2 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-interviews">48</div>
+                            <div class="stat-desc">Interviews Conducted Today</div>
+                        </div>
+                        <!-- Stat Box 3 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-offers">12</div>
+                            <div class="stat-desc">Offers Extended This Week</div>
+                        </div>
+                        <!-- Stat Box 4 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="market-success">84%</div>
+                            <div class="stat-desc">Recruiter Action Rate</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <!-- Heatmap/Skills card -->
+                        <div class="card col-6" style="height: 380px; display: flex; flex-direction: column;">
+                            <h3 class="card-title"><i class="fas fa-fire" style="color: #ff4757;"></i> High-Demand Skills Heatmap</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Skills with highest volume of placement requirements currently.</p>
+                            <div class="skills-demand-grid" id="market-heatmap-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; flex-grow: 1; align-content: start; overflow-y: auto;">
+                                <!-- Dynamic heat tiles -->
+                            </div>
+                        </div>
+                        
+                        <!-- Sectors growth -->
+                        <div class="card col-6" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-chart-line"></i> Industry Sector Growth Indexes</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Hiring expansion rates across technology business sectors.</p>
+                            <div style="position: relative; height: 260px; width: 100%;">
+                                <canvas id="marketSectorsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card col-12" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-sack-dollar"></i> Placement Salary Distributions</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Comparative monthly stipend rates by role index (fresher entry-level brackets).</p>
+                        <div style="position: relative; height: 320px; width: 100%;">
+                            <canvas id="marketSalaryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== MY APPLICATIONS PANEL ================== -->
+                <div id="my-applications-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title">My Application Pipeline</h1>
+                        <p class="panel-subtitle">Track the real-time status of all your submitted internship applications.</p>
+                    </div>
+                    <div id="applications-timeline-container">
+                        <div class="timeline-empty">
+                            <i class="fas fa-inbox" style="font-size: 3rem; color: rgba(255,255,255,0.06);"></i>
+                            <p style="color: var(--text-secondary);">No applications submitted yet. Apply for internships from the Placement Matching dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== STUDENT RESUME BUILDER PANEL ================== -->
+                <div id="resume-builder-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title">Interactive Resume Builder</h1>
+                        <p class="panel-subtitle">Create a professional job-ready resume and export it directly as a formatted PDF.</p>
+                    </div>
+
+                    <div class="grid-container">
+                        <!-- Input form card -->
+                        <div class="card col-6" id="resume-form-col">
+                            <h3 class="card-title"><i class="fas fa-pen-to-square"></i> Construct Profile Details</h3>
+                            <form id="resume-builder-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                <!-- Section 1: Academics & Experience -->
+                                <div class="form-section-header"><i class="fas fa-graduation-cap"></i> Academics & Experience</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="input-group">
+                                        <label>Academic CGPA</label>
+                                        <input type="number" id="builder-cgpa" step="0.01" min="0" max="10" placeholder="8.5" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Work Experience</label>
+                                        <input type="text" id="builder-experience" placeholder="6 Months Intern at Cisco" required>
+                                    </div>
+                                </div>
+
+                                <!-- Section 2: Skills & Credentials -->
+                                <div class="form-section-header"><i class="fas fa-award"></i> Skills & Credentials</div>
+                                <div class="input-group">
+                                    <label>Technical Skills (Comma Separated)</label>
+                                    <input type="text" id="builder-skills" placeholder="python, react, sql, aws, docker" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Completed Certifications (Comma Separated)</label>
+                                    <input type="text" id="builder-certifications" placeholder="AWS Cloud Practitioner, Google Analytics" required>
+                                </div>
+
+                                <!-- Section 3: Featured Projects -->
+                                <div class="form-section-header"><i class="fas fa-folder-open"></i> Key Projects</div>
+                                <div class="input-group">
+                                    <label>Key Project 1 (Name & Technologies)</label>
+                                    <input type="text" id="builder-project1" placeholder="AI Placement Portal (Python, Flask, SQLite)" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Key Project 1 Description</label>
+                                    <textarea id="builder-project1-desc" rows="2" placeholder="Developed an ML-based placement scoring system..."></textarea>
+                                </div>
+
+                                <div class="input-group">
+                                    <label>Key Project 2 (Name & Technologies)</label>
+                                    <input type="text" id="builder-project2" placeholder="E-Commerce Interface (React, Node.js)" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Key Project 2 Description</label>
+                                    <textarea id="builder-project2-desc" rows="2" placeholder="Created responsive user interfaces using styled cards..."></textarea>
+                                </div>
+
+                                <!-- Section 4: Design Configuration -->
+                                <div class="form-section-header"><i class="fas fa-palette"></i> Resume Template Design</div>
+                                <div class="input-group">
+                                    <label>Select Design Theme Style</label>
+                                    <select id="builder-theme" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <option value="theme-corporate">Classic Corporate (Deep Navy & Slate)</option>
+                                        <option value="theme-executive">Modern Executive (Emerald & Charcoal)</option>
+                                        <option value="theme-creative">Creative Developer (Royal Purple & Charcoal)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Section 5: Cover Letter Generator -->
+                                <div class="form-section-header"><i class="fas fa-file-pen"></i> AI Cover Letter Generator</div>
+                                <div style="display: flex; gap: 1rem; align-items: flex-end; width: 100%;">
+                                    <div class="input-group" style="flex-grow: 1;">
+                                        <label>Target Internship Opportunity</label>
+                                        <select id="cover-letter-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                            <option value="">-- Click Save/Compile to Load Options --</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-secondary" id="generate-cover-btn" style="height: 38px; margin-bottom: 4px; padding: 0 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 8px;">
+                                        <i class="fas fa-wand-magic-sparkles"></i> Generate
+                                    </button>
+                                </div>
+                                <div class="input-group" id="cover-letter-result-group" style="display: none; margin-top: 0.5rem;">
+                                    <label>Tailored Letter Draft</label>
+                                    <textarea id="builder-cover-letter" rows="8" style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.15); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem; border-radius: 8px;" placeholder="Your cover letter text..."></textarea>
+                                    <button type="button" class="btn-secondary" id="export-cover-pdf-btn" style="margin-top: 0.5rem; justify-content: center; width: 100%;">
+                                        <i class="fas fa-file-pdf"></i> Export Cover Letter PDF
+                                    </button>
+                                </div>
+
+                                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                    <button type="submit" class="btn-primary" style="flex-grow: 1;">
+                                        <i class="fas fa-floppy-disk"></i> Save & Compile
+                                    </button>
+                                    <button type="button" class="btn-secondary" id="export-resume-pdf-btn">
+                                        <i class="fas fa-file-pdf"></i> Export PDF
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Live resume preview card -->
+                        <div class="card col-6" id="resume-preview-card" style="background: #0f1225; padding: 0;">
+                            <div class="terminal-header" style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1.25rem;">
+                                <div class="terminal-buttons">
+                                    <div class="t-btn t-red"></div>
+                                    <div class="t-btn t-yellow"></div>
+                                    <div class="t-btn t-green"></div>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">A4_RESUME_TEMPLATE_PREVIEW.pdf</span>
+                            </div>
+                            
+                            <!-- Resume Paper container -->
+                            <div class="resume-paper theme-corporate" id="resume-paper-container">
+                                <div class="resume-header">
+                                    <h2 id="preview-name">Candidate Name</h2>
+                                    <p id="preview-email">email@university.edu</p>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h4 class="resume-section-title">Education & Credentials</h4>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 0.25rem; color: #334155;">
+                                        <span>B.Tech Computer Science & Engineering</span>
+                                        <span>CGPA: <strong id="preview-cgpa" style="color: #0f172a;">0.0</strong></span>
+                                    </div>
+                                </div>
+
+                                <div class="resume-section">
+                                    <h4 class="resume-section-title">Technical Skills</h4>
+                                    <p id="preview-skills" class="resume-text">No skills populated.</p>
+                                </div>
+
+                                <div class="resume-section">
+                                    <h4 class="resume-section-title">Professional Experience</h4>
+                                    <p id="preview-experience" class="resume-text">No experience added.</p>
+                                </div>
+
+                                <div class="resume-section">
+                                    <h4 class="resume-section-title">Academic Projects</h4>
+                                    <div class="preview-project-item">
+                                        <strong id="preview-proj1-title">Project 1</strong>
+                                        <p id="preview-proj1-desc" class="resume-project-desc">Description will appear here.</p>
+                                    </div>
+                                    <div class="preview-project-item" style="margin-top: 0.5rem;">
+                                        <strong id="preview-proj2-title">Project 2</strong>
+                                        <p id="preview-proj2-desc" class="resume-project-desc">Description will appear here.</p>
+                                    </div>
+                                </div>
+
+                                <div class="resume-section" style="border-bottom: none;">
+                                    <h4 class="resume-section-title">Certifications</h4>
+                                    <p id="preview-certifications" class="resume-text">No certifications added.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== AI INTERVIEW COACH PANEL ================== -->
+                <div id="mock-interview-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title">AI Mock Interview Prep Coach</h1>
+                        <p class="panel-subtitle">Train on verbal answers, receive technical sub-grades, and get certified scorecards.</p>
+                    </div>
+
+                    <div class="grid-container">
+                        <!-- Assessment configuration card -->
+                        <div class="card col-4">
+                            <h3 class="card-title"><i class="fas fa-gear"></i> Configure Assessment</h3>
+                            
+                            <div class="input-group" style="margin-bottom: 1.25rem;">
+                                <label>Target Internship Role</label>
+                                <select id="interview-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none;">
+                                    <option value="Software Engineer Intern">Software Engineer Intern</option>
+                                    <option value="Machine Learning Intern">Machine Learning Intern</option>
+                                    <option value="Data Scientist Intern">Data Scientist Intern</option>
+                                    <option value="Cloud Architect Intern">Cloud Architect Intern</option>
+                                    <option value="AI Research Intern">AI Research Intern</option>
+                                    <option value="Cybersecurity Specialist Intern">Cybersecurity Specialist Intern</option>
+                                    <option value="Product Management Intern">Product Management Intern</option>
+                                </select>
+                            </div>
+
+                            <button class="btn-primary" id="start-interview-btn" style="width: 100%; justify-content: center; padding: 0.75rem 1rem;">
+                                <i class="fas fa-circle-play"></i> Start Practice Session
+                            </button>
+
+                            <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 600;"><i class="fas fa-circle-question"></i> System Rules</h4>
+                                <ul style="font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem; padding-left: 1.2rem;">
+                                    <li>Assessment consists of verbal questions.</li>
+                                    <li>Use the <i class="fas fa-microphone"></i> icon to answer hands-free.</li>
+                                    <li>Review scorecard & clarity ratings between rounds.</li>
+                                    <li>Click **Next Question** to proceed.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Technical command line Simulator Terminal -->
+                        <div class="card col-8 terminal-card">
+                            <div class="terminal-header">
+                                <div class="terminal-buttons">
+                                    <div class="t-btn t-red"></div>
+                                    <div class="t-btn t-yellow"></div>
+                                    <div class="t-btn t-green"></div>
+                                </div>
+                                <span class="terminal-title">AI_INTERVIEW_COACH_SESSION_v1.0</span>
+                            </div>
+                            
+                            <div class="terminal-body" id="terminal-body">
+                                <div class="terminal-line">
+                                    <span class="terminal-prompt">guest@rvuniversity:~$</span> Select target role and click 'Start Practice Session' to initiate.
+                                </div>
+                            </div>
+                            
+                            <!-- Control input row -->
+                            <div class="terminal-input-row">
+                                <span class="terminal-prompt" id="terminal-prompt-str">guest@rvuniversity:~$</span>
+                                <input type="text" class="terminal-input" id="terminal-input-el" placeholder="Type your answer here..." disabled>
+                                
+                                <button id="mic-btn" class="btn-secondary" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Speak Answer" disabled>
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button id="speaker-btn" class="btn-secondary active" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Mute/Unmute Audio output">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <button id="replay-btn" class="btn-secondary" style="padding: 0.35rem 0.75rem; height: 35px; width: 35px; display: inline-flex; align-items: center; justify-content: center;" title="Replay Question Audio" disabled>
+                                    <i class="fas fa-redo"></i>
+                                </button>
+
+                                <button class="btn-primary" id="terminal-submit-btn" style="padding: 0.35rem 0.75rem; height: 35px;" disabled>
+                                    <i class="fas fa-share"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Performance Trend Graph -->
+                    <div class="card col-12" id="interview-history-container" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-chart-line"></i> Interview Performance Trends</h3>
+                        <div id="interview-history-empty" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-chart-area" style="font-size: 2.5rem; color: rgba(255,255,255,0.06); margin-bottom: 1rem; display: block;"></i>
+                            <p>Complete mock interviews to see your performance trends over time.</p>
+                        </div>
+                        <div id="interview-history-chart-wrap" style="display: none; position: relative; height: 300px; width: 100%;">
+                            <canvas id="interviewTrendChart"></canvas>
+                        </div>
+                        
+                        <!-- Performance Scorecard History Table -->
+                        <div id="interview-history-table-wrap" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600; color: #fff;"><i class="fas fa-award"></i> Verification Certificates & History</h4>
+                            <div class="table-wrapper">
+                                <table class="custom-table" id="interview-sessions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Role Practice Session</th>
+                                            <th>Date & Time</th>
+                                            <th>Technical</th>
+                                            <th>Communication</th>
+                                            <th>Overall Grade</th>
+                                            <th>Action / Certificate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dynamic list of past sessions -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== LEADERBOARD PANEL ================== -->
+                <div id="leaderboard-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-trophy" style="color: #ffd700;"></i> Student Employability Leaderboard</h1>
+                        <p class="panel-subtitle">See how you rank against peers. Scores are based on CGPA, skills, projects, certifications, and experience.</p>
+                    </div>
+                    <div class="card col-12">
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">Rank</th>
+                                        <th>Student Name</th>
+                                        <th>CGPA</th>
+                                        <th>Skills</th>
+                                        <th>Employability Score</th>
+                                        <th>Badges</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Loading rankings...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== COMPANIES PANEL ================== -->
+                <div id="companies-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title"><i class="fas fa-building"></i> Company Profiles & Opportunities</h1>
+                        <p class="panel-subtitle">Explore companies, their culture, and available internship listings.</p>
+                    </div>
+                    <div id="companies-grid" class="companies-grid">
+                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary); grid-column: 1 / -1;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                            <p style="margin-top: 1rem;">Loading company profiles...</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ================== EMPLOYER PIPELINE PANEL ================== -->
+                <div id="employer-panel" class="dashboard-panel">
+                    <div class="panel-header">
+                        <h1 class="panel-title">Recruiter Applicant Tracking Desk</h1>
+                        <p class="panel-subtitle">Review incoming placement profiles, audit technical interview transcript scorecards, and update recruitment status.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                        <button id="view-mode-table-btn" class="btn-primary active" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-table"></i> Table View</button>
+                        <button id="view-mode-kanban-btn" class="btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-columns"></i> Kanban Pipeline</button>
+                        
+                        <div id="kanban-bulk-actions" style="display: none; gap: 0.5rem; align-items: center; margin-left: 1.5rem;">
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Selected (<span id="bulk-select-count">0</span>):</span>
+                            <select id="bulk-status-select" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.35rem 0.5rem; border-radius:6px; font-size:0.8rem; outline:none;">
+                                <option value="">-- Change Stage --</option>
+                                <option value="Screening">Move to Screening</option>
+                                <option value="Interviewing">Move to Interviewing</option>
+                                <option value="Shortlisted">Move to Shortlisted</option>
+                                <option value="Offered">Move to Offered</option>
+                                <option value="Rejected">Move to Rejected</option>
+                            </select>
+                            <button id="bulk-apply-btn" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px;">Apply</button>
+                        </div>
+                        
+                        <button id="comparison-toggle-btn" class="btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; margin-left: auto;"><i class="fas fa-code-compare"></i> Compare Applicants</button>
+                    </div>
+
+                    <div class="card col-12" id="recruiter-table-card">
+                        <h3 class="card-title"><i class="fas fa-users"></i> Applicant Monitoring Desk</h3>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="employer-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="select-all-candidates-checkbox"></th>
+                                        <th>Applicant Student Details</th>
+                                        <th>Target Role</th>
+                                        <th>Match Index</th>
+                                        <th>Technical Mock Grade</th>
+                                        <th>Recruitment Status</th>
+                                        <th>Applied Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic applicant lists -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Kanban Board Container -->
+                    <div id="recruiter-kanban-container" style="display: none; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; width: 100%;">
+                        <div class="kanban-column" data-status="Screening" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Screening</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-screening-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Interviewing" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Interviewing</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-interviewing-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Shortlisted" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Shortlisted</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-shortlisted-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Offered" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Offered</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-offered-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                        
+                        <div class="kanban-column" data-status="Rejected" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                                <span>Rejected</span>
+                                <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
+                            </div>
+                            <div class="kanban-cards-wrapper" id="kanban-rejected-cards" style="display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; min-height: 250px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card col-12" id="recruiter-scheduler-card" style="margin-top: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-calendar-plus"></i> Post Available Interview Slots</h3>
+                        <form id="recruiter-post-slot-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                            <div class="input-group" style="flex: 1; min-width: 150px;">
+                                <label>Date</label>
+                                <input type="date" id="slot-date-input" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 120px;">
+                                <label>Time Slot</label>
+                                <input type="text" id="slot-time-input" placeholder="e.g. 10:00 AM" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 180px;">
+                                <label>Interviewer Name</label>
+                                <input type="text" id="slot-interviewer-input" placeholder="Sundar Pichai" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="height: 38px; border-radius: 8px; padding: 0 1.25rem;"><i class="fas fa-plus"></i> Add Slot</button>
+                        </form>
+                        
+                        <h4 style="font-size: 0.95rem; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color:#fff;">Created Slots</h4>
+                        <div class="table-wrapper">
+                            <table class="custom-table" id="recruiter-slots-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Interviewer</th>
+                                        <th>Booked By Candidate</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="university-panel" class="dashboard-panel">
+                    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h1 class="panel-title">University Placement Analytics</h1>
+                            <p class="panel-subtitle">Monitor readiness metrics, audit cohort performance indices, and project placement improvements.</p>
+                        </div>
+                        <button class="btn-primary" id="export-cohort-csv-btn" style="padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-file-csv"></i> Export Cohort Report</button>
+                    </div>
+
+                    <div class="grid-container">
+                        <!-- Stat box 1 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="uni-students">0</div>
+                            <div class="stat-desc">Students Monitored</div>
+                        </div>
+                        <!-- Stat box 2 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="uni-cgpa">0.0</div>
+                            <div class="stat-desc">Cohort Average CGPA</div>
+                        </div>
+                        <!-- Stat box 3 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="uni-apps">0</div>
+                            <div class="stat-desc">Applications Processed</div>
+                        </div>
+                        <!-- Stat box 4 -->
+                        <div class="card col-3 stat-box">
+                            <div class="stat-value" id="uni-match">0%</div>
+                            <div class="stat-desc">Average Match Index</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-container">
+                        <!-- Donut chart -->
+                        <div class="card col-4" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-chart-pie"></i> Placement Readiness Distribution</h3>
+                            <div style="position: relative; height: 280px; width: 100%;">
+                                <canvas id="readinessDistributionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Linear regression chart -->
+                        <div class="card col-8" style="height: 380px;">
+                            <h3 class="card-title"><i class="fas fa-chart-line"></i> Placement Forecasting (Syllabus Impact Curves)</h3>
+                            <div style="position: relative; height: 280px; width: 100%;">
+                                <canvas id="forecastingChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- 3. TRANSCRIPT DIALOGUE MODAL OVERLAY -->
+    <div id="transcript-modal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-clipboard-check" style="color: var(--accent-blue);"></i> Technical Mock Assessment Audit
+                </h3>
+                <button id="modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; transition: color 0.2s ease;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="stat-box" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.75rem;">
+                    <div id="modal-avg-score" style="font-size: 1.5rem; font-weight: 800; color: var(--accent-blue);">0%</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Average Score</div>
+                </div>
+                <div class="stat-box" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.75rem;">
+                    <div id="modal-tech-score" style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green);">0%</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Technical Acc.</div>
+                </div>
+                <div class="stat-box" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.75rem;">
+                    <div id="modal-comm-score" style="font-size: 1.5rem; font-weight: 800; color: var(--accent-purple);">0%</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Clarity Score</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                <div style="margin-bottom: 0.25rem;">Candidate Email: <strong id="modal-student-email" style="color: #fff;">email@university.edu</strong></div>
+                <div>Detected Filler Crutches: <strong id="modal-filler-words" style="color: var(--accent-red);">None</strong></div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: #fff;">Full Dialogue Logs</h4>
+                <div id="modal-transcript-text" style="background: #030408; font-family: 'Fira Code', monospace; font-size: 0.8rem; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); height: 200px; overflow-y: auto; white-space: pre-wrap; color: #a7f3d0; line-height: 1.5;">
+                    Transcript loading...
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn-primary" id="modal-download-report-btn" style="flex-grow: 1; justify-content: center; padding: 0.75rem;">
+                    <i class="fas fa-file-pdf"></i> Download PDF Scorecard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
+    <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
+        <div class="notif-dropdown-header">
+            <span><i class="fas fa-bell"></i> Notifications</span>
+            <button id="notif-mark-read-btn" class="notif-mark-read">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list">
+            <div class="notif-empty">No notifications yet.</div>
+        </div>
+    </div>
+
+    <!-- Hidden printable container for cover letter -->
+    <div id="cover-letter-paper-container" class="resume-paper" style="display: none; background: #fff; padding: 25mm 20mm; color: #000; font-family: 'Outfit', sans-serif; box-shadow: none;">
+        <div id="cover-letter-print-text" style="white-space: pre-wrap; line-height: 1.6; font-size: 1rem; color: #000;"></div>
+    </div>
+
+    <!-- 5. ONBOARDING TOUR MODAL OVERLAY -->
+    <div id="onboarding-tour-overlay" class="tour-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif;">
+        <div class="tour-card" id="tour-card-el" style="background: #0f1225; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 1rem;">
+            <div class="tour-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <span class="tour-step-indicator" id="tour-step-idx" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold;">Step 1 of 5</span>
+                <button id="tour-skip-btn" class="tour-skip-btn" style="background: transparent; border: none; color: var(--accent-red); font-size: 0.8rem; cursor: pointer; font-weight: bold;">Skip Tour</button>
+            </div>
+            <div class="tour-body">
+                <h4 class="tour-title" id="tour-title-el" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.5rem;">Welcome to PlacementIntel!</h4>
+                <p class="tour-text" id="tour-text-el" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">Let's walk you through the key modules of the system.</p>
+            </div>
+            <div class="tour-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                <button id="tour-prev-btn" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: none; border-radius: 6px;">Back</button>
+                <button id="tour-next-btn" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; margin-left: auto;">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. CERTIFICATE VERIFICATION MODAL -->
+    <div id="certificate-modal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-certificate" style="color: #ffd700;"></i> Employability Verification Certificate
+                </h3>
+                <button id="cert-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="certificate-print-area" style="background: #fff; padding: 2.5rem; border: 8px double #ffd700; border-radius: 10px; color: #0f172a; text-align: center; font-family: 'Georgia', serif; position: relative; margin-bottom: 1.5rem;">
+                <div style="font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin-bottom: 1rem; font-family: 'Outfit', sans-serif; font-weight: 700;">Certificate of Completion</div>
+                <div style="font-size: 0.85rem; font-style: italic; color: #64748b; margin-bottom: 1.5rem;">This credentials verify that</div>
+                <div style="font-size: 1.8rem; font-weight: bold; color: #1e293b; border-bottom: 2px solid #cbd5e1; display: inline-block; padding: 0 2rem 0.5rem 2rem; margin-bottom: 1.5rem;" id="cert-student-name">Ritvik Medam</div>
+                <div style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 1.5rem;">
+                    has successfully achieved an average grade of <strong id="cert-score-val" style="color: #0f172a; font-size: 1.1rem;">85%</strong> on the <br>
+                    <strong id="cert-role-val" style="color: #1e293b; font-size: 1rem;">Machine Learning Intern</strong> Mock Assessment.<br>
+                    Demonstrating competent core tech logic and communication metrics.
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8;" id="cert-date-val">Verified on 2026-07-17</div>
+                <div style="position: absolute; bottom: 15px; right: 20px; font-family: sans-serif; font-size: 0.55rem; color: #cbd5e1;">Verification Code: PI-MOCK-3942</div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn-primary" id="print-cert-btn" style="flex-grow: 1; justify-content: center; padding: 0.75rem; border-radius: 8px;">
+                    <i class="fas fa-print"></i> Print Official Certificate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. CANDIDATE COMPARISON MODAL -->
+    <div id="candidate-comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-code-compare" style="color: var(--accent-blue);"></i> Side-by-Side Candidate Comparison
+                </h3>
+                <button id="compare-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="grid-container" style="gap: 1.5rem;">
+                <!-- Left selections and scores -->
+                <div class="card col-5" style="display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Select Applicants to Compare</h4>
+                    
+                    <div class="input-group">
+                        <label>Candidate A</label>
+                        <select id="compare-candidate-a" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Candidate B</label>
+                        <select id="compare-candidate-b" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;" id="compare-summary-metrics">
+                        <!-- Dynamic compared stats comparison -->
+                    </div>
+                </div>
+                
+                <!-- Comparison Radar Chart -->
+                <div class="card col-7" style="height: 380px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Overlay Index Radar</h4>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="candidateCompareChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
+    <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
+        <div class="notif-dropdown-header">
+            <span><i class="fas fa-bell"></i> Notifications</span>
+            <button id="notif-mark-read-btn" class="notif-mark-read">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list">
+            <div class="notif-empty">No notifications yet.</div>
+        </div>
+    </div>
+
+    <!-- 8. FLOATING AI ASSISTANT CHATBOT -->
+    <div id="chatbot-float-trigger" class="chatbot-trigger" style="position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,242,254,0.3); z-index: 9999; transition: transform 0.2s;">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+    
+    <div id="chatbot-window" class="chatbot-window" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 340px; height: 420px; background: #0f1225; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999; flex-direction: column; overflow: hidden; font-family: 'Outfit', sans-serif;">
+        <div style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%;"></div>
+                <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">AI Placement Assistant</span>
+            </div>
+            <button id="chatbot-close-btn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem;"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="chatbot-chat-body" style="flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="chat-msg ai-msg" style="align-self: flex-start; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.8rem; max-width: 85%; color: #e2e8f0; line-height: 1.4;">
+                Hello! I am your AI placement helper. Ask me about resume builder formats, interview preps, skills gap, or trending salaries!
+            </div>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); padding: 0.5rem; background: rgba(0,0,0,0.2); display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" id="chatbot-input-el" placeholder="Type a message..." style="flex-grow: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            <button class="btn-primary" id="chatbot-send-btn" style="padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; border: none; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- JS Core -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -115,6 +115,7 @@
                     <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
                 </div>
                 <div class="sidebar-actions">
+                    <button id="restart-tour-btn" class="theme-toggle-btn" title="Platform Feature Tour" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-compass"></i></button>
                     <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-moon"></i></button>
                     <button id="notif-bell-btn" class="notif-bell" title="Notifications">
                         <i class="fas fa-bell"></i>
@@ -1096,17 +1097,21 @@
     </div>
 
     <!-- 5. ONBOARDING TOUR MODAL OVERLAY -->
-    <div id="onboarding-tour-overlay" class="tour-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif;">
-        <div class="tour-card" id="tour-card-el" style="background: #0f1225; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 1rem;">
+    <div id="onboarding-tour-overlay" class="tour-overlay" style="display: none;">
+        <div id="onboarding-tour-backdrop"></div>
+        <div class="tour-card" id="tour-card-el">
             <div class="tour-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
                 <span class="tour-step-indicator" id="tour-step-idx" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold;">Step 1 of 5</span>
                 <button id="tour-skip-btn" class="tour-skip-btn" style="background: transparent; border: none; color: var(--accent-red); font-size: 0.8rem; cursor: pointer; font-weight: bold;">Skip Tour</button>
             </div>
-            <div class="tour-body">
+            <div class="tour-body" style="margin-top: 0.5rem;">
+                <div class="tour-location-badge" id="tour-location-badge">
+                    <i class="fas fa-location-dot"></i> <span id="tour-location-text">Sidebar ➔ Placement Matching</span>
+                </div>
                 <h4 class="tour-title" id="tour-title-el" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.5rem;">Welcome to PlacementIntel!</h4>
                 <p class="tour-text" id="tour-text-el" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">Let's walk you through the key modules of the system.</p>
             </div>
-            <div class="tour-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <div class="tour-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
                 <button id="tour-prev-btn" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: none; border-radius: 6px;">Back</button>
                 <button id="tour-next-btn" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; margin-left: auto;">Next</button>
             </div>

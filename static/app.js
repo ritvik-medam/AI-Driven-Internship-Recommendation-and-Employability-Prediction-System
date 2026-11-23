@@ -2040,41 +2040,128 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------- Onboarding Tour -----------------
     const tourSteps = [
         {
-            title: "Resume Parser & Analytics",
-            text: "Upload your resume PDF to calculate placement readiness scores and job matches instantly.",
-            elementId: "upload-zone"
+            title: "Resume Parser & Employability Score",
+            location: "Left Sidebar ➔ Placement Matching ➔ Resume Parser",
+            tabId: "student-dashboard",
+            targetSelector: "#upload-zone",
+            beaconLabel: "Resume Parser",
+            text: "Upload your resume (PDF/TXT) here. Our NLP parser and ML Random Forest classifier extract your skills, predict your Employability Score, and generate resume recommendations."
         },
         {
             title: "Interactive Resume Builder",
-            text: "Generate premium corporate resume templates or craft matching cover letters.",
-            elementId: "resume-builder-panel"
+            location: "Left Sidebar ➔ Resume Builder",
+            tabId: "resume-builder-panel",
+            targetSelector: "#resume-builder-form",
+            beaconLabel: "Resume Builder Form",
+            text: "Build and customize your resume with real-time live A4 preview, switch corporate color templates, and generate tailored cover letters for your applications."
         },
         {
-            title: "AI Interview Practice",
-            text: "Prepare with realistic verbal mock assessments and review clarity rating graphs.",
-            elementId: "mock-interview-panel"
+            title: "AI Technical Mock Interview Coach",
+            location: "Left Sidebar ➔ AI Interview Coach",
+            tabId: "mock-interview-panel",
+            targetSelector: ".terminal-card",
+            beaconLabel: "AI Interview Terminal",
+            text: "Practice technical verbal interviews in this terminal. The AI evaluates concept accuracy, detects verbal filler words, and awards verification certificates for scores ≥ 70%."
         },
         {
-            title: "Job Market Trends",
-            text: "Inspect real-time skill demand heatmaps and entry-level stipend curves.",
-            elementId: "market-insights-panel"
+            title: "Job Market Trends & Intelligence",
+            location: "Left Sidebar ➔ Market Insights",
+            tabId: "market-insights-panel",
+            targetSelector: "#market-insights-panel .grid-container",
+            beaconLabel: "Market Intelligence",
+            text: "Inspect active technology placement numbers, industry sector distributions, trending skill requirements, and entry-level stipend curves across top tech domains."
         },
         {
-            title: "Employability Leaderboard",
-            text: "Check rankings and earn polyglot, scholar, or interview-ready badges.",
-            elementId: "leaderboard-panel"
+            title: "Cohort Placement Leaderboard",
+            location: "Left Sidebar ➔ Leaderboard",
+            tabId: "leaderboard-panel",
+            targetSelector: "#leaderboard-table",
+            beaconLabel: "Rankings & Badges",
+            text: "Track your placement readiness rank among fellow students, view readiness scores, and earn Polyglot, Scholar, and Interview-Ready achievement badges."
         }
     ];
 
     let currentTourStep = 0;
+    let tourActiveTarget = null;
 
-    function startOnboardingTour() {
-        if (localStorage.getItem('tour_completed')) return;
+    function startOnboardingTour(force = false) {
+        if (!force && localStorage.getItem('tour_completed_v2')) return;
 
         currentTourStep = 0;
-        document.getElementById('onboarding-tour-overlay').style.display = 'flex';
-        showTourStep(0);
+        const overlay = document.getElementById('onboarding-tour-overlay');
+        if (overlay) {
+            overlay.style.display = 'block';
+            showTourStep(0);
+        }
     }
+
+    function positionTourCard(target) {
+        const card = document.getElementById('tour-card-el');
+        if (!card || !target) return;
+
+        const rect = target.getBoundingClientRect();
+        const cardWidth = Math.min(380, window.innerWidth - 30);
+        card.style.width = `${cardWidth}px`;
+        card.style.position = 'fixed';
+        card.style.zIndex = '10005';
+
+        const vW = window.innerWidth;
+        const vH = window.innerHeight;
+        const cardH = card.offsetHeight || 260;
+
+        let left, top;
+        let arrowClass = 'arrow-left';
+
+        // 1. Try placing to the right of target if there is room
+        if (rect.right + cardWidth + 25 < vW && rect.right > 280) {
+            left = rect.right + 20;
+            top = Math.max(25, Math.min(vH - cardH - 25, rect.top + (rect.height / 2) - (cardH / 2)));
+            arrowClass = 'arrow-left';
+        }
+        // 2. Try placing below target
+        else if (rect.bottom + cardH + 30 < vH && rect.bottom > 0) {
+            left = Math.max(300, Math.min(vW - cardWidth - 25, rect.left + (rect.width / 2) - (cardWidth / 2)));
+            top = rect.bottom + 16;
+            arrowClass = 'arrow-top';
+        }
+        // 3. Try placing above target
+        else if (rect.top - cardH - 30 > 0) {
+            left = Math.max(300, Math.min(vW - cardWidth - 25, rect.left + (rect.width / 2) - (cardWidth / 2)));
+            top = Math.max(20, rect.top - cardH - 16);
+            arrowClass = 'arrow-bottom';
+        }
+        // 4. Try placing to the left of target (outside sidebar width 280px)
+        else if (rect.left - cardWidth - 25 > 280) {
+            left = rect.left - cardWidth - 20;
+            top = Math.max(25, Math.min(vH - cardH - 25, rect.top + (rect.height / 2) - (cardH / 2)));
+            arrowClass = 'arrow-right';
+        }
+        // Fallback: Safe centered position in workspace
+        else {
+            left = Math.max(300, Math.min(vW - cardWidth - 25, (vW + 280) / 2 - cardWidth / 2));
+            top = Math.max(30, Math.min(vH - cardH - 30, vH / 2 - cardH / 2));
+            arrowClass = 'no-arrow';
+        }
+
+        card.style.left = `${Math.round(left)}px`;
+        card.style.top = `${Math.round(top)}px`;
+        card.className = `tour-card ${arrowClass}`;
+    }
+
+    // Reposition card on resize or scroll while tour is open
+    window.addEventListener('resize', () => {
+        const overlay = document.getElementById('onboarding-tour-overlay');
+        if (overlay && overlay.style.display !== 'none' && tourActiveTarget) {
+            positionTourCard(tourActiveTarget);
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        const overlay = document.getElementById('onboarding-tour-overlay');
+        if (overlay && overlay.style.display !== 'none' && tourActiveTarget) {
+            positionTourCard(tourActiveTarget);
+        }
+    }, true);
 
     function showTourStep(idx) {
         const step = tourSteps[idx];
@@ -2082,15 +2169,46 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('tour-title-el').textContent = step.title;
         document.getElementById('tour-text-el').textContent = step.text;
 
-        // Remove previous spotlight class
-        document.querySelectorAll('.tour-spotlight').forEach(el => el.classList.remove('tour-spotlight'));
+        const locText = document.getElementById('tour-location-text');
+        if (locText) locText.textContent = step.location;
 
-        // Target spotlight highlight
-        const target = document.getElementById(step.elementId) || document.querySelector(`[data-tab="${step.elementId}"]`);
-        if (target) {
-            target.classList.add('tour-spotlight');
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Remove previous spotlights, beacons, and sidebar highlights
+        document.querySelectorAll('.tour-spotlight').forEach(el => el.classList.remove('tour-spotlight'));
+        document.querySelectorAll('.tour-sidebar-highlight').forEach(el => el.classList.remove('tour-sidebar-highlight'));
+        document.querySelectorAll('.tour-locator-beacon').forEach(el => el.remove());
+
+        // Switch to the relevant tab in the UI
+        const tabBtn = document.querySelector(`.menu-btn[data-tab="${step.tabId}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+            tabBtn.classList.add('tour-sidebar-highlight');
         }
+
+        // Wait for tab transition and layout
+        setTimeout(() => {
+            const target = document.querySelector(step.targetSelector) || tabBtn;
+            tourActiveTarget = target;
+            if (target) {
+                target.classList.add('tour-spotlight');
+
+                // Attach pulsating beacon pin
+                const beacon = document.createElement('div');
+                beacon.className = 'tour-locator-beacon';
+                beacon.innerHTML = `<i class="fas fa-crosshairs"></i> ${step.beaconLabel}`;
+                
+                const computedPos = window.getComputedStyle(target).position;
+                if (computedPos === 'static') {
+                    target.style.position = 'relative';
+                }
+                target.appendChild(beacon);
+
+                // Smoothly scroll target into view
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Position card adjacent to target
+                positionTourCard(target);
+            }
+        }, 150);
 
         document.getElementById('tour-prev-btn').style.display = idx > 0 ? 'inline-block' : 'none';
         document.getElementById('tour-next-btn').textContent = idx === tourSteps.length - 1 ? 'Finish' : 'Next';
@@ -2114,10 +2232,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('tour-skip-btn').addEventListener('click', closeTour);
 
+    const tourBackdrop = document.getElementById('onboarding-tour-backdrop');
+    if (tourBackdrop) {
+        tourBackdrop.addEventListener('click', closeTour);
+    }
+
+    const restartTourBtn = document.getElementById('restart-tour-btn');
+    if (restartTourBtn) {
+        restartTourBtn.addEventListener('click', () => {
+            startOnboardingTour(true);
+        });
+    }
+
     function closeTour() {
         document.getElementById('onboarding-tour-overlay').style.display = 'none';
         document.querySelectorAll('.tour-spotlight').forEach(el => el.classList.remove('tour-spotlight'));
-        localStorage.setItem('tour_completed', 'true');
+        document.querySelectorAll('.tour-sidebar-highlight').forEach(el => el.classList.remove('tour-sidebar-highlight'));
+        document.querySelectorAll('.tour-locator-beacon').forEach(el => el.remove());
+        tourActiveTarget = null;
+        localStorage.setItem('tour_completed_v2', 'true');
+
+        // Return to student dashboard
+        const defaultTab = document.querySelector('.menu-btn[data-tab="student-dashboard"]');
+        if (defaultTab) defaultTab.click();
     }
 
     // ----------------- Recruiter Kanban Pipeline -----------------

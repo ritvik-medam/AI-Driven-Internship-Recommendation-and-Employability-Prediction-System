@@ -286,6 +286,56 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('login-password').value = password;
     };
 
+    // ----------------- Date & Time Helpers -----------------
+    function parseUTCDate(dateStr) {
+        if (!dateStr) return null;
+        let s = String(dateStr).trim();
+        if (!s.includes('T')) s = s.replace(' ', 'T');
+        if (!s.endsWith('Z') && !s.includes('+')) {
+            s += 'Z';
+        }
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatFriendlyDate(dateStr) {
+        if (!dateStr) return 'N/A';
+        const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const y = parseInt(match[1]);
+            const m = parseInt(match[2]) - 1;
+            const d = parseInt(match[3]);
+            const dt = new Date(y, m, d);
+            return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        const d = parseUTCDate(dateStr);
+        if (d) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return dateStr;
+    }
+
+    function formatTimeAgoOrLocal(timestampStr) {
+        if (!timestampStr) return '';
+        const d = parseUTCDate(timestampStr);
+        if (!d) return timestampStr;
+
+        const now = new Date();
+        const diffMs = now.getTime() - d.getTime();
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHr = Math.floor(diffMin / 60);
+        const diffDays = Math.floor(diffHr / 24);
+
+        if (diffSec < 60) return 'Just now';
+        if (diffMin < 60) return `${diffMin}m ago`;
+        if (diffHr < 24) {
+            return `Today at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        if (diffDays === 1) {
+            return `Yesterday at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
     // ----------------- Tab Navigation -----------------
     menuButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -990,9 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 data.forEach(c => {
                     const tr = document.createElement('tr');
-                    const cleanDateStr = c.applied_at ? c.applied_at.replace(" ", "T") : "";
-                    const dObj = new Date(cleanDateStr);
-                    const date = isNaN(dObj.getTime()) ? (c.applied_at || "N/A") : dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const date = formatFriendlyDate(c.applied_at);
 
                     const mockGrade = c.interview_score !== null ?
                         `<span class="clickable-score score-badge" data-email="${c.student_email}" data-role="${c.internship_title}" style="color:var(--accent-green); border-color:rgba(0,245,160,0.3); cursor:pointer;">${c.interview_score}/100</span>` :
@@ -1107,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div><strong>Email:</strong> ${d.student_email}</div>
                     <div><strong>Target Assessment Role:</strong> ${d.role}</div>
                     <div><strong>Verbal Filler Phrases Found:</strong> ${d.filler_words}</div>
-                    <div><strong>Completed At:</strong> ${d.completed_at ? new Date(d.completed_at.replace(" ", "T")).toLocaleString() : "N/A"}</div>
+                    <div><strong>Completed At:</strong> ${d.completed_at ? (parseUTCDate(d.completed_at) ? parseUTCDate(d.completed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : d.completed_at) : "N/A"}</div>
                 </div>
                 <div class="score-grid">
                     <div class="score-card">
@@ -1375,9 +1423,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const card = document.createElement('div');
                     card.className = 'timeline-card';
 
-                    const cleanDate = app.applied_at ? app.applied_at.replace(' ', 'T') : '';
-                    const dateObj = new Date(cleanDate);
-                    const dateStr = isNaN(dateObj.getTime()) ? (app.applied_at || 'N/A') : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const dateStr = formatFriendlyDate(app.applied_at);
 
                     const isRejected = app.status === 'Rejected';
                     let currentStageIndex = pipelineStages.indexOf(app.status);
@@ -1554,9 +1600,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.notifications.forEach(n => {
                     const item = document.createElement('div');
                     item.className = `notif-item ${n.is_read ? '' : 'unread'}`;
-                    const cleanDate = n.created_at ? n.created_at.replace(' ', 'T') : '';
-                    const dObj = new Date(cleanDate);
-                    const timeStr = isNaN(dObj.getTime()) ? '' : dObj.toLocaleString();
+                    const timeStr = formatTimeAgoOrLocal(n.created_at);
                     item.innerHTML = `
                     <div class="notif-icon"><i class="fas ${n.icon || 'fa-bell'}"></i></div>
                     <div>
@@ -2500,9 +2544,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sessions.forEach(session => {
             const tr = document.createElement('tr');
 
-            const cleanDateStr = session.completed_at ? session.completed_at.replace(" ", "T") : "";
-            const dObj = new Date(cleanDateStr);
-            const date = isNaN(dObj.getTime()) ? (session.completed_at || "N/A") : dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const dObj = parseUTCDate(session.completed_at);
+            const date = dObj ? dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : (session.completed_at || "N/A");
 
             const certBtn = session.average_score >= 70 ?
                 `<button class="btn-primary cert-view-btn" data-name="${currentUserSession.name}" data-score="${session.average_score}" data-role="${session.role}" data-date="${date}" style="padding:0.25rem 0.5rem; font-size:0.75rem; border-radius:6px; border:none; cursor:pointer;"><i class="fas fa-certificate"></i> View Certificate</button>` :
@@ -2669,7 +2712,7 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
                         `<span class="score-badge" style="color:var(--accent-blue); border-color:rgba(0,242,254,0.25);">Available</span>`;
 
                     tr.innerHTML = `
-                    <td style="color:#fff; font-weight:600;">${slot.slot_date}</td>
+                    <td style="color:#fff; font-weight:600;">${formatFriendlyDate(slot.slot_date)}</td>
                     <td>${slot.slot_time}</td>
                     <td>${slot.interviewer_name}</td>
                     <td>${bookedCol}</td>
@@ -2715,7 +2758,7 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
                     }
 
                     card.innerHTML = `
-                    <div class="scheduler-slot-date">${slot.slot_date}</div>
+                    <div class="scheduler-slot-date"><i class="fas fa-calendar-day" style="margin-right:0.35rem; color:var(--accent-blue);"></i>${formatFriendlyDate(slot.slot_date)}</div>
                     <div class="scheduler-slot-time">${slot.slot_time}</div>
                     <div class="scheduler-slot-interviewer"><i class="fas fa-user-tie" style="margin-right:0.35rem;"></i>${slot.interviewer_name}</div>
                     <div style="margin-top:0.5rem;">${actionBtnHTML}</div>

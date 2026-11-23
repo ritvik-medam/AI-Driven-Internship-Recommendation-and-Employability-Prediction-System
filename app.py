@@ -232,10 +232,12 @@ def init_db():
     # Pre-seed interview slots if empty
     cursor.execute("SELECT COUNT(*) FROM interview_slots")
     if cursor.fetchone()[0] == 0:
+        from datetime import date, timedelta
+        today = date.today()
         mock_slots = [
-            ("recruiter@google.com", "2026-07-20", "10:00 AM", "Sundar Pichai", None, "Available"),
-            ("recruiter@google.com", "2026-07-20", "02:00 PM", "Jeff Dean", None, "Available"),
-            ("recruiter@google.com", "2026-07-21", "11:30 AM", "Sanjay Ghemawat", None, "Available")
+            ("recruiter@google.com", (today + timedelta(days=1)).strftime("%Y-%m-%d"), "10:00 AM", "Sundar Pichai", None, "Available"),
+            ("recruiter@google.com", (today + timedelta(days=2)).strftime("%Y-%m-%d"), "02:00 PM", "Jeff Dean", None, "Available"),
+            ("recruiter@google.com", (today + timedelta(days=3)).strftime("%Y-%m-%d"), "11:30 AM", "Sanjay Ghemawat", None, "Available")
         ]
         cursor.executemany("INSERT INTO interview_slots (recruiter_email, slot_date, slot_time, interviewer_name, booked_by_student_email, status) VALUES (?, ?, ?, ?, ?, ?)", mock_slots)
         conn.commit()
@@ -1734,8 +1736,16 @@ def book_scheduler_slot():
     conn.commit()
     conn.close()
     
-    insert_notification(session['email'], f"Your mock interview slot with {slot['interviewer_name']} on {slot['slot_date']} has been confirmed.", "fa-calendar-check")
-    insert_notification(slot['recruiter_email'], f"Candidate {session['email']} has booked the interview slot on {slot['slot_date']} at {slot['slot_time']}.", "fa-calendar-check")
+    formatted_date = slot['slot_date']
+    try:
+        from datetime import datetime
+        d_parsed = datetime.strptime(slot['slot_date'], '%Y-%m-%d')
+        formatted_date = d_parsed.strftime('%b %d, %Y')
+    except Exception:
+        pass
+
+    insert_notification(session['email'], f"Your mock interview slot with {slot['interviewer_name']} on {formatted_date} has been confirmed.", "fa-calendar-check")
+    insert_notification(slot['recruiter_email'], f"Candidate {session['email']} has booked the interview slot on {formatted_date} at {slot['slot_time']}.", "fa-calendar-check")
     
     return jsonify({'success': True, 'message': 'Interview slot booked successfully!'})
 

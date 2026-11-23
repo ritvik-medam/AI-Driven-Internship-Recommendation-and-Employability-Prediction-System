@@ -305,8 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadResumeBuilderData();
             } else if (targetId === 'my-applications-panel') {
                 fetchMyApplications();
-            } else if (targetId === 'leaderboard-panel') {
-                fetchLeaderboard();
             } else if (targetId === 'companies-panel') {
                 fetchCompanies();
             } else if (targetId === 'mock-interview-panel') {
@@ -1523,57 +1521,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // ----------------- Feature 4: Leaderboard -----------------
-    function fetchLeaderboard() {
-        const tbody = document.querySelector('#leaderboard-table tbody');
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading rankings...</td></tr>';
-
-        fetch('/api/leaderboard')
-            .then(res => res.json())
-            .then(data => {
-                tbody.innerHTML = '';
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">No student profiles found.</td></tr>';
-                    return;
-                }
-
-                data.forEach(entry => {
-                    const tr = document.createElement('tr');
-                    const isMe = currentUserSession && entry.email === currentUserSession.email;
-                    if (isMe) tr.className = 'lb-highlight-row';
-
-                    let rankClass = 'rank-other';
-                    if (entry.rank === 1) rankClass = 'rank-1';
-                    else if (entry.rank === 2) rankClass = 'rank-2';
-                    else if (entry.rank === 3) rankClass = 'rank-3';
-
-                    let badgesHTML = '';
-                    (entry.badges || []).forEach(b => {
-                        badgesHTML += `<span class="lb-badge" style="background: ${b.color}15; color: ${b.color}; border: 1px solid ${b.color}30;"><i class="fas ${b.icon}"></i> ${b.label}</span>`;
-                    });
-
-                    tr.innerHTML = `
-                    <td>
-                        <div class="rank-badge ${rankClass}">${entry.rank}</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600; color: #fff;">${entry.name}${isMe ? ' <span style="color: var(--accent-blue); font-size: 0.7rem;">(You)</span>' : ''}</div>
-                        <div style="font-size: 0.72rem; color: var(--text-secondary);">${entry.email}</div>
-                    </td>
-                    <td style="font-weight: 600; color: var(--accent-green);">${entry.cgpa || 'N/A'}</td>
-                    <td>${entry.skills_count} skills</td>
-                    <td>
-                        <div class="lb-score-bar">
-                            <div class="lb-score-track"><div class="lb-score-fill" style="width: ${entry.score}%;"></div></div>
-                            <span class="lb-score-val">${entry.score}</span>
-                        </div>
-                    </td>
-                    <td>${badgesHTML || '<span style="color: var(--text-secondary); font-size: 0.75rem;">None yet</span>'}</td>`;
-                    tbody.appendChild(tr);
-                });
-            });
-    }
-
     // ----------------- Feature 5: Notifications -----------------
     let notifPollingInterval = null;
 
@@ -2070,14 +2017,6 @@ document.addEventListener('DOMContentLoaded', () => {
             targetSelector: "#market-insights-panel .grid-container",
             beaconLabel: "Market Intelligence",
             text: "Inspect active technology placement numbers, industry sector distributions, trending skill requirements, and entry-level stipend curves across top tech domains."
-        },
-        {
-            title: "Cohort Placement Leaderboard",
-            location: "Left Sidebar ➔ Leaderboard",
-            tabId: "leaderboard-panel",
-            targetSelector: "#leaderboard-table",
-            beaconLabel: "Rankings & Badges",
-            text: "Track your placement readiness rank among fellow students, view readiness scores, and earn Polyglot, Scholar, and Interview-Ready achievement badges."
         }
     ];
 

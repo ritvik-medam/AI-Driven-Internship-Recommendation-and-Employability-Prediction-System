@@ -143,15 +143,39 @@
                     <div class="grid-container">
                         <!-- Upload Card -->
                         <div class="card col-4">
-                            <h3 class="card-title"><i class="fas fa-cloud-arrow-up"></i> Resume Parser</h3>
+                            <h3 class="card-title"><i class="fas fa-cloud-arrow-up"></i> Resume & Documents</h3>
                             <div class="upload-zone" id="upload-zone">
                                 <i class="fas fa-file-pdf"></i>
                                 <p id="file-label">Upload or drag resume (PDF, TXT)</p>
                                 <input type="file" id="resume-input" accept=".pdf,.txt">
                             </div>
                             <div class="loader" id="upload-loader"></div>
+
+                            <!-- Active Resume Banner -->
+                            <div id="active-resume-banner" style="display: none; margin-top: 0.85rem; padding: 0.6rem 0.8rem; background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 8px; font-size: 0.8rem; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">
+                                    <i class="fas fa-file-circle-check" style="color: var(--accent-green); font-size: 1rem; flex-shrink: 0;"></i>
+                                    <span id="active-resume-name" style="color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis;">resume.pdf</span>
+                                </div>
+                                <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+                                    <a id="btn-download-active-resume" href="#" class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; text-decoration: none;" title="Download Original Document">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Upload History Toggle & List -->
+                            <div id="resume-history-section" style="display: none; margin-top: 0.75rem;">
+                                <button id="btn-toggle-resume-history" type="button" class="btn-secondary" style="width: 100%; font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem;">
+                                    <span><i class="fas fa-clock-rotate-left" style="color: var(--accent-blue); margin-right: 0.35rem;"></i> Saved Documents (<span id="resume-history-count">0</span>)</span>
+                                    <i class="fas fa-chevron-down" id="resume-history-chevron"></i>
+                                </button>
+                                <div id="resume-history-list" style="display: none; margin-top: 0.5rem; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 0.2rem;">
+                                    <!-- Dynamic uploaded documents list -->
+                                </div>
+                            </div>
                             
-                            <div id="mini-readiness-sec" style="margin-top: 1.5rem; display: none; text-align: center;">
+                            <div id="mini-readiness-sec" style="margin-top: 1.25rem; display: none; text-align: center;">
                                 <div id="readiness-badge" class="badge-readiness medium">Medium Readiness</div>
                             </div>
                         </div>
@@ -859,6 +883,7 @@
                                         <th>Technical Mock Grade</th>
                                         <th>Recruitment Status</th>
                                         <th>Applied Date</th>
+                                        <th>Resume</th>
                                     </tr>
                                 </thead>
                                 <tbody>

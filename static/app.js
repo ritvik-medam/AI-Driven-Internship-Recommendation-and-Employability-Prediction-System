@@ -90,6 +90,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const placementsTableContainer = document.getElementById('placements-table-container');
     const miniReadinessSec = document.getElementById('mini-readiness-sec');
 
+    // Document & Resume Persistence Elements
+    const activeResumeBanner = document.getElementById('active-resume-banner');
+    const activeResumeName = document.getElementById('active-resume-name');
+    const btnDownloadActiveResume = document.getElementById('btn-download-active-resume');
+    const resumeHistorySection = document.getElementById('resume-history-section');
+    const btnToggleResumeHistory = document.getElementById('btn-toggle-resume-history');
+    const resumeHistoryCount = document.getElementById('resume-history-count');
+    const resumeHistoryList = document.getElementById('resume-history-list');
+    const resumeHistoryChevron = document.getElementById('resume-history-chevron');
+
+    if (btnToggleResumeHistory) {
+        btnToggleResumeHistory.addEventListener('click', () => {
+            const isHidden = !resumeHistoryList.style.display || resumeHistoryList.style.display === 'none';
+            resumeHistoryList.style.display = isHidden ? 'flex' : 'none';
+            if (resumeHistoryChevron) {
+                resumeHistoryChevron.className = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+            }
+        });
+    }
+
     // ----------------- Resume Builder Elements -----------------
     const resumeBuilderForm = document.getElementById('resume-builder-form');
     const exportResumePdfBtn = document.getElementById('export-resume-pdf-btn');
@@ -195,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadStudentProfileDetails();
             startNotificationPolling();
             fetchStudentSlots();
+            fetchActiveStudentResume();
             setTimeout(startOnboardingTour, 1000);
         } else if (user.role === 'recruiter') {
             recruiterMenu.style.display = 'flex';
@@ -275,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/auth/logout', { method: 'POST' })
             .then(() => {
                 currentUserSession = null;
+                resetStudentDashboardState();
                 showAuthPortal();
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
             });
@@ -334,6 +356,143 @@ document.addEventListener('DOMContentLoaded', () => {
             return `Yesterday at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         }
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ----------------- Account Document & Resume State Helpers -----------------
+    function resetStudentDashboardState() {
+        if (profilePlaceholder) profilePlaceholder.style.display = 'flex';
+        if (critiqueReportCard) critiqueReportCard.style.display = 'none';
+        if (profileDetailedContainer) profileDetailedContainer.style.display = 'none';
+        if (profileDetailsRow) profileDetailsRow.style.display = 'none';
+        if (placementsTableContainer) placementsTableContainer.style.display = 'none';
+        if (miniReadinessSec) miniReadinessSec.style.display = 'none';
+
+        const radarContainer = document.getElementById('radar-chart-container');
+        if (radarContainer) radarContainer.style.display = 'none';
+        const peerContainer = document.getElementById('peer-comparison-container');
+        if (peerContainer) peerContainer.style.display = 'none';
+
+        if (fileLabel) fileLabel.innerHTML = 'Upload or drag resume (PDF, TXT)';
+        if (resumeInput) resumeInput.value = '';
+
+        if (activeResumeBanner) activeResumeBanner.style.display = 'none';
+        if (resumeHistorySection) resumeHistorySection.style.display = 'none';
+        if (resumeHistoryList) {
+            resumeHistoryList.style.display = 'none';
+            resumeHistoryList.innerHTML = '';
+        }
+
+        const resName = document.getElementById('res-name');
+        if (resName) resName.textContent = '';
+        const resEmail = document.getElementById('res-email');
+        if (resEmail) resEmail.textContent = '';
+        const resCgpa = document.getElementById('res-cgpa');
+        if (resCgpa) resCgpa.textContent = '';
+        const resSkills = document.getElementById('res-skills');
+        if (resSkills) resSkills.innerHTML = '';
+
+        const gaugeScore = document.getElementById('gauge-score-value');
+        if (gaugeScore) gaugeScore.textContent = '0%';
+        const progressCircle = document.querySelector('.gauge-progress');
+        if (progressCircle) progressCircle.style.strokeDashoffset = 440;
+
+        const tableBody = document.querySelector('#recommendation-table tbody');
+        if (tableBody) tableBody.innerHTML = '';
+        const courseContainer = document.getElementById('skill-gap-courses');
+        if (courseContainer) courseContainer.innerHTML = '';
+        const checklistContainer = document.getElementById('critique-checklist-container');
+        if (checklistContainer) checklistContainer.innerHTML = '';
+    }
+
+    function updateActiveResumeUI(analysis, resumesList) {
+        if (!analysis) return;
+        const fileName = analysis.original_filename || 'Saved Resume';
+        if (fileLabel) {
+            fileLabel.innerHTML = `<span><i class="fas fa-file-circle-check" style="color:var(--accent-green); margin-right:0.35rem;"></i> Active: <b>${fileName}</b></span><br><span style="font-size:0.75rem; color:var(--text-secondary);">Click or drag to replace / upload new resume</span>`;
+        }
+        if (activeResumeBanner) {
+            activeResumeBanner.style.display = 'flex';
+            if (activeResumeName) activeResumeName.textContent = fileName;
+            if (btnDownloadActiveResume) {
+                btnDownloadActiveResume.href = `/api/student/resume/download/${analysis.resume_id}`;
+            }
+        }
+
+        if (resumesList && resumesList.length > 0) {
+            if (resumeHistorySection) resumeHistorySection.style.display = 'block';
+            if (resumeHistoryCount) resumeHistoryCount.textContent = resumesList.length;
+            if (resumeHistoryList) {
+                resumeHistoryList.innerHTML = '';
+                resumesList.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'resume-history-item';
+                    const isActive = item.is_active || item.id === analysis.resume_id;
+                    div.style.cssText = `display:flex; align-items:center; justify-content:space-between; padding:0.45rem 0.65rem; background:rgba(255,255,255,0.03); border:1px solid ${isActive ? 'var(--accent-blue)' : 'rgba(255,255,255,0.08)'}; border-radius:6px; font-size:0.75rem;`;
+                    
+                    const friendlyDate = formatFriendlyDate(item.uploaded_at);
+                    const scoreBadge = item.employability_score ? `<span class="score-badge" style="font-size:0.65rem; padding:0.1rem 0.35rem;">${item.employability_score}%</span>` : '';
+                    
+                    div.innerHTML = `
+                        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;">
+                            <div style="font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis;" title="${item.original_filename}">${item.original_filename}</div>
+                            <div style="font-size:0.65rem; color:var(--text-secondary);">${friendlyDate} &bull; ${scoreBadge}</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.35rem;">
+                            ${isActive ? 
+                                `<span style="color:var(--accent-green); font-size:0.7rem; font-weight:600;"><i class="fas fa-check-circle"></i> Active</span>` :
+                                `<button class="btn-secondary btn-switch-resume" data-id="${item.id}" style="padding:0.2rem 0.45rem; font-size:0.68rem; cursor:pointer;"><i class="fas fa-arrows-rotate"></i> Use</button>`
+                            }
+                            <a href="/api/student/resume/download/${item.id}" target="_blank" class="btn-secondary" style="padding:0.2rem 0.45rem; font-size:0.68rem; text-decoration:none;" title="Download Original"><i class="fas fa-download"></i></a>
+                        </div>
+                    `;
+                    resumeHistoryList.appendChild(div);
+                });
+
+                document.querySelectorAll('.btn-switch-resume').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const resId = btn.dataset.id;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        fetch(`/api/student/resume/switch/${resId}`, { method: 'POST' })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.analysis) {
+                                    renderStudentResults(data.analysis);
+                                    updateActiveResumeUI(data.analysis, data.resumes_list);
+                                    showToast(data.message || 'Active resume updated', 'success');
+                                }
+                            })
+                            .catch(err => alert('Failed to switch resume: ' + err.message));
+                    });
+                });
+            }
+        } else {
+            if (resumeHistorySection) resumeHistorySection.style.display = 'none';
+        }
+    }
+
+    function fetchActiveStudentResume() {
+        fetch('/api/student/resume/latest')
+            .then(res => res.json())
+            .then(data => {
+                if (data.has_resume && data.analysis) {
+                    if (profilePlaceholder) profilePlaceholder.style.display = 'none';
+                    if (critiqueReportCard) critiqueReportCard.style.display = 'block';
+                    if (profileDetailedContainer) profileDetailedContainer.style.display = 'flex';
+                    if (profileDetailsRow) profileDetailsRow.style.display = 'flex';
+                    if (placementsTableContainer) placementsTableContainer.style.display = 'block';
+                    if (miniReadinessSec) miniReadinessSec.style.display = 'block';
+
+                    renderStudentResults(data.analysis);
+                    updateActiveResumeUI(data.analysis, data.resumes_list);
+                } else {
+                    resetStudentDashboardState();
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load active resume:", err);
+            });
     }
 
     // ----------------- Tab Navigation -----------------
@@ -503,6 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 placementsTableContainer.style.display = 'block';
                 miniReadinessSec.style.display = 'block';
                 renderStudentResults(data);
+                fetchActiveStudentResume();
             });
     }
 
@@ -575,6 +735,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 miniReadinessSec.style.display = 'block';
 
                 renderStudentResults(data);
+                fetchActiveStudentResume();
+                showToast("Resume saved to your account!", "success");
             })
             .catch(err => {
                 uploadLoader.style.display = 'none';
@@ -1017,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function fetchRecruiterCandidates() {
         const tableBody = document.querySelector('#employer-table tbody');
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Syncing applicant list...</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Syncing applicant list...</td></tr>';
 
         fetch('/api/employer_candidates')
             .then(res => res.json())
@@ -1034,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 populateComparisonSelects(data);
 
                 if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No active applications in the queue.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No active applications in the queue.</td></tr>';
                     return;
                 }
 
@@ -1045,6 +1207,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const mockGrade = c.interview_score !== null ?
                         `<span class="clickable-score score-badge" data-email="${c.student_email}" data-role="${c.internship_title}" style="color:var(--accent-green); border-color:rgba(0,245,160,0.3); cursor:pointer;">${c.interview_score}/100</span>` :
                         '<span style="color:var(--text-secondary); font-size:0.75rem;">Not Taken</span>';
+
+                    const resumeCol = c.active_resume_id ?
+                        `<a href="/api/student/resume/download/${c.active_resume_id}" target="_blank" class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;" title="Download Candidate Resume"><i class="fas fa-file-pdf" style="color:var(--accent-red);"></i> CV</a>` :
+                        `<span style="color:var(--text-secondary); font-size:0.75rem;">None</span>`;
 
                     const statusOptions = ['Screening', 'Interviewing', 'Shortlisted', 'Offered', 'Rejected'];
                     let optionsHTML = '';
@@ -1070,6 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </td>
                     <td style="color: var(--text-secondary); font-size: 0.8rem;">${date}</td>
+                    <td>${resumeCol}</td>
                 `;
                     tableBody.appendChild(tr);
                 });

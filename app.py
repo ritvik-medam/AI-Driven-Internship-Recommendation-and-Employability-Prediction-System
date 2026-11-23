@@ -1,11 +1,14 @@
 import os
 import re
+import time
+import json
 import pickle
 import sqlite3
 import pypdf
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template, session, send_file
+from werkzeug.utils import secure_filename
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -226,6 +229,27 @@ def init_db():
         interviewer_name TEXT NOT NULL,
         booked_by_student_email TEXT,
         status TEXT DEFAULT 'Available'
+    )
+    ''')
+
+    # 8. Create User Resumes & Uploaded Documents Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_resumes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        original_filename TEXT NOT NULL,
+        saved_filename TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_size INTEGER DEFAULT 0,
+        raw_text TEXT,
+        parsed_profile_json TEXT,
+        employability_score REAL,
+        placement_readiness TEXT,
+        critique_json TEXT,
+        recommendations_json TEXT,
+        is_active INTEGER DEFAULT 1,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
     )
     ''')
 
@@ -484,6 +508,54 @@ def get_recommendations(student_skills, internships):
     recommendations.sort(key=lambda x: x['match_score'], reverse=True)
     return recommendations
 
+def compute_profile_analysis(student_profile):
+    employability_score = 50.0
+    placement_readiness = "Medium"
+    
+    if os.path.exists(MODEL_PATH):
+        try:
+            with open(MODEL_PATH, 'rb') as f:
+                model = pickle.load(f)
+            
+            skills = student_profile.get('skills', [])
+            core_skills_score = min(10, len(skills))
+            features = np.array([[
+                student_profile.get('cgpa', 7.5),
+                student_profile.get('projects_count', 2),
+                student_profile.get('certifications_count', 1),
+                core_skills_score,
+                student_profile.get('communication_score', 8.0),
+                student_profile.get('experience_months', 0),
+                student_profile.get('extracurricular_score', 7.5)
+            ]])
+            
+            prob = model.predict_proba(features)[0][1]
+            employability_score = round(prob * 100, 1)
+            
+            if employability_score >= 75.0:
+                placement_readiness = "High"
+            elif employability_score >= 50.0:
+                placement_readiness = "Medium"
+            else:
+                placement_readiness = "Low"
+        except Exception as e:
+            print(f"Prediction Error: {e}")
+            
+    conn = get_db_connection()
+    internships = [dict(r) for r in conn.execute('SELECT * FROM internships').fetchall()]
+    conn.close()
+    
+    recommendations = get_recommendations(student_profile.get('skills', []), internships)
+    critique_report = generate_resume_critique(student_profile)
+    
+    return {
+        'student_profile': student_profile,
+        'employability_score': employability_score,
+        'placement_readiness': placement_readiness,
+        'recommendations': recommendations,
+        'critique': critique_report
+    }
+
 # Base Route
 @app.route('/')
 def home():
@@ -629,18 +701,35 @@ def get_internships():
 
 @app.route('/api/upload_resume', methods=['POST'])
 def upload_resume():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Please sign in to upload and save your resume.'}), 401
+        
+    user_id = session['user_id']
+    user_name = session.get('name', 'Student')
+    user_email = session.get('email', '')
+
     if 'resume' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
         
     file = request.files['resume']
-    if file.filename == '':
+    if not file or file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
         
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    original_filename = file.filename
+    clean_name = secure_filename(original_filename) or "resume.pdf"
+    
+    # Isolate storage per user account
+    user_upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"user_{user_id}")
+    os.makedirs(user_upload_dir, exist_ok=True)
+    
+    timestamp = int(time.time())
+    saved_filename = f"{timestamp}_{clean_name}"
+    file_path = os.path.join(user_upload_dir, saved_filename)
     file.save(file_path)
+    file_size = os.path.getsize(file_path)
     
     text = ""
-    if file.filename.endswith('.pdf'):
+    if original_filename.lower().endswith('.pdf'):
         text = extract_text_from_pdf(file_path)
     else:
         try:
@@ -654,69 +743,280 @@ def upload_resume():
                 return jsonify({'error': f'Failed to read text: {e}'}), 500
                 
     if not text.strip():
-        return jsonify({'error': 'Could not extract text from resume.'}), 400
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
+        return jsonify({'error': 'Could not extract readable text from resume. Please verify the file is not empty or try TXT format.'}), 400
         
     student_profile = parse_resume_text(text)
+    if not student_profile.get('name') or student_profile['name'] in ['Candidate', 'Unknown']:
+        student_profile['name'] = user_name
+    if not student_profile.get('email') or 'unknown' in student_profile['email']:
+        student_profile['email'] = user_email
+
+    analysis = compute_profile_analysis(student_profile)
     
-    # Save parsed values to db linked to session if user logged in
-    if 'user_id' in session and session['role'] == 'student':
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Mark previously active resumes for this user as inactive
+    cursor.execute('UPDATE user_resumes SET is_active = 0 WHERE user_id = ?', (user_id,))
+    
+    # Insert new resume record
+    cursor.execute('''
+        INSERT INTO user_resumes (
+            user_id, original_filename, saved_filename, file_path, file_size, raw_text,
+            parsed_profile_json, employability_score, placement_readiness,
+            critique_json, recommendations_json, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    ''', (
+        user_id, original_filename, saved_filename, file_path, file_size, text,
+        json.dumps(student_profile), analysis['employability_score'], analysis['placement_readiness'],
+        json.dumps(analysis['critique']), json.dumps(analysis['recommendations'])
+    ))
+    new_resume_id = cursor.lastrowid
+    
+    # Sync with student_profiles table
+    cursor.execute('''
+        INSERT INTO student_profiles (user_id, cgpa, skills, projects, certifications, experience)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            cgpa = excluded.cgpa,
+            skills = excluded.skills,
+            projects = excluded.projects,
+            certifications = excluded.certifications,
+            experience = excluded.experience
+    ''', (
+        user_id,
+        student_profile['cgpa'],
+        ", ".join(student_profile['skills']),
+        f"{student_profile['projects_count']} Projects",
+        f"{student_profile['certifications_count']} Certifications",
+        f"{student_profile['experience_months']} Months"
+    ))
+    
+    conn.commit()
+    conn.close()
+    
+    insert_notification(user_email, f"Resume '{original_filename}' uploaded and analyzed. Employability Score: {analysis['employability_score']}%.", "fa-file-circle-check")
+    
+    return jsonify({
+        'success': True,
+        'resume_id': new_resume_id,
+        'original_filename': original_filename,
+        'student_profile': student_profile,
+        'employability_score': analysis['employability_score'],
+        'placement_readiness': analysis['placement_readiness'],
+        'recommendations': analysis['recommendations'],
+        'critique': analysis['critique']
+    })
+
+@app.route('/api/student/resume/latest', methods=['GET'])
+def get_latest_resume():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized. Please login.'}), 401
+        
+    user_id = session['user_id']
+    conn = get_db_connection()
+    
+    # 1. Fetch active resume
+    row = conn.execute('''
+        SELECT * FROM user_resumes
+        WHERE user_id = ? AND is_active = 1
+        ORDER BY id DESC LIMIT 1
+    ''', (user_id,)).fetchone()
+    
+    if not row:
+        # Fallback to most recent resume if none marked active
+        row = conn.execute('''
+            SELECT * FROM user_resumes
+            WHERE user_id = ?
+            ORDER BY id DESC LIMIT 1
+        ''', (user_id,)).fetchone()
+        
+    all_resumes = conn.execute('''
+        SELECT id, original_filename, employability_score, placement_readiness, is_active, uploaded_at
+        FROM user_resumes
+        WHERE user_id = ?
+        ORDER BY id DESC
+    ''', (user_id,)).fetchall()
+    
+    if not row:
+        # Check if student_profiles already has legacy data (e.g. from seed)
+        sp = conn.execute('SELECT * FROM student_profiles WHERE user_id = ?', (user_id,)).fetchone()
+        if sp and sp['skills']:
+            skills_list = [s.strip() for s in sp['skills'].split(',') if s.strip()]
+            synth_profile = {
+                'name': session.get('name', 'Student'),
+                'email': session.get('email', ''),
+                'phone': 'N/A',
+                'education': 'Bachelor of Technology',
+                'cgpa': float(sp['cgpa'] or 7.5),
+                'skills': skills_list,
+                'projects_count': int(str(sp['projects']).split()[0]) if sp['projects'] and str(sp['projects']).split()[0].isdigit() else 2,
+                'certifications_count': int(str(sp['certifications']).split()[0]) if sp['certifications'] and str(sp['certifications']).split()[0].isdigit() else 1,
+                'experience_months': int(str(sp['experience']).split()[0]) if sp['experience'] and str(sp['experience']).split()[0].isdigit() else 0,
+                'communication_score': 8.0,
+                'extracurricular_score': 7.5
+            }
+            analysis = compute_profile_analysis(synth_profile)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO user_resumes (
+                    user_id, original_filename, saved_filename, file_path, file_size, raw_text,
+                    parsed_profile_json, employability_score, placement_readiness,
+                    critique_json, recommendations_json, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            ''', (
+                user_id, 'Primary Resume.pdf', 'primary_resume.pdf', '', 0, '',
+                json.dumps(synth_profile), analysis['employability_score'], analysis['placement_readiness'],
+                json.dumps(analysis['critique']), json.dumps(analysis['recommendations'])
+            ))
+            conn.commit()
+            new_id = cursor.lastrowid
+            conn.close()
+            return jsonify({
+                'has_resume': True,
+                'analysis': {
+                    'resume_id': new_id,
+                    'original_filename': 'Primary Resume.pdf',
+                    'student_profile': synth_profile,
+                    'employability_score': analysis['employability_score'],
+                    'placement_readiness': analysis['placement_readiness'],
+                    'critique': analysis['critique'],
+                    'recommendations': analysis['recommendations']
+                },
+                'resumes_list': [{
+                    'id': new_id,
+                    'original_filename': 'Primary Resume.pdf',
+                    'employability_score': analysis['employability_score'],
+                    'placement_readiness': analysis['placement_readiness'],
+                    'is_active': 1,
+                    'uploaded_at': 'Saved in Account'
+                }]
+            })
+            
+        conn.close()
+        return jsonify({'has_resume': False, 'resumes_list': []})
+        
+    conn.close()
+    
+    parsed_profile = json.loads(row['parsed_profile_json']) if row['parsed_profile_json'] else {}
+    critique = json.loads(row['critique_json']) if row['critique_json'] else {}
+    recommendations = json.loads(row['recommendations_json']) if row['recommendations_json'] else []
+    
+    return jsonify({
+        'has_resume': True,
+        'analysis': {
+            'resume_id': row['id'],
+            'original_filename': row['original_filename'],
+            'uploaded_at': row['uploaded_at'],
+            'student_profile': parsed_profile,
+            'employability_score': row['employability_score'],
+            'placement_readiness': row['placement_readiness'],
+            'critique': critique,
+            'recommendations': recommendations
+        },
+        'resumes_list': [dict(r) for r in all_resumes]
+    })
+
+@app.route('/api/student/resumes', methods=['GET'])
+def get_student_resumes():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user_id = session['user_id']
+    conn = get_db_connection()
+    resumes = conn.execute('''
+        SELECT id, original_filename, employability_score, placement_readiness, is_active, uploaded_at
+        FROM user_resumes
+        WHERE user_id = ?
+        ORDER BY id DESC
+    ''', (user_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in resumes])
+
+@app.route('/api/student/resume/switch/<int:resume_id>', methods=['POST'])
+def switch_active_resume(resume_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    user_id = session['user_id']
+    conn = get_db_connection()
+    target = conn.execute('SELECT * FROM user_resumes WHERE id = ? AND user_id = ?', (resume_id, user_id)).fetchone()
+    if not target:
+        conn.close()
+        return jsonify({'error': 'Resume not found for this account'}), 404
+        
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_resumes SET is_active = 0 WHERE user_id = ?', (user_id,))
+    cursor.execute('UPDATE user_resumes SET is_active = 1 WHERE id = ?', (resume_id,))
+    
+    # Sync with student_profiles
+    if target['parsed_profile_json']:
+        p = json.loads(target['parsed_profile_json'])
         cursor.execute('''
             INSERT INTO student_profiles (user_id, cgpa, skills, projects, certifications, experience)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 cgpa = excluded.cgpa,
-                skills = excluded.skills
-        ''', (session['user_id'], student_profile['cgpa'], ", ".join(student_profile['skills']), f"{student_profile['projects_count']} Projects", f"{student_profile['certifications_count']} Certifications", f"{student_profile['experience_months']} Months"))
-        conn.commit()
-        conn.close()
-        
-    employability_score = 50.0
-    placement_readiness = "Medium"
+                skills = excluded.skills,
+                projects = excluded.projects,
+                certifications = excluded.certifications,
+                experience = excluded.experience
+        ''', (
+            user_id,
+            p.get('cgpa', 7.5),
+            ", ".join(p.get('skills', [])),
+            f"{p.get('projects_count', 2)} Projects",
+            f"{p.get('certifications_count', 1)} Certifications",
+            f"{p.get('experience_months', 0)} Months"
+        ))
+    conn.commit()
     
-    if os.path.exists(MODEL_PATH):
-        try:
-            with open(MODEL_PATH, 'rb') as f:
-                model = pickle.load(f)
-            
-            core_skills_score = min(10, len(student_profile['skills']))
-            features = np.array([[
-                student_profile['cgpa'],
-                student_profile['projects_count'],
-                student_profile['certifications_count'],
-                core_skills_score,
-                student_profile['communication_score'],
-                student_profile['experience_months'],
-                student_profile['extracurricular_score']
-            ]])
-            
-            prob = model.predict_proba(features)[0][1]
-            employability_score = round(prob * 100, 1)
-            
-            if employability_score >= 75.0:
-                placement_readiness = "High"
-            elif employability_score >= 50.0:
-                placement_readiness = "Medium"
-            else:
-                placement_readiness = "Low"
-        except Exception as e:
-            print(f"Prediction Error: {e}")
-            
-    conn = get_db_connection()
-    internships = [dict(r) for r in conn.execute('SELECT * FROM internships').fetchall()]
+    all_resumes = conn.execute('''
+        SELECT id, original_filename, employability_score, placement_readiness, is_active, uploaded_at
+        FROM user_resumes
+        WHERE user_id = ?
+        ORDER BY id DESC
+    ''', (user_id,)).fetchall()
     conn.close()
     
-    recommendations = get_recommendations(student_profile['skills'], internships)
-    critique_report = generate_resume_critique(student_profile)
-    
     return jsonify({
-        'student_profile': student_profile,
-        'employability_score': employability_score,
-        'placement_readiness': placement_readiness,
-        'recommendations': recommendations,
-        'critique': critique_report
+        'success': True,
+        'message': f"Active resume switched to '{target['original_filename']}'",
+        'analysis': {
+            'resume_id': target['id'],
+            'original_filename': target['original_filename'],
+            'uploaded_at': target['uploaded_at'],
+            'student_profile': json.loads(target['parsed_profile_json']),
+            'employability_score': target['employability_score'],
+            'placement_readiness': target['placement_readiness'],
+            'critique': json.loads(target['critique_json']),
+            'recommendations': json.loads(target['recommendations_json'])
+        },
+        'resumes_list': [dict(r) for r in all_resumes]
     })
+
+@app.route('/api/student/resume/download/<int:resume_id>', methods=['GET'])
+def download_resume(resume_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    user_id = session['user_id']
+    role = session.get('role', 'student')
+    
+    conn = get_db_connection()
+    if role in ['recruiter', 'university']:
+        row = conn.execute('SELECT * FROM user_resumes WHERE id = ?', (resume_id,)).fetchone()
+    else:
+        row = conn.execute('SELECT * FROM user_resumes WHERE id = ? AND user_id = ?', (resume_id, user_id)).fetchone()
+    conn.close()
+    
+    if not row or not row['file_path'] or not os.path.exists(row['file_path']):
+        return jsonify({'error': 'Original resume file not found on disk.'}), 404
+        
+    return send_file(row['file_path'], as_attachment=True, download_name=row['original_filename'])
 
 @app.route('/api/apply', methods=['POST'])
 def apply_internship():
@@ -747,6 +1047,7 @@ def apply_internship():
     conn.commit()
     conn.close()
     
+    insert_notification(email, f"You successfully applied for internship ID #{internship_id} (Match: {match_score}%).", "fa-paper-plane")
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
 
 @app.route('/api/apply/update_status', methods=['POST'])
@@ -778,7 +1079,9 @@ def update_application_status():
 def get_employer_candidates():
     conn = get_db_connection()
     query = '''
-        SELECT a.student_name, a.student_email, a.match_score, a.status, a.applied_at, a.internship_id, a.interview_score, a.technical_score, a.communication_score, i.title as internship_title
+        SELECT a.student_name, a.student_email, a.match_score, a.status, a.applied_at, a.internship_id, a.interview_score, a.technical_score, a.communication_score, i.title as internship_title,
+               (SELECT ur.id FROM user_resumes ur JOIN users u ON ur.user_id = u.id WHERE u.email = a.student_email AND ur.is_active = 1 ORDER BY ur.id DESC LIMIT 1) as active_resume_id,
+               (SELECT ur.original_filename FROM user_resumes ur JOIN users u ON ur.user_id = u.id WHERE u.email = a.student_email AND ur.is_active = 1 ORDER BY ur.id DESC LIMIT 1) as active_resume_filename
         FROM applications a
         JOIN internships i ON a.internship_id = i.id
         ORDER BY a.match_score DESC

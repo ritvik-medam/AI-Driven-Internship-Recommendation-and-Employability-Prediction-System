@@ -932,6 +932,7 @@ def get_transcript():
         
     return jsonify({
         'student_name': row['student_name'],
+        'student_email': row['student_email'],
         'role': row['role'],
         'average_score': row['average_score'],
         'technical_score': row['technical_score'],
@@ -1587,8 +1588,10 @@ def sandbox_run():
         # Restricted execution context
         exec(code, {'__builtins__': {
             'range': range, 'len': len, 'print': lambda *args: None, 
-            'int': int, 'str': str, 'list': list, 'dict': dict, 
-            'float': float, 'bool': bool, 'abs': abs, 'min': min, 'max': max, 'sum': sum
+            'int': int, 'str': str, 'list': list, 'dict': dict, 'set': set, 'tuple': tuple,
+            'float': float, 'bool': bool, 'abs': abs, 'min': min, 'max': max, 'sum': sum,
+            'enumerate': enumerate, 'zip': zip, 'reversed': reversed, 'sorted': sorted,
+            'map': map, 'filter': filter, 'any': any, 'all': all, 'round': round
         }}, loc)
         
         if problem_id == 'two_sum':

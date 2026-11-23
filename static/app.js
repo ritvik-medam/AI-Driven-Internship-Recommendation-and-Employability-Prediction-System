@@ -1054,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openCandidateTranscript(email, role) {
-        fetch(`/api/interview/transcript?email=${email}&role=${role}`)
+        fetch(`/api/interview/transcript?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`)
             .then(res => {
                 if (!res.ok) return res.json().then(e => { throw new Error(e.error) });
                 return res.json();

@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td style="font-weight: 600;">
-                    <div style="font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                    <div style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
                         ${rec.title}
                     </div>
                     <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${scoreBadgeHTML}</td>
                 <td><div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">${skillsHTML}</div></td>
                 <td>
-                    <div style="font-size: 0.8rem; color: #fff;"><i class="fas fa-map-marker-alt" style="color: var(--accent-blue);"></i> ${rec.location}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-primary);"><i class="fas fa-map-marker-alt" style="color: var(--accent-blue);"></i> ${rec.location}</div>
                     <div style="font-size: 0.75rem; color: var(--accent-green); margin-top: 0.15rem;"><i class="fas fa-wallet"></i> ${rec.stipend}</div>
                 </td>
                 <td>
@@ -1168,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     div.innerHTML = `
                         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;">
-                            <div style="font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis;" title="${item.original_filename}">${item.original_filename}</div>
+                            <div style="font-weight:600; color: var(--text-primary); overflow:hidden; text-overflow:ellipsis;" title="${item.original_filename}">${item.original_filename}</div>
                             <div style="font-size:0.65rem; color:var(--text-secondary);">${friendlyDate} &bull; ${scoreBadge}</div>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.35rem;">
@@ -1863,7 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span><i class="fas fa-circle-check"></i> TECHNICAL ACCURACY: ${data.technical_score}/100</span>
                     <span style="color:var(--accent-purple);"><i class="fas fa-volume-high"></i> DELIVERY CLARITY: ${data.communication_score}/100</span>
                 </div>
-                <div style="font-size:0.8rem; color: var(--text-secondary); line-height: 1.4;"><span style="color:#fff; font-weight:500;">Critique & Grammar:</span> ${data.feedback}</div>
+                <div style="font-size:0.8rem; color: var(--text-secondary); line-height: 1.4;"><span style="color: var(--text-primary); font-weight:500;">Critique & Grammar:</span> ${data.feedback}</div>
                 <div style="font-size:0.8rem; color: var(--text-secondary); line-height: 1.4; margin-top:0.25rem;"><span style="color:#00f5a0; font-weight:500;">Model Answer:</span> ${data.model_answer}</div>
             `;
                 terminalBody.appendChild(scoreCard);
@@ -1893,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const line = document.createElement('div');
         line.className = 'terminal-line';
         if (sender === 'You') {
-            line.innerHTML = `<span class="terminal-prompt">${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$</span> <span style="color:#fff;">${text}</span>`;
+            line.innerHTML = `<span class="terminal-prompt">${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$</span> <span style="color: var(--text-primary);">${text}</span>`;
         } else {
             line.innerHTML = `<span style="color:var(--accent-purple); font-weight:600;">[AI Interviewer]</span> <span class="terminal-ai-text">${text}</span>`;
         }
@@ -1949,7 +1949,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                     <td><input type="checkbox" class="candidate-checkbox" data-email="${c.student_email}" data-id="${c.internship_id}"></td>
                     <td style="font-weight:600;">
-                        <div style="color: #fff;">${c.student_name}</div>
+                        <div style="color: var(--text-primary);">${c.student_name}</div>
                         <div style="font-size:0.75rem; color: var(--text-secondary);">${c.student_email}</div>
                     </td>
                     <td style="font-weight:500;">${c.internship_title}</td>
@@ -2650,9 +2650,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 gaps.forEach(node => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                    <td style="font-weight: 700; color: #fff;">${node.label}</td>
+                    <td style="font-weight: 700; color: var(--text-primary);">${node.label}</td>
                     <td>
-                        <div style="font-size:0.9rem; color:#fff; font-weight:600;">${node.course}</div>
+                        <div style="font-size:0.9rem; color: var(--text-primary); font-weight:600;">${node.course}</div>
                         <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Self-paced syllabus study with project implementation parameters.</div>
                     </td>
                     <td><span class="score-badge" style="background:rgba(245,166,35,0.1); color:#f5a623; border: 1px solid rgba(245,166,35,0.25);">${node.time}</span></td>
@@ -3451,7 +3451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<span style="color:var(--text-secondary); font-size:0.75rem;"><i class="fas fa-lock" style="margin-right:0.25rem;"></i>Requires >=70%</span>`;
 
             tr.innerHTML = `
-                <td style="font-weight: 600; color: #fff;">${session.role}</td>
+                <td style="font-weight: 600; color: var(--text-primary);">${session.role}</td>
                 <td style="color:var(--text-secondary); font-size:0.8rem;">${date}</td>
                 <td><span class="score-badge" style="color:var(--accent-green); border-color:rgba(0,245,160,0.2);">${session.technical_score}%</span></td>
                 <td><span class="score-badge" style="color:var(--accent-purple); border-color:rgba(155,81,224,0.2);">${session.communication_score}%</span></td>
@@ -3605,13 +3605,13 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
 
                 data.forEach(slot => {
                     const tr = document.createElement('tr');
-                    const bookedCol = slot.booked_by_student_email ? `<span style="color:#fff;">${slot.booked_by_student_email}</span>` : '<span style="color:var(--text-secondary);">Unbooked</span>';
+                    const bookedCol = slot.booked_by_student_email ? `<span style="color: var(--text-primary);">${slot.booked_by_student_email}</span>` : '<span style="color:var(--text-secondary);">Unbooked</span>';
                     const statusCol = slot.status === 'Booked' ?
                         `<span class="score-badge" style="color:var(--accent-green); border-color:rgba(0,245,160,0.25);">Booked</span>` :
                         `<span class="score-badge" style="color:var(--accent-blue); border-color:rgba(0,242,254,0.25);">Available</span>`;
 
                     tr.innerHTML = `
-                    <td style="color:#fff; font-weight:600;">${formatFriendlyDate(slot.slot_date)}</td>
+                    <td style="color: var(--text-primary); font-weight:600;">${formatFriendlyDate(slot.slot_date)}</td>
                     <td>${slot.slot_time}</td>
                     <td>${slot.interviewer_name}</td>
                     <td>${bookedCol}</td>

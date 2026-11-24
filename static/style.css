@@ -1714,89 +1714,403 @@ h1, h2, h3, h4 {
    v3.0 PREMIUM SERVICES - THEME/ROADMAP/KANBAN/HEATMAP/TOUR SYSTEM
    ========================================================================== */
 
-/* ================== LIGHT THEME OVERRIDES ================== */
+/* ================== LIGHT THEME OVERRIDES (HIGH CONTRAST & FULL VISIBILITY) ================== */
 body.theme-light {
     --bg-dark: #f8fafc;
     --bg-card: #ffffff;
+    --bg-card-hover: #ffffff;
+    --bg-card-inner: #f1f5f9;
     --card-bg: #ffffff;
-    --border-color: #cbd5e1;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --terminal-bg: #f1f5f9;
-    --input-bg: #f8fafc;
-    --table-header-bg: #e2e8f0;
+    --border-color: #e2e8f0;
+    --border-color-hover: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --terminal-bg: #f8fafc;
+    --input-bg: #ffffff;
+    --table-header-bg: #f8fafc;
+    --accent-blue-subtle: #eff6ff;
 }
+
 body.theme-light aside {
-    background: #0f172a; /* Keep sidebar dark for premium high contrast look */
+    background: #0f172a; /* High contrast authoritative sidebar */
 }
-body.theme-light select option {
-    background-color: #ffffff;
-    color: #1e293b;
-}
-body.theme-light input::placeholder, body.theme-light textarea::placeholder {
-    color: #94a3b8;
-}
+
 body.theme-light .card {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid #e2e8f0;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03) !important;
+    color: #0f172a !important;
 }
-body.theme-light .custom-table th {
-    color: #334155;
-    background: #f1f5f9;
+
+body.theme-light .card-title {
+    color: #0f172a !important;
+    border-bottom: 1px solid #e2e8f0 !important;
 }
-body.theme-light .custom-table td {
-    color: #475569;
-    border-bottom: 1px solid #f1f5f9;
+
+body.theme-light .card-title i {
+    color: #2563eb !important;
 }
-body.theme-light .custom-table tr:hover {
-    background: #f8fafc;
-}
-body.theme-light #resume-preview-card {
-    background: #e2e8f0;
-}
-body.theme-light .terminal-body {
-    background: #ffffff;
-    color: #1e293b;
-    border: 1px solid #cbd5e1;
-}
-body.theme-light .terminal-input-row {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-}
-body.theme-light .terminal-input {
-    color: #0f172a;
-}
+
 body.theme-light h1, body.theme-light h2, body.theme-light h3, body.theme-light h4, body.theme-light h5, body.theme-light p {
     color: #0f172a;
 }
+
 body.theme-light .panel-title {
-    color: #0f172a;
+    color: #0f172a !important;
 }
+
 body.theme-light .panel-subtitle {
-    color: #64748b;
+    color: #475569 !important;
 }
+
+/* Secondary & Action Buttons */
+body.theme-light .btn-secondary {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.theme-light .btn-secondary:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .btn-secondary i {
+    color: inherit !important;
+}
+
+/* Live Activity Ticker Bar */
+body.theme-light .live-activity-bar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.theme-light .live-activity-badge {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+body.theme-light .pulse-dot {
+    background: #059669 !important;
+}
+
+body.theme-light .live-activity-ticker {
+    color: #475569 !important;
+}
+
+body.theme-light .live-activity-ticker strong {
+    color: #0f172a !important;
+}
+
+/* Active Resume Banner & Document History */
+body.theme-light #active-resume-banner {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+}
+
+body.theme-light #active-resume-name {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+body.theme-light .resume-history-item {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .resume-history-item > div:first-child > div:first-child {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+/* Critique Checklist Items (High Contrast Red / Green) */
+body.theme-light .critique-item {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .critique-item.completed {
+    border-color: #86efac !important;
+    background: #f0fdf4 !important;
+    color: #166534 !important;
+    font-weight: 500 !important;
+}
+
+body.theme-light .critique-item.completed i {
+    color: #16a34a !important;
+}
+
+body.theme-light .critique-item.pending {
+    border-color: #fca5a5 !important;
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    font-weight: 500 !important;
+}
+
+body.theme-light .critique-item.pending i {
+    color: #dc2626 !important;
+}
+
+/* Score Card & Readiness Badges */
+body.theme-light .badge-readiness.high {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+body.theme-light .badge-readiness.medium {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+
+body.theme-light .badge-readiness.low {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+}
+
+body.theme-light .gauge-bg {
+    stroke: #e2e8f0 !important;
+}
+
+body.theme-light .gauge-value {
+    color: #0f172a !important;
+}
+
+body.theme-light .critique-progress-bar {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light #score-format,
+body.theme-light #score-certs,
+body.theme-light #score-projects {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+/* Student Parsing Details & Skill Tags */
+body.theme-light #res-name,
+body.theme-light #res-email {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+body.theme-light .skill-tag {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .skill-tag.matched {
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #047857 !important;
+}
+
+body.theme-light .skill-tag.missing {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #b91c1c !important;
+}
+
+/* Upload Dropzone */
+body.theme-light .upload-zone {
+    background: #f8fafc !important;
+    border: 2px dashed #cbd5e1 !important;
+}
+
+body.theme-light .upload-zone:hover {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+}
+
+body.theme-light .upload-zone p {
+    color: #475569 !important;
+}
+
+/* What-If Simulator & Filter Pills */
+body.theme-light .skill-sim-chip {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .skill-sim-chip:hover {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    color: #1d4ed8 !important;
+}
+
+body.theme-light .skill-sim-chip.active {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+body.theme-light .skill-sim-chip .boost-tag {
+    background: #d1fae5 !important;
+    color: #047857 !important;
+}
+
+body.theme-light .filter-pill {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+body.theme-light .filter-pill:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .filter-pill.active {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    color: #1d4ed8 !important;
+}
+
+body.theme-light .btn-bookmark {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
+}
+
+body.theme-light .btn-bookmark:hover,
+body.theme-light .btn-bookmark.saved {
+    color: #d97706 !important;
+    border-color: #fde68a !important;
+    background: #fffbeb !important;
+}
+
+/* Course Cards */
+body.theme-light .course-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .course-title {
+    color: #0f172a !important;
+}
+
+body.theme-light .course-skill {
+    color: #4338ca !important;
+}
+
+/* Custom Table & Inputs */
+body.theme-light .custom-table th {
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .custom-table td {
+    color: #0f172a !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.theme-light .custom-table tr:hover {
+    background: #f8fafc !important;
+}
+
+body.theme-light .score-badge {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-color: #bfdbfe !important;
+}
+
+body.theme-light .score-badge.boosted {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border-color: #a7f3d0 !important;
+}
+
+body.theme-light select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+body.theme-light input::placeholder, body.theme-light textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.theme-light input[type="text"],
+body.theme-light input[type="email"],
+body.theme-light input[type="password"],
+body.theme-light input[type="date"],
+body.theme-light textarea,
+body.theme-light select {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
 body.theme-light .stat-box {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
 }
+
 body.theme-light .stat-value {
-    color: #0f172a;
+    color: #0f172a !important;
 }
+
 body.theme-light .notif-dropdown {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #0f172a;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
+
 body.theme-light .notif-dropdown-header {
-    border-bottom: 1px solid #cbd5e1;
-    color: #0f172a;
+    border-bottom: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
 }
+
 body.theme-light .notif-item {
-    border-bottom: 1px solid #f1f5f9;
-    color: #0f172a;
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: #0f172a !important;
 }
+
 body.theme-light .notif-item:hover {
-    background: #f8fafc;
+    background: #f8fafc !important;
+}
+
+body.theme-light .modal-content {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.theme-light .modal-content h3,
+body.theme-light .modal-content h4,
+body.theme-light .modal-content p,
+body.theme-light .modal-content div {
+    color: #0f172a !important;
+}
+
+body.theme-light .terminal-body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .terminal-input-row {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .terminal-input {
+    color: #0f172a !important;
 }
 
 /* ================== CAREER ROADMAP FLOWCHART ================== */

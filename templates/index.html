@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PlacementIntel | AI Placement & Interview Platform</title>
     <!-- CSS and Fonts -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=dark_v3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for university statistics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -178,7 +178,7 @@
                             <div id="active-resume-banner" style="display: none; margin-top: 0.75rem; padding: 0.55rem 0.75rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: 8px; font-size: 0.8rem; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">
                                     <i class="fas fa-file-circle-check" style="color: var(--accent-green); font-size: 1rem; flex-shrink: 0;"></i>
-                                    <span id="active-resume-name" style="color: var(--text-primary); font-weight: 500; overflow: hidden; text-overflow: ellipsis;">resume.pdf</span>
+                                    <span id="active-resume-name" style="color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis;">resume.pdf</span>
                                 </div>
                                 <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
                                     <a id="btn-download-active-resume" href="#" class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; text-decoration: none;" title="Download Original Document">
@@ -211,7 +211,7 @@
                         <div class="card col-3" id="profile-detailed-container" style="display: none; flex-direction: column; gap: 1rem;">
                             <!-- Header with Title and Readiness Badge -->
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-                                <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0;">
+                                <h3 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0;">
                                     <i class="fas fa-chart-pie" style="color: var(--accent-blue); margin-right: 0.4rem;"></i> Readiness
                                 </h3>
                                 <div id="mini-readiness-sec">
@@ -225,8 +225,8 @@
                                     <svg viewBox="0 0 150 150">
                                         <defs>
                                             <linearGradient id="gaugeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#1d4ed8" />
-                                                <stop offset="100%" stop-color="#2563eb" />
+                                                <stop offset="0%" stop-color="#3b82f6" />
+                                                <stop offset="100%" stop-color="#60a5fa" />
                                             </linearGradient>
                                         </defs>
                                         <circle class="gauge-bg" cx="75" cy="75" r="70"></circle>
@@ -241,28 +241,28 @@
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Formatting Index</span>
-                                        <span id="score-format" style="font-weight: 600; color: var(--text-primary);">0%</span>
+                                        <span id="score-format" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-format" style="width: 0%; background: #2563eb;"></div>
+                                        <div class="critique-progress-fill" id="fill-format" style="width: 0%; background: #3b82f6;"></div>
                                     </div>
                                 </div>
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Certifications Grade</span>
-                                        <span id="score-certs" style="font-weight: 600; color: var(--text-primary);">0%</span>
+                                        <span id="score-certs" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-certs" style="width: 0%; background: #4f46e5;"></div>
+                                        <div class="critique-progress-fill" id="fill-certs" style="width: 0%; background: #6366f1;"></div>
                                     </div>
                                 </div>
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Projects Index</span>
-                                        <span id="score-projects" style="font-weight: 600; color: var(--text-primary);">0%</span>
+                                        <span id="score-projects" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-projects" style="width: 0%; background: #059669;"></div>
+                                        <div class="critique-progress-fill" id="fill-projects" style="width: 0%; background: #10b981;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -284,11 +284,11 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                 <div>
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Parsed Candidate Name</div>
-                                    <div id="res-name" style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">Ritvik Medam</div>
+                                    <div id="res-name" style="font-weight: 600; font-size: 1.1rem; color: #fff;">Ritvik Medam</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Registered Email</div>
-                                    <div id="res-email" style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">ritvik.medam@university.edu</div>
+                                    <div id="res-email" style="font-weight: 600; font-size: 1.1rem; color: #fff;">ritvik.medam@university.edu</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Extracted Academic CGPA</div>
@@ -323,7 +323,7 @@
                                 <p style="font-size: 0.8rem; color: var(--text-secondary);">Click any high-impact skill below to simulate learning it and see your live Employability Score surge and unlocked matches in real time!</p>
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div id="simulated-boost-badge" style="display: none; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
+                                <div id="simulated-boost-badge" style="display: none; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; background: rgba(0, 245, 160, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 245, 160, 0.3);">
                                     <i class="fas fa-arrow-trend-up"></i> +<span id="boost-points-val">0</span>% Projected Score
                                 </div>
                                 <button id="btn-reset-simulator" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;"><i class="fas fa-rotate-left"></i> Reset Simulation</button>
@@ -333,7 +333,7 @@
                         <div class="skills-sim-chips-grid" id="sim-chips-container" style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.75rem;">
                             <!-- Dynamic Simulation Chips inserted via JS -->
                         </div>
-                        <div id="sim-unlocked-message" style="display: none; font-size: 0.8rem; color: var(--accent-blue); padding-top: 0.5rem; border-top: 1px dashed var(--border-color);">
+                        <div id="sim-unlocked-message" style="display: none; font-size: 0.8rem; color: var(--accent-blue); padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.08);">
                             <i class="fas fa-bullseye"></i> <span id="sim-unlocked-text"></span>
                         </div>
                     </div>
@@ -342,7 +342,7 @@
                     <div class="card col-12" id="placements-table-container" style="display: none; margin-top: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                             <h3 class="card-title" style="margin-bottom: 0;"><i class="fas fa-briefcase"></i> Recommended Internships (Ranked by AI Match Score)</h3>
-                            <div id="table-matches-count-badge" style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-card-inner); padding: 0.25rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color);">Showing 7 Opportunities</div>
+                            <div id="table-matches-count-badge" style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.04); padding: 0.25rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color);">Showing 7 Opportunities</div>
                         </div>
 
                         <!-- Filter & Live Search Toolbar -->
@@ -350,11 +350,11 @@
                             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                                 <div class="search-input-wrap" style="position: relative; flex-grow: 1; min-width: 240px;">
                                     <i class="fas fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.85rem;"></i>
-                                    <input type="text" id="internship-search-input" placeholder="Search internships by role, company, or required skills..." style="width: 100%; padding: 0.6rem 0.85rem 0.6rem 2.4rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; outline: none;">
+                                    <input type="text" id="internship-search-input" placeholder="Search internships by role, company, or required skills..." style="width: 100%; padding: 0.6rem 0.85rem 0.6rem 2.4rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 0.85rem; outline: none;">
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span style="font-size: 0.75rem; color: var(--text-secondary);">Sort:</span>
-                                    <select id="internship-sort-select" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                    <select id="internship-sort-select" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); color: #fff; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.8rem; outline: none; cursor: pointer;">
                                         <option value="match_desc">Highest AI Match</option>
                                         <option value="stipend_desc">Highest Stipend</option>
                                         <option value="company_asc">Company (A-Z)</option>
@@ -414,11 +414,11 @@
                             <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; flex-grow: 1;">
                                 <div class="percentile-badge-wrapper" style="text-align: center;">
                                     <div class="percentile-ring" style="width: 140px; height: 140px; border-radius: 50%; border: 8px solid rgba(0,242,254,0.1); border-top-color: var(--accent-blue); display: flex; align-items: center; justify-content: center; position: relative;">
-                                        <div class="percentile-val" id="percentile-text" style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary);">Top 50%</div>
+                                        <div class="percentile-val" id="percentile-text" style="font-size: 1.6rem; font-weight: 800; color: #fff;">Top 50%</div>
                                     </div>
                                 </div>
                                 <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-                                    <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Rank Position Insights</div>
+                                    <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">Rank Position Insights</div>
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);" id="percentile-feedback">Complete profile & mock interviews to improve.</div>
                                 </div>
                             </div>
@@ -449,7 +449,7 @@
                                 <h3 class="card-title"><i class="fas fa-book-open"></i> Choose Coding Challenge</h3>
                                 <div class="input-group" style="margin-bottom: 1.25rem;">
                                     <label>Select Challenge</label>
-                                    <select id="sandbox-problem-select" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                    <select id="sandbox-problem-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
                                         <option value="two_sum">Two Sum (Array Hashmap)</option>
                                         <option value="fizzbuzz">FizzBuzz (Modulo loop)</option>
                                         <option value="palindrome">Valid Palindrome (String parsing)</option>
@@ -462,7 +462,7 @@
                             
                             <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.85rem; border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary);">
                                 <strong>Expected Signature:</strong>
-                                <pre id="sandbox-expected-signature" style="font-family: monospace; color: var(--text-primary); background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; margin-top: 0.25rem; margin-bottom: 0;"></pre>
+                                <pre id="sandbox-expected-signature" style="font-family: monospace; color:#fff; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; margin-top: 0.25rem; margin-bottom: 0;"></pre>
                             </div>
                         </div>
                         
@@ -481,7 +481,7 @@
                             
                             <div style="height: 140px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
                                 <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-secondary);">Execution Console Output</div>
-                                <pre id="sandbox-console-log" style="flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.78rem; margin: 0; color: var(--text-primary); white-space: pre-wrap;"></pre>
+                                <pre id="sandbox-console-log" style="flex-grow: 1; overflow-y: auto; font-family: monospace; font-size: 0.78rem; margin: 0; color: #fff; white-space: pre-wrap;"></pre>
                             </div>
                         </div>
                     </div>
@@ -503,7 +503,7 @@
                                 
                                 <div class="input-group" style="margin-bottom: 1.25rem;">
                                     <label>Target Role</label>
-                                    <select id="roadmap-role-select" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                    <select id="roadmap-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
                                         <option value="Software Engineer Intern">Software Engineer Intern</option>
                                         <option value="Machine Learning Intern">Machine Learning Intern</option>
                                         <option value="Data Scientist Intern">Data Scientist Intern</option>
@@ -517,7 +517,7 @@
                             </div>
                             
                             <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
-                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;"><i class="fas fa-lightbulb" style="color: #ffd700;"></i> Legend</div>
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;"><i class="fas fa-lightbulb" style="color: #ffd700;"></i> Legend</div>
                                 <div style="display: grid; grid-template-columns: 12px 1fr; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); align-items: center;">
                                     <div style="background: var(--accent-green); border-radius: 50%; height: 12px; width: 12px;"></div>
                                     <div>Learned Skill (Found in resume)</div>
@@ -632,7 +632,7 @@
                                 <!-- Slider 1: CGPA -->
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                                        <span style="font-weight: 500; color: var(--text-primary);"><i class="fas fa-graduation-cap" style="color: var(--accent-blue); margin-right: 0.35rem;"></i> Academic CGPA</span>
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-graduation-cap" style="color: var(--accent-blue); margin-right: 0.35rem;"></i> Academic CGPA</span>
                                         <span id="slider-cgpa-val" style="font-weight: 700; color: var(--accent-green);">8.5</span>
                                     </div>
                                     <input type="range" id="roi-slider-cgpa" min="6.0" max="10.0" step="0.1" value="8.5" class="custom-range-slider" style="width: 100%;">
@@ -643,7 +643,7 @@
                                 <!-- Slider 2: Technical Projects -->
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                                        <span style="font-weight: 500; color: var(--text-primary);"><i class="fas fa-laptop-code" style="color: var(--accent-purple); margin-right: 0.35rem;"></i> Production Projects Built</span>
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-laptop-code" style="color: var(--accent-purple); margin-right: 0.35rem;"></i> Production Projects Built</span>
                                         <span id="slider-proj-val" style="font-weight: 700; color: var(--accent-purple);">3 Projects</span>
                                     </div>
                                     <input type="range" id="roi-slider-projects" min="0" max="8" step="1" value="3" class="custom-range-slider" style="width: 100%;">
@@ -654,7 +654,7 @@
                                 <!-- Slider 3: Industry Certifications -->
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                                        <span style="font-weight: 500; color: var(--text-primary);"><i class="fas fa-award" style="color: var(--accent-yellow); margin-right: 0.35rem;"></i> Cloud / ML Certifications</span>
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-award" style="color: var(--accent-yellow); margin-right: 0.35rem;"></i> Cloud / ML Certifications</span>
                                         <span id="slider-cert-val" style="font-weight: 700; color: var(--accent-yellow);">2 Certifications</span>
                                     </div>
                                     <input type="range" id="roi-slider-certs" min="0" max="6" step="1" value="2" class="custom-range-slider" style="width: 100%;">
@@ -665,7 +665,7 @@
                                 <!-- Slider 4: Experience Months -->
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                                        <span style="font-weight: 500; color: var(--text-primary);"><i class="fas fa-briefcase" style="color: var(--accent-pink); margin-right: 0.35rem;"></i> Relevant Experience</span>
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-briefcase" style="color: var(--accent-pink); margin-right: 0.35rem;"></i> Relevant Experience</span>
                                         <span id="slider-exp-val" style="font-weight: 700; color: var(--accent-pink);">3 Months</span>
                                     </div>
                                     <input type="range" id="roi-slider-exp" min="0" max="24" step="1" value="3" class="custom-range-slider" style="width: 100%;">
@@ -778,7 +778,7 @@
                                 <div class="form-section-header"><i class="fas fa-palette"></i> Resume Template Design</div>
                                 <div class="input-group">
                                     <label>Select Design Theme Style</label>
-                                    <select id="builder-theme" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                    <select id="builder-theme" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
                                         <option value="theme-corporate">Classic Corporate (Deep Navy & Slate)</option>
                                         <option value="theme-executive">Modern Executive (Emerald & Charcoal)</option>
                                         <option value="theme-creative">Creative Developer (Royal Purple & Charcoal)</option>
@@ -790,7 +790,7 @@
                                 <div style="display: flex; gap: 1rem; align-items: flex-end; width: 100%;">
                                     <div class="input-group" style="flex-grow: 1;">
                                         <label>Target Internship Opportunity</label>
-                                        <select id="cover-letter-role-select" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
+                                        <select id="cover-letter-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none; cursor: pointer;">
                                             <option value="">-- Click Save/Compile to Load Options --</option>
                                         </select>
                                     </div>
@@ -800,7 +800,7 @@
                                 </div>
                                 <div class="input-group" id="cover-letter-result-group" style="display: none; margin-top: 0.5rem;">
                                     <label>Tailored Letter Draft</label>
-                                    <textarea id="builder-cover-letter" rows="8" style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.15); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.6rem; border-radius: 8px;" placeholder="Your cover letter text..."></textarea>
+                                    <textarea id="builder-cover-letter" rows="8" style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.15); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem; border-radius: 8px;" placeholder="Your cover letter text..."></textarea>
                                     <button type="button" class="btn-secondary" id="export-cover-pdf-btn" style="margin-top: 0.5rem; justify-content: center; width: 100%;">
                                         <i class="fas fa-file-pdf"></i> Export Cover Letter PDF
                                     </button>
@@ -889,7 +889,7 @@
                             
                             <div class="input-group" style="margin-bottom: 1.25rem;">
                                 <label>Target Internship Role</label>
-                                <select id="interview-role-select" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.6rem; border-radius:8px; outline:none;">
+                                <select id="interview-role-select" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; outline:none;">
                                     <option value="Software Engineer Intern">Software Engineer Intern</option>
                                     <option value="Machine Learning Intern">Machine Learning Intern</option>
                                     <option value="Data Scientist Intern">Data Scientist Intern</option>
@@ -967,7 +967,7 @@
                         
                         <!-- Performance Scorecard History Table -->
                         <div id="interview-history-table-wrap" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600; color: var(--text-primary);"><i class="fas fa-award"></i> Verification Certificates & History</h4>
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600; color: #fff;"><i class="fas fa-award"></i> Verification Certificates & History</h4>
                             <div class="table-wrapper">
                                 <table class="custom-table" id="interview-sessions-table">
                                     <thead>
@@ -1005,7 +1005,7 @@
                         
                         <div id="kanban-bulk-actions" style="display: none; gap: 0.5rem; align-items: center; margin-left: 1.5rem;">
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">Selected (<span id="bulk-select-count">0</span>):</span>
-                            <select id="bulk-status-select" style="background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.35rem 0.5rem; border-radius:6px; font-size:0.8rem; outline:none;">
+                            <select id="bulk-status-select" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.35rem 0.5rem; border-radius:6px; font-size:0.8rem; outline:none;">
                                 <option value="">-- Change Stage --</option>
                                 <option value="Screening">Move to Screening</option>
                                 <option value="Interviewing">Move to Interviewing</option>
@@ -1045,7 +1045,7 @@
                     <!-- Kanban Board Container -->
                     <div id="recruiter-kanban-container" style="display: none; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; width: 100%;">
                         <div class="kanban-column" data-status="Screening" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="kanban-header" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
                                 <span>Screening</span>
                                 <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
                             </div>
@@ -1053,7 +1053,7 @@
                         </div>
                         
                         <div class="kanban-column" data-status="Interviewing" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="kanban-header" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
                                 <span>Interviewing</span>
                                 <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
                             </div>
@@ -1061,7 +1061,7 @@
                         </div>
                         
                         <div class="kanban-column" data-status="Shortlisted" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="kanban-header" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
                                 <span>Shortlisted</span>
                                 <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
                             </div>
@@ -1069,7 +1069,7 @@
                         </div>
                         
                         <div class="kanban-column" data-status="Offered" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="kanban-header" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
                                 <span>Offered</span>
                                 <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
                             </div>
@@ -1077,7 +1077,7 @@
                         </div>
                         
                         <div class="kanban-column" data-status="Rejected" style="flex: 1; min-width: 220px; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="kanban-header" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+                            <div class="kanban-header" style="font-weight: 700; color: #fff; font-size: 0.9rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
                                 <span>Rejected</span>
                                 <span class="count-badge" style="background: var(--border-color); border-radius: 12px; padding: 0.1rem 0.5rem; font-size: 0.75rem;">0</span>
                             </div>
@@ -1090,20 +1090,20 @@
                         <form id="recruiter-post-slot-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
                             <div class="input-group" style="flex: 1; min-width: 150px;">
                                 <label>Date</label>
-                                <input type="date" id="slot-date-input" style="width: 100%; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;" required>
+                                <input type="date" id="slot-date-input" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
                             </div>
                             <div class="input-group" style="flex: 1; min-width: 120px;">
                                 <label>Time Slot</label>
-                                <input type="text" id="slot-time-input" placeholder="e.g. 10:00 AM" style="width: 100%; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;" required>
+                                <input type="text" id="slot-time-input" placeholder="e.g. 10:00 AM" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
                             </div>
                             <div class="input-group" style="flex: 1; min-width: 180px;">
                                 <label>Interviewer Name</label>
-                                <input type="text" id="slot-interviewer-input" placeholder="Sundar Pichai" style="width: 100%; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;" required>
+                                <input type="text" id="slot-interviewer-input" placeholder="Sundar Pichai" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; border-radius: 8px;" required>
                             </div>
                             <button type="submit" class="btn-primary" style="height: 38px; border-radius: 8px; padding: 0 1.25rem;"><i class="fas fa-plus"></i> Add Slot</button>
                         </form>
                         
-                        <h4 style="font-size: 0.95rem; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Created Slots</h4>
+                        <h4 style="font-size: 0.95rem; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color:#fff;">Created Slots</h4>
                         <div class="table-wrapper">
                             <table class="custom-table" id="recruiter-slots-table">
                                 <thead>
@@ -1183,7 +1183,7 @@
     <div id="transcript-modal" class="modal">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
                     <i class="fas fa-clipboard-check" style="color: var(--accent-blue);"></i> Technical Mock Assessment Audit
                 </h3>
                 <button id="modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; transition: color 0.2s ease;">
@@ -1207,12 +1207,12 @@
             </div>
 
             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
-                <div style="margin-bottom: 0.25rem;">Candidate Email: <strong id="modal-student-email" style="color: var(--text-primary);">email@university.edu</strong></div>
+                <div style="margin-bottom: 0.25rem;">Candidate Email: <strong id="modal-student-email" style="color: #fff;">email@university.edu</strong></div>
                 <div>Detected Filler Crutches: <strong id="modal-filler-words" style="color: var(--accent-red);">None</strong></div>
             </div>
 
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Full Dialogue Logs</h4>
+                <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: #fff;">Full Dialogue Logs</h4>
                 <div id="modal-transcript-text" style="background: #030408; font-family: 'Fira Code', monospace; font-size: 0.8rem; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); height: 200px; overflow-y: auto; white-space: pre-wrap; color: #a7f3d0; line-height: 1.5;">
                     Transcript loading...
                 </div>
@@ -1230,7 +1230,7 @@
     <div id="passport-modal" class="modal">
         <div class="modal-content" style="max-width: 580px; padding: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff;">
                     <i class="fas fa-id-badge" style="color: var(--accent-blue);"></i> Student Employability Passport
                 </h3>
                 <button id="passport-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
@@ -1279,7 +1279,7 @@
 
                 <div class="passport-footer">
                     <div class="passport-qr">
-                        <i class="fas fa-qrcode" style="font-size: 2.2rem; color: var(--text-primary);"></i>
+                        <i class="fas fa-qrcode" style="font-size: 2.2rem; color: #fff;"></i>
                     </div>
                     <div class="passport-cred">
                         <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Credential Hash</div>
@@ -1345,7 +1345,7 @@
     <div id="certificate-modal" class="modal">
         <div class="modal-content" style="max-width: 650px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
                     <i class="fas fa-certificate" style="color: #ffd700;"></i> Employability Verification Certificate
                 </h3>
                 <button id="cert-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
@@ -1378,7 +1378,7 @@
     <div id="candidate-comparison-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #fff;">
                     <i class="fas fa-code-compare" style="color: var(--accent-blue);"></i> Side-by-Side Candidate Comparison
                 </h3>
                 <button id="compare-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
@@ -1389,16 +1389,16 @@
             <div class="grid-container" style="gap: 1.5rem;">
                 <!-- Left selections and scores -->
                 <div class="card col-5" style="display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
-                    <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Select Applicants to Compare</h4>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Select Applicants to Compare</h4>
                     
                     <div class="input-group">
                         <label>Candidate A</label>
-                        <select id="compare-candidate-a" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                        <select id="compare-candidate-a" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
                     </div>
                     
                     <div class="input-group">
                         <label>Candidate B</label>
-                        <select id="compare-candidate-b" style="width:100%; background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-primary); padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
+                        <select id="compare-candidate-b" style="width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); color:#fff; padding:0.5rem; border-radius:8px; outline:none; cursor: pointer;"></select>
                     </div>
                     
                     <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;" id="compare-summary-metrics">
@@ -1408,7 +1408,7 @@
                 
                 <!-- Comparison Radar Chart -->
                 <div class="card col-7" style="height: 380px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1.25rem;">
-                    <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Overlay Index Radar</h4>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Overlay Index Radar</h4>
                     <div style="position: relative; height: 280px; width: 100%;">
                         <canvas id="candidateCompareChart"></canvas>
                     </div>
@@ -1418,7 +1418,7 @@
     </div>
 
     <!-- 8. FLOATING AI ASSISTANT CHATBOT -->
-    <div id="chatbot-float-trigger" class="chatbot-trigger" style="position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(37,99,235,0.25); z-index: 9999; transition: transform 0.2s;">
+    <div id="chatbot-float-trigger" class="chatbot-trigger" style="position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,242,254,0.3); z-index: 9999; transition: transform 0.2s;">
         <i class="fas fa-comment-dots"></i>
     </div>
     
@@ -1426,17 +1426,17 @@
         <div style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <div style="width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%;"></div>
-                <span style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">AI Placement Assistant</span>
+                <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">AI Placement Assistant</span>
             </div>
             <button id="chatbot-close-btn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem;"><i class="fas fa-xmark"></i></button>
         </div>
         <div id="chatbot-chat-body" style="flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
-            <div class="chat-msg ai-msg" style="align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.8rem; max-width: 85%; color: #e2e8f0; line-height: 1.4;">
+            <div class="chat-msg ai-msg" style="align-self: flex-start; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.8rem; max-width: 85%; color: #e2e8f0; line-height: 1.4;">
                 Hello! I am your AI placement helper. Ask me about resume builder formats, interview preps, skills gap, or trending salaries!
             </div>
         </div>
         <div style="border-top: 1px solid var(--border-color); padding: 0.5rem; background: rgba(0,0,0,0.2); display: flex; gap: 0.5rem; align-items: center;">
-            <input type="text" id="chatbot-input-el" placeholder="Type a message..." style="flex-grow: 1; background: transparent; border: none; outline: none; color: var(--text-primary); font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            <input type="text" id="chatbot-input-el" placeholder="Type a message..." style="flex-grow: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 0.85rem; padding: 0.4rem 0.5rem;">
             <button class="btn-primary" id="chatbot-send-btn" style="padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; border: none; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>

@@ -1411,18 +1411,18 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadZone.style.borderColor = 'var(--accent-blue)';
-        uploadZone.style.background = 'var(--accent-blue-subtle)';
+        uploadZone.style.background = 'rgba(0, 242, 254, 0.05)';
     });
 
     uploadZone.addEventListener('dragleave', () => {
-        uploadZone.style.borderColor = '';
-        uploadZone.style.background = '';
+        uploadZone.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        uploadZone.style.background = 'rgba(255, 255, 255, 0.01)';
     });
 
     uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadZone.style.borderColor = '';
-        uploadZone.style.background = '';
+        uploadZone.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        uploadZone.style.background = 'rgba(255, 255, 255, 0.01)';
 
         if (e.dataTransfer.files.length > 0) {
             resumeInput.files = e.dataTransfer.files;
@@ -2904,33 +2904,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cover-letter-paper-container').style.display = 'none';
     });
 
-    // ----------------- Light (Default Institutional) / Dark Theme Switcher -----------------
+    // ----------------- Light/Dark Theme Switcher -----------------
     const themeBtn = document.getElementById('theme-toggle-btn');
-    const savedTheme = localStorage.getItem('theme');
-    
-    // Default to clean Light institutional theme unless explicitly saved as 'dark'
-    if (savedTheme === 'dark') {
-        document.body.classList.add('theme-dark');
-        document.body.classList.remove('theme-light');
-        if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun" title="Switch to Light Theme"></i>';
-    } else {
-        document.body.classList.remove('theme-dark');
-        document.body.classList.add('theme-light');
-        if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon" title="Switch to Dark Theme"></i>';
+    // Ensure default theme is dark as requested; clear any lingering light theme override
+    if (localStorage.getItem('theme') === 'light') {
+        localStorage.setItem('theme', 'dark');
     }
+    document.body.classList.remove('theme-light');
+    if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
 
     if (themeBtn) {
         themeBtn.addEventListener('click', () => {
-            if (document.body.classList.contains('theme-dark')) {
-                document.body.classList.remove('theme-dark');
-                document.body.classList.add('theme-light');
-                localStorage.setItem('theme', 'light');
-                themeBtn.innerHTML = '<i class="fas fa-moon" title="Switch to Dark Theme"></i>';
-            } else {
-                document.body.classList.add('theme-dark');
+            if (document.body.classList.contains('theme-light')) {
                 document.body.classList.remove('theme-light');
                 localStorage.setItem('theme', 'dark');
-                themeBtn.innerHTML = '<i class="fas fa-sun" title="Switch to Light Theme"></i>';
+                themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+            } else {
+                document.body.classList.add('theme-light');
+                localStorage.setItem('theme', 'light');
+                themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
         });
     }

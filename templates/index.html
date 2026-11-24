@@ -96,7 +96,6 @@
                 <button class="menu-btn" data-tab="resume-builder-panel"><i class="fas fa-file-invoice"></i> Resume Builder</button>
                 <button class="menu-btn" data-tab="mock-interview-panel"><i class="fas fa-headset"></i> AI Interview Coach</button>
                 <button class="menu-btn" data-tab="mock-coding-panel"><i class="fas fa-code"></i> Coding Sandbox</button>
-                <button class="menu-btn" data-tab="companies-panel"><i class="fas fa-building"></i> Companies</button>
             </div>
             
             <div class="sidebar-menu" id="recruiter-menu" style="display: none;">
@@ -114,6 +113,7 @@
                     <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
                 </div>
                 <div class="sidebar-actions">
+                    <button id="sound-fx-toggle-btn" class="theme-toggle-btn" title="Toggle Sound Feedback" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-volume-high"></i></button>
                     <button id="restart-tour-btn" class="theme-toggle-btn" title="Platform Feature Tour" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-compass"></i></button>
                     <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-moon"></i></button>
                     <button id="notif-bell-btn" class="notif-bell" title="Notifications">
@@ -135,9 +135,25 @@
 
                 <!-- ================== STUDENT PROFILE DASHBOARD ================== -->
                 <div id="student-dashboard" class="dashboard-panel active">
-                    <div class="panel-header">
-                        <h1 class="panel-title">Internship & Employability Matching</h1>
-                        <p class="panel-subtitle">Upload your resume PDF to calculate placement readiness scores and job matches.</p>
+                    <!-- Live Campus Milestone Ticker -->
+                    <div class="live-activity-bar">
+                        <div class="live-activity-badge"><span class="pulse-dot"></span> LIVE HIRING RADAR</div>
+                        <div class="live-activity-ticker" id="live-activity-ticker">
+                            <span>🚀 <strong>Placement Surge:</strong> 42 students shortlisted this week across Google, Microsoft, Meta & Netflix</span>
+                            <span>🔥 <strong>High Yield Stack:</strong> Docker, AWS Cloud & PyTorch showing +42% interview conversion boost</span>
+                            <span>✨ <strong>AI Interview Simulator:</strong> 18 technical mock sessions completed today • Mean Score: 84%</span>
+                            <span>🎯 <strong>Recruiter Activity:</strong> Google Recruiter desk reviewed 15 candidate portfolios today</span>
+                        </div>
+                    </div>
+
+                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h1 class="panel-title">Internship & Employability Matching</h1>
+                            <p class="panel-subtitle">Upload your resume PDF to calculate placement readiness scores and job matches.</p>
+                        </div>
+                        <button id="btn-open-passport" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.9rem; font-size: 0.8rem; border-radius: 8px; cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3);">
+                            <i class="fas fa-id-badge" style="color: var(--accent-blue);"></i> View Employability Passport
+                        </button>
                     </div>
 
                     <div class="grid-container">
@@ -284,9 +300,64 @@
                         </div>
                     </div>
 
+                    <!-- Interactive What-If Skill Growth Simulator -->
+                    <div class="card col-12" id="whatif-simulator-container" style="display: none; margin-top: 1.5rem; background: linear-gradient(135deg, rgba(18, 24, 46, 0.85) 0%, rgba(25, 34, 68, 0.7) 100%); border: 1px solid rgba(0, 242, 254, 0.25);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <h3 class="card-title" style="margin-bottom: 0.35rem; font-family: 'Outfit', sans-serif;">
+                                    <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-yellow);"></i> Interactive Skill Gap "What-If" Simulator
+                                    <span class="badge-tag" style="background: rgba(244, 180, 26, 0.15); color: var(--accent-yellow); border: 1px solid rgba(244, 180, 26, 0.3); font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 999px; margin-left: 0.5rem;">Live Dynamic Impact</span>
+                                </h3>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary);">Click any high-impact skill below to simulate learning it and see your live Employability Score surge and unlocked matches in real time!</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div id="simulated-boost-badge" style="display: none; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; background: rgba(0, 245, 160, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 245, 160, 0.3);">
+                                    <i class="fas fa-arrow-trend-up"></i> +<span id="boost-points-val">0</span>% Projected Score
+                                </div>
+                                <button id="btn-reset-simulator" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;"><i class="fas fa-rotate-left"></i> Reset Simulation</button>
+                            </div>
+                        </div>
+
+                        <div class="skills-sim-chips-grid" id="sim-chips-container" style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.75rem;">
+                            <!-- Dynamic Simulation Chips inserted via JS -->
+                        </div>
+                        <div id="sim-unlocked-message" style="display: none; font-size: 0.8rem; color: var(--accent-blue); padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.08);">
+                            <i class="fas fa-bullseye"></i> <span id="sim-unlocked-text"></span>
+                        </div>
+                    </div>
+
                     <!-- Recommended Placement lists -->
                     <div class="card col-12" id="placements-table-container" style="display: none; margin-top: 1.5rem;">
-                        <h3 class="card-title"><i class="fas fa-briefcase"></i> Recommended Internships (Ranked by AI Match Score)</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                            <h3 class="card-title" style="margin-bottom: 0;"><i class="fas fa-briefcase"></i> Recommended Internships (Ranked by AI Match Score)</h3>
+                            <div id="table-matches-count-badge" style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.04); padding: 0.25rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color);">Showing 7 Opportunities</div>
+                        </div>
+
+                        <!-- Filter & Live Search Toolbar -->
+                        <div class="internship-filter-toolbar" style="margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <div class="search-input-wrap" style="position: relative; flex-grow: 1; min-width: 240px;">
+                                    <i class="fas fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.85rem;"></i>
+                                    <input type="text" id="internship-search-input" placeholder="Search internships by role, company, or required skills..." style="width: 100%; padding: 0.6rem 0.85rem 0.6rem 2.4rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 0.85rem; outline: none;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Sort:</span>
+                                    <select id="internship-sort-select" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); color: #fff; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                        <option value="match_desc">Highest AI Match</option>
+                                        <option value="stipend_desc">Highest Stipend</option>
+                                        <option value="company_asc">Company (A-Z)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-pills-row" id="internship-category-pills" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button class="filter-pill active" data-category="all">All Roles (<span id="pill-count-all">7</span>)</button>
+                                <button class="filter-pill" data-category="remote"><i class="fas fa-globe"></i> Remote</button>
+                                <button class="filter-pill" data-category="high-stipend"><i class="fas fa-sack-dollar"></i> High Stipend (₹50k+)</button>
+                                <button class="filter-pill" data-category="ai-ml"><i class="fas fa-brain"></i> AI & ML</button>
+                                <button class="filter-pill" data-category="software"><i class="fas fa-laptop-code"></i> Software & Backend</button>
+                                <button class="filter-pill" data-category="saved" id="filter-pill-saved"><i class="fas fa-star" style="color: var(--accent-yellow);"></i> Saved (<span id="saved-bookmarks-count">0</span>)</button>
+                            </div>
+                        </div>
                         <div class="table-wrapper">
                             <table class="custom-table" id="recommendation-table">
                                 <thead>
@@ -535,6 +606,86 @@
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Comparative monthly stipend rates by role index (fresher entry-level brackets).</p>
                         <div style="position: relative; height: 320px; width: 100%;">
                             <canvas id="marketSalaryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Stipend & ROI Calculator Card -->
+                    <div class="card col-12" style="margin-top: 1.5rem; background: linear-gradient(135deg, rgba(18, 24, 46, 0.9) 0%, rgba(20, 30, 60, 0.75) 100%); border: 1px solid rgba(0, 242, 254, 0.25);">
+                        <div class="panel-header" style="margin-bottom: 1.5rem;">
+                            <h2 class="panel-title" style="font-size: 1.25rem;"><i class="fas fa-calculator" style="color: var(--accent-green);"></i> Interactive Stipend & Placement ROI Calculator</h2>
+                            <p class="panel-subtitle">Simulate how your GPA, tech stack projects, and hands-on experience mathematically project your monthly entry offer bracket.</p>
+                        </div>
+                        <div class="grid-container" style="align-items: stretch;">
+                            <div class="col-7" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                <!-- Slider 1: CGPA -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-graduation-cap" style="color: var(--accent-blue); margin-right: 0.35rem;"></i> Academic CGPA</span>
+                                        <span id="slider-cgpa-val" style="font-weight: 700; color: var(--accent-green);">8.5</span>
+                                    </div>
+                                    <input type="range" id="roi-slider-cgpa" min="6.0" max="10.0" step="0.1" value="8.5" class="custom-range-slider" style="width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                        <span>6.0</span><span>8.0</span><span>10.0</span>
+                                    </div>
+                                </div>
+                                <!-- Slider 2: Technical Projects -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-laptop-code" style="color: var(--accent-purple); margin-right: 0.35rem;"></i> Production Projects Built</span>
+                                        <span id="slider-proj-val" style="font-weight: 700; color: var(--accent-purple);">3 Projects</span>
+                                    </div>
+                                    <input type="range" id="roi-slider-projects" min="0" max="8" step="1" value="3" class="custom-range-slider" style="width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                        <span>0</span><span>4</span><span>8+</span>
+                                    </div>
+                                </div>
+                                <!-- Slider 3: Industry Certifications -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-award" style="color: var(--accent-yellow); margin-right: 0.35rem;"></i> Cloud / ML Certifications</span>
+                                        <span id="slider-cert-val" style="font-weight: 700; color: var(--accent-yellow);">2 Certifications</span>
+                                    </div>
+                                    <input type="range" id="roi-slider-certs" min="0" max="6" step="1" value="2" class="custom-range-slider" style="width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                        <span>0</span><span>3</span><span>6</span>
+                                    </div>
+                                </div>
+                                <!-- Slider 4: Experience Months -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                                        <span style="font-weight: 500; color: #fff;"><i class="fas fa-briefcase" style="color: var(--accent-pink); margin-right: 0.35rem;"></i> Relevant Experience</span>
+                                        <span id="slider-exp-val" style="font-weight: 700; color: var(--accent-pink);">3 Months</span>
+                                    </div>
+                                    <input type="range" id="roi-slider-exp" min="0" max="24" step="1" value="3" class="custom-range-slider" style="width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                        <span>0 Mo</span><span>12 Mo</span><span>24 Mo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Output Results Box -->
+                            <div class="col-5" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">Estimated Monthly Stipend</div>
+                                    <div id="roi-projected-stipend" style="font-size: 1.85rem; font-weight: 800; font-family: 'Outfit', sans-serif; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">₹52,000 - ₹72,000</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">Per month entry stipend rate across tech hubs</div>
+
+                                    <div style="margin-top: 1.25rem;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.35rem;">
+                                            <span style="color: var(--text-secondary);">Tier-1 Shortlist Probability</span>
+                                            <span id="roi-shortlist-pct" style="font-weight: 700; color: var(--accent-green);">84%</span>
+                                        </div>
+                                        <div class="critique-progress-bar" style="height: 8px;">
+                                            <div id="roi-progress-bar" class="critique-progress-fill" style="width: 84%; background: var(--gradient-glow);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="roi-insight-box" style="margin-top: 1.25rem; padding: 0.85rem; background: rgba(0, 242, 254, 0.05); border: 1px dashed rgba(0, 242, 254, 0.25); border-radius: 8px; font-size: 0.78rem; line-height: 1.45; color: #d0e4ff;">
+                                    <i class="fas fa-lightbulb" style="color: var(--accent-yellow); margin-right: 0.35rem;"></i>
+                                    <span id="roi-tip-text">Completing 1 additional cloud certification (AWS/GCP) will increase projected stipend potential by approx ₹10,000/month.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -828,20 +979,6 @@
 
 
 
-                <!-- ================== COMPANIES PANEL ================== -->
-                <div id="companies-panel" class="dashboard-panel">
-                    <div class="panel-header">
-                        <h1 class="panel-title"><i class="fas fa-building"></i> Company Profiles & Opportunities</h1>
-                        <p class="panel-subtitle">Explore companies, their culture, and available internship listings.</p>
-                    </div>
-                    <div id="companies-grid" class="companies-grid">
-                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary); grid-column: 1 / -1;">
-                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
-                            <p style="margin-top: 1rem;">Loading company profiles...</p>
-                        </div>
-                    </div>
-                </div>
-
 
                 <!-- ================== EMPLOYER PIPELINE PANEL ================== -->
                 <div id="employer-panel" class="dashboard-panel">
@@ -1077,6 +1214,83 @@
         </div>
     </div>
 
+    <!-- 8. EMPLOYABILITY PASSPORT DIGITAL BADGE MODAL -->
+    <div id="passport-modal" class="modal">
+        <div class="modal-content" style="max-width: 580px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff;">
+                    <i class="fas fa-id-badge" style="color: var(--accent-blue);"></i> Student Employability Passport
+                </h3>
+                <button id="passport-modal-close-btn" class="modal-close-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="passport-card-render" class="passport-holographic-card">
+                <div class="passport-header">
+                    <div class="passport-chip"><i class="fas fa-microchip"></i></div>
+                    <div class="passport-brand"><i class="fas fa-graduation-cap"></i> Placement<span>Intel</span> Verified</div>
+                </div>
+
+                <div class="passport-body">
+                    <div class="passport-avatar-wrap">
+                        <div class="passport-avatar" id="passport-avatar-initials">RM</div>
+                        <div class="passport-status-dot" title="Verified Active"></div>
+                    </div>
+                    <div class="passport-info">
+                        <div class="passport-name" id="passport-name">Ritvik Medam</div>
+                        <div class="passport-email" id="passport-email">student@university.edu</div>
+                        <div class="passport-tier-pill" id="passport-tier-badge">
+                            <i class="fas fa-award"></i> Level 4: Industry Ready
+                        </div>
+                    </div>
+                </div>
+
+                <div class="passport-metrics-row">
+                    <div class="passport-metric">
+                        <span class="p-label">Readiness Index</span>
+                        <span class="p-val" id="passport-score">85%</span>
+                    </div>
+                    <div class="passport-metric">
+                        <span class="p-label">Academic CGPA</span>
+                        <span class="p-val" id="passport-cgpa">8.45</span>
+                    </div>
+                    <div class="passport-metric">
+                        <span class="p-label">Verified Stacks</span>
+                        <span class="p-val" id="passport-skills-count">12 Skills</span>
+                    </div>
+                </div>
+
+                <div class="passport-skills-list" id="passport-skills-tags">
+                    <!-- Dynamic verified badges -->
+                </div>
+
+                <div class="passport-footer">
+                    <div class="passport-qr">
+                        <i class="fas fa-qrcode" style="font-size: 2.2rem; color: #fff;"></i>
+                    </div>
+                    <div class="passport-cred">
+                        <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Credential Hash</div>
+                        <div style="font-family: 'Fira Code', monospace; font-size: 0.72rem; color: var(--accent-blue);" id="passport-code-val">PI-VERIFIED-849204</div>
+                        <div style="font-size: 0.6rem; color: #94a3b8;">Cryptographically secured placement readiness passport</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+                <button type="button" class="btn-primary" id="btn-copy-passport-link" style="flex: 1; justify-content: center; padding: 0.65rem;">
+                    <i class="fas fa-link"></i> Copy Verification Link
+                </button>
+                <button type="button" class="btn-secondary" id="btn-print-passport" style="flex: 1; justify-content: center; padding: 0.65rem;">
+                    <i class="fas fa-download"></i> Save Digital Passport
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Confetti Canvas -->
+    <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 99999; display: none;"></canvas>
+
     <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
     <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
         <div class="notif-dropdown-header">
@@ -1188,17 +1402,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 4. NOTIFICATION DROPDOWN OVERLAY -->
-    <div id="notif-dropdown" class="notif-dropdown" style="display: none;">
-        <div class="notif-dropdown-header">
-            <span><i class="fas fa-bell"></i> Notifications</span>
-            <button id="notif-mark-read-btn" class="notif-mark-read">Mark all read</button>
-        </div>
-        <div id="notif-list" class="notif-list">
-            <div class="notif-empty">No notifications yet.</div>
         </div>
     </div>
 

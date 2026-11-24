@@ -172,6 +172,729 @@ document.addEventListener('DOMContentLoaded', () => {
     let recognition = null;
     let isRecordingInput = false;
 
+    // =========================================================================
+    // 1. TACTILE AUDIO SYNTHESIZER (Web Audio API - Pure Client Side)
+    // =========================================================================
+    let audioCtx = null;
+    let soundFXEnabled = localStorage.getItem('placement_sound_fx') !== 'false';
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                audioCtx = new AudioContext();
+            }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
+    function playClickSound() {
+        if (!soundFXEnabled) return;
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(750, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.04);
+        } catch(e) {}
+    }
+
+    function playSuccessChime() {
+        if (!soundFXEnabled) return;
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const chords = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
+            chords.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                const startTime = ctx.currentTime + idx * 0.08;
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(0.12, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.35);
+            });
+        } catch(e) {}
+    }
+
+    function playBoostSound() {
+        if (!soundFXEnabled) return;
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(320, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(980, ctx.currentTime + 0.16);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.18);
+        } catch(e) {}
+    }
+
+    const soundToggleBtn = document.getElementById('sound-fx-toggle-btn');
+    if (soundToggleBtn) {
+        soundToggleBtn.innerHTML = soundFXEnabled ? '<i class="fas fa-volume-high"></i>' : '<i class="fas fa-volume-xmark" style="color: var(--accent-red);"></i>';
+        soundToggleBtn.title = soundFXEnabled ? 'Sound Effects Enabled (Click to Mute)' : 'Sound Effects Muted (Click to Enable)';
+        soundToggleBtn.addEventListener('click', () => {
+            soundFXEnabled = !soundFXEnabled;
+            localStorage.setItem('placement_sound_fx', soundFXEnabled);
+            soundToggleBtn.innerHTML = soundFXEnabled ? '<i class="fas fa-volume-high"></i>' : '<i class="fas fa-volume-xmark" style="color: var(--accent-red);"></i>';
+            soundToggleBtn.title = soundFXEnabled ? 'Sound Effects Enabled (Click to Mute)' : 'Sound Effects Muted (Click to Enable)';
+            if (soundFXEnabled) playSuccessChime();
+            showToast(soundFXEnabled ? 'Audio feedback enabled' : 'Audio feedback muted', 'info');
+        });
+    }
+
+    // =========================================================================
+    // 2. CELEBRATORY CONFETTI ENGINE (Vanilla Canvas Particles)
+    // =========================================================================
+    function triggerConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.display = 'block';
+
+        const particles = [];
+        const colors = ['#00f2fe', '#4facfe', '#00f5a0', '#9b51e0', '#f59e0b', '#ec4899', '#38bdf8'];
+        const count = 75;
+
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+                y: canvas.height * 0.45,
+                vx: (Math.random() - 0.5) * 16,
+                vy: -Math.random() * 14 - 6,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 12,
+                gravity: 0.35,
+                alpha: 1,
+                decay: Math.random() * 0.015 + 0.01
+            });
+        }
+
+        let animationId;
+        function renderParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = 0;
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.vx *= 0.98;
+                p.rotation += p.rotSpeed;
+                p.alpha -= p.decay;
+
+                if (p.alpha > 0) {
+                    alive++;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+                    ctx.restore();
+                }
+            });
+
+            if (alive > 0) {
+                animationId = requestAnimationFrame(renderParticles);
+            } else {
+                cancelAnimationFrame(animationId);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.style.display = 'none';
+            }
+        }
+        renderParticles();
+    }
+
+    // =========================================================================
+    // 3. SMOOTH NUMERIC COUNTER ANIMATOR
+    // =========================================================================
+    function animateCounter(element, target, duration = 800, suffix = '') {
+        if (!element) return;
+        const start = parseInt(element.textContent) || 0;
+        const startTime = performance.now();
+        function update(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+            const current = Math.round(start + (target - start) * ease);
+            element.textContent = `${current}${suffix}`;
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            } else {
+                element.textContent = `${target}${suffix}`;
+            }
+        }
+        requestAnimationFrame(update);
+    }
+
+    // =========================================================================
+    // 4. INTERNSHIPS, WHAT-IF SIMULATOR & FILTERING STATE
+    // =========================================================================
+    let currentRecommendationsData = [];
+    let currentBaseScore = 0;
+    let currentStudentSkills = [];
+    let simulatedActiveSkills = new Set();
+    let savedInternshipIds = new Set(JSON.parse(localStorage.getItem('placement_saved_internships') || '[]'));
+    let activeCategoryFilter = 'all';
+    let currentSearchTerm = '';
+    let currentSortOrder = 'match_desc';
+    let latestStudentAnalysis = null;
+
+    const SIMULATION_SKILL_POOL = [
+        { name: 'Docker & Containers', skillKey: 'docker', boost: 6, icon: 'fa-cube' },
+        { name: 'AWS Cloud Architecture', skillKey: 'aws', boost: 8, icon: 'fa-cloud' },
+        { name: 'Kubernetes Orchestration', skillKey: 'kubernetes', boost: 7, icon: 'fa-dharmachakra' },
+        { name: 'PyTorch Deep Learning', skillKey: 'pytorch', boost: 8, icon: 'fa-brain' },
+        { name: 'System Design & Scalability', skillKey: 'system design', boost: 7, icon: 'fa-diagram-project' },
+        { name: 'React / Next.js', skillKey: 'react', boost: 6, icon: 'fa-code' },
+        { name: 'CI/CD & GitOps', skillKey: 'ci/cd', boost: 5, icon: 'fa-gears' },
+        { name: 'FastAPI Microservices', skillKey: 'fastapi', boost: 6, icon: 'fa-bolt' },
+        { name: 'PostgreSQL Performance', skillKey: 'postgresql', boost: 5, icon: 'fa-database' },
+        { name: 'TypeScript', skillKey: 'typescript', boost: 5, icon: 'fa-file-code' }
+    ];
+
+    function initWhatIfSimulator(studentSkills) {
+        const chipsContainer = document.getElementById('sim-chips-container');
+        if (!chipsContainer) return;
+        chipsContainer.innerHTML = '';
+        simulatedActiveSkills.clear();
+
+        const lowerStudentSkills = (studentSkills || []).map(s => s.toLowerCase());
+
+        // Filter out skills the student already possesses
+        const availablePool = SIMULATION_SKILL_POOL.filter(item => 
+            !lowerStudentSkills.some(sk => sk.includes(item.skillKey) || item.skillKey.includes(sk))
+        );
+
+        availablePool.forEach(item => {
+            const chip = document.createElement('div');
+            chip.className = 'skill-sim-chip';
+            chip.dataset.skill = item.skillKey;
+            chip.dataset.boost = item.boost;
+            chip.innerHTML = `
+                <i class="fas ${item.icon}"></i>
+                <span>${item.name}</span>
+                <span class="boost-tag">+${item.boost}%</span>
+            `;
+
+            chip.addEventListener('click', () => {
+                const isActive = chip.classList.toggle('active');
+                if (isActive) {
+                    simulatedActiveSkills.add(item.skillKey);
+                    playBoostSound();
+                } else {
+                    simulatedActiveSkills.delete(item.skillKey);
+                    playClickSound();
+                }
+
+                updateSimulationState(true);
+            });
+
+            chipsContainer.appendChild(chip);
+        });
+
+        updateSimulationState(false);
+    }
+
+    function updateSimulationState(playSound = true) {
+        let totalBoost = 0;
+        document.querySelectorAll('.skill-sim-chip.active').forEach(chip => {
+            totalBoost += parseInt(chip.dataset.boost) || 0;
+        });
+
+        const badge = document.getElementById('simulated-boost-badge');
+        const pointsVal = document.getElementById('boost-points-val');
+        const unlockedMsg = document.getElementById('sim-unlocked-message');
+        const unlockedText = document.getElementById('sim-unlocked-text');
+
+        const boostedScore = Math.min(99, currentBaseScore + totalBoost);
+        const progressCircle = document.querySelector('.gauge-progress');
+        if (progressCircle) {
+            progressCircle.style.strokeDashoffset = 440 - (boostedScore / 100) * 440;
+        }
+
+        animateCounter(document.getElementById('gauge-score-value'), boostedScore, 300, '%');
+
+        if (totalBoost > 0) {
+            if (badge) badge.style.display = 'inline-flex';
+            if (pointsVal) pointsVal.textContent = totalBoost;
+
+            if (boostedScore >= 80 && currentBaseScore < 80 && playSound) {
+                triggerConfetti();
+                playSuccessChime();
+            }
+
+            // Calculate how many opportunities got boosted
+            let boostedCount = 0;
+            currentRecommendationsData.forEach(rec => {
+                const reqSkills = rec.required_skills.split(',').map(s => s.trim().toLowerCase());
+                const simMatches = reqSkills.filter(sk => [...simulatedActiveSkills].some(sim => sk.includes(sim) || sim.includes(sk)));
+                if (simMatches.length > 0) boostedCount++;
+            });
+
+            if (unlockedMsg && unlockedText) {
+                unlockedMsg.style.display = 'block';
+                unlockedText.innerHTML = `Simulation active: <strong>+${totalBoost}%</strong> readiness surge unlocked higher match tiers across <strong>${boostedCount}</strong> target internships below!`;
+            }
+        } else {
+            if (badge) badge.style.display = 'none';
+            if (unlockedMsg) unlockedMsg.style.display = 'none';
+        }
+
+        renderFilteredInternships();
+    }
+
+    const resetSimBtn = document.getElementById('btn-reset-simulator');
+    if (resetSimBtn) {
+        resetSimBtn.addEventListener('click', () => {
+            playClickSound();
+            document.querySelectorAll('.skill-sim-chip.active').forEach(chip => chip.classList.remove('active'));
+            simulatedActiveSkills.clear();
+            updateSimulationState(false);
+            showToast('Simulation reset to baseline score', 'info');
+        });
+    }
+
+    function renderFilteredInternships() {
+        const recomTableBody = document.querySelector('#recommendation-table tbody');
+        if (!recomTableBody) return;
+
+        // Clone and compute effective match scores
+        let processed = currentRecommendationsData.map(rec => {
+            const reqSkills = rec.required_skills.split(',').map(s => s.trim());
+            let matchedBaseCount = 0;
+            let matchedSimCount = 0;
+
+            const skillsAnalysis = reqSkills.map(sk => {
+                const sClean = sk.toLowerCase();
+                const matchedBase = currentStudentSkills.some(s => s === sClean || s.includes(sClean) || sClean.includes(s));
+                const matchedSim = !matchedBase && [...simulatedActiveSkills].some(s => s === sClean || s.includes(sClean) || sClean.includes(s));
+                
+                if (matchedBase) matchedBaseCount++;
+                if (matchedSim) matchedSimCount++;
+
+                return {
+                    name: sk,
+                    status: matchedBase ? 'matched' : (matchedSim ? 'simulated' : 'missing')
+                };
+            });
+
+            let effectiveScore = rec.match_score;
+            let isBoosted = false;
+            if (matchedSimCount > 0 && reqSkills.length > 0) {
+                const simBoost = Math.round((matchedSimCount / reqSkills.length) * 22);
+                effectiveScore = Math.min(99, rec.match_score + simBoost);
+                isBoosted = true;
+            }
+
+            // Extract numeric stipend for sorting
+            const stipendDigits = parseInt(rec.stipend.replace(/[^0-9]/g, '')) || 0;
+
+            return {
+                ...rec,
+                effectiveScore,
+                isBoosted,
+                skillsAnalysis,
+                stipendValue: stipendDigits
+            };
+        });
+
+        // 1. Text Search Filter
+        if (currentSearchTerm.trim() !== '') {
+            const term = currentSearchTerm.toLowerCase();
+            processed = processed.filter(item => 
+                item.title.toLowerCase().includes(term) ||
+                item.company.toLowerCase().includes(term) ||
+                item.required_skills.toLowerCase().includes(term) ||
+                item.location.toLowerCase().includes(term)
+            );
+        }
+
+        // 2. Category Filter
+        if (activeCategoryFilter === 'remote') {
+            processed = processed.filter(item => item.location.toLowerCase().includes('remote'));
+        } else if (activeCategoryFilter === 'high-stipend') {
+            processed = processed.filter(item => item.stipendValue >= 25000 || /3[0-9]k|4[0-9]k|5[0-9]k|6[0-9]k|7[0-9]k|8[0-9]k|9[0-9]k/i.test(item.stipend));
+        } else if (activeCategoryFilter === 'ai-ml') {
+            processed = processed.filter(item => /ai|ml|machine learning|data|nlp|vision|python/i.test(item.title + ' ' + item.required_skills));
+        } else if (activeCategoryFilter === 'software') {
+            processed = processed.filter(item => /software|developer|frontend|backend|full stack|web|react|node|cloud/i.test(item.title + ' ' + item.required_skills));
+        } else if (activeCategoryFilter === 'saved') {
+            processed = processed.filter(item => savedInternshipIds.has(item.id));
+        }
+
+        // 3. Sorting
+        if (currentSortOrder === 'match_desc') {
+            processed.sort((a, b) => b.effectiveScore - a.effectiveScore);
+        } else if (currentSortOrder === 'stipend_desc') {
+            processed.sort((a, b) => b.stipendValue - a.stipendValue);
+        } else if (currentSortOrder === 'company_asc') {
+            processed.sort((a, b) => a.company.localeCompare(b.company));
+        }
+
+        // Update counts in UI
+        const countBadge = document.getElementById('table-matches-count-badge');
+        if (countBadge) countBadge.textContent = `Showing ${processed.length} of ${currentRecommendationsData.length} Opportunities`;
+        const pillAll = document.getElementById('pill-count-all');
+        if (pillAll) pillAll.textContent = currentRecommendationsData.length;
+        const savedCount = document.getElementById('saved-bookmarks-count');
+        if (savedCount) savedCount.textContent = savedInternshipIds.size;
+
+        recomTableBody.innerHTML = '';
+
+        if (processed.length === 0) {
+            recomTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+                        <i class="fas fa-filter-circle-xmark" style="font-size: 1.8rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
+                        No internships matched your current filter criteria.
+                        <div style="margin-top: 0.5rem;">
+                            <button id="btn-clear-filters" class="btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;">Clear All Filters</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            const clearBtn = document.getElementById('btn-clear-filters');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    const searchInput = document.getElementById('internship-search-input');
+                    if (searchInput) searchInput.value = '';
+                    currentSearchTerm = '';
+                    activeCategoryFilter = 'all';
+                    document.querySelectorAll('#internship-category-pills .filter-pill').forEach(p => {
+                        p.classList.toggle('active', p.dataset.category === 'all');
+                    });
+                    renderFilteredInternships();
+                });
+            }
+            return;
+        }
+
+        processed.forEach(rec => {
+            const tr = document.createElement('tr');
+            let skillsHTML = '';
+            rec.skillsAnalysis.forEach(sk => {
+                let cls = 'skill-tag missing';
+                let icon = 'fa-triangle-exclamation';
+                if (sk.status === 'matched') {
+                    cls = 'skill-tag matched';
+                    icon = 'fa-check';
+                } else if (sk.status === 'simulated') {
+                    cls = 'skill-tag simulated';
+                    icon = 'fa-wand-magic-sparkles';
+                }
+                skillsHTML += `<span class="${cls}"><i class="fas ${icon}"></i> ${sk.name}</span> `;
+            });
+
+            const isSaved = savedInternshipIds.has(rec.id);
+            const scoreBadgeHTML = rec.isBoosted 
+                ? `<span class="score-badge boosted" title="Boosted by What-If Simulator!"><i class="fas fa-bolt"></i> ${rec.effectiveScore}%</span>`
+                : `<span class="score-badge">${rec.effectiveScore}%</span>`;
+
+            tr.innerHTML = `
+                <td style="font-weight: 600;">
+                    <div style="font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                        ${rec.title}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
+                        <i class="fas fa-building" style="font-size: 0.75rem;"></i> ${rec.company}
+                    </div>
+                </td>
+                <td>${scoreBadgeHTML}</td>
+                <td><div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">${skillsHTML}</div></td>
+                <td>
+                    <div style="font-size: 0.8rem; color: #fff;"><i class="fas fa-map-marker-alt" style="color: var(--accent-blue);"></i> ${rec.location}</div>
+                    <div style="font-size: 0.75rem; color: var(--accent-green); margin-top: 0.15rem;"><i class="fas fa-wallet"></i> ${rec.stipend}</div>
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                        <button class="btn-bookmark ${isSaved ? 'saved' : ''}" data-id="${rec.id}" title="${isSaved ? 'Remove from Saved' : 'Save Internship'}">
+                            <i class="${isSaved ? 'fas' : 'far'} fa-star"></i>
+                        </button>
+                        <button class="btn-primary apply-btn" data-id="${rec.id}" data-score="${rec.effectiveScore}">
+                            <i class="fas fa-paper-plane"></i> Apply
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            recomTableBody.appendChild(tr);
+        });
+
+        // Wire Bookmark buttons
+        recomTableBody.querySelectorAll('.btn-bookmark').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                if (savedInternshipIds.has(id)) {
+                    savedInternshipIds.delete(id);
+                    btn.classList.remove('saved');
+                    btn.querySelector('i').className = 'far fa-star';
+                    showToast('Removed from saved internships', 'info');
+                } else {
+                    savedInternshipIds.add(id);
+                    btn.classList.add('saved');
+                    btn.querySelector('i').className = 'fas fa-star';
+                    showToast('Saved to your bookmarks!', 'success');
+                }
+                playClickSound();
+                localStorage.setItem('placement_saved_internships', JSON.stringify([...savedInternshipIds]));
+                const savedBadge = document.getElementById('saved-bookmarks-count');
+                if (savedBadge) savedBadge.textContent = savedInternshipIds.size;
+                if (activeCategoryFilter === 'saved') {
+                    renderFilteredInternships();
+                }
+            });
+        });
+
+        // Wire Apply buttons
+        recomTableBody.querySelectorAll('.apply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyForInternship(btn, btn.dataset.id, btn.dataset.score);
+            });
+        });
+    }
+
+    // Toolbar Input Listeners
+    const searchInput = document.getElementById('internship-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            renderFilteredInternships();
+        });
+    }
+
+    const sortSelect = document.getElementById('internship-sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSortOrder = e.target.value;
+            playClickSound();
+            renderFilteredInternships();
+        });
+    }
+
+    const filterPills = document.querySelectorAll('#internship-category-pills .filter-pill');
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            playClickSound();
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeCategoryFilter = pill.dataset.category;
+            renderFilteredInternships();
+        });
+    });
+
+    // =========================================================================
+    // 5. PLACEMENT ROI & MARKET STIPEND CALCULATOR
+    // =========================================================================
+    function initROICalculator() {
+        const sliderCgpa = document.getElementById('roi-slider-cgpa');
+        const sliderProj = document.getElementById('roi-slider-projects');
+        const sliderCerts = document.getElementById('roi-slider-certs');
+        const sliderExp = document.getElementById('roi-slider-exp');
+
+        if (!sliderCgpa) return;
+
+        function updateROICalculation() {
+            const cgpa = parseFloat(sliderCgpa.value) || 8.5;
+            const proj = parseInt(sliderProj.value) || 3;
+            const certs = parseInt(sliderCerts.value) || 2;
+            const exp = parseInt(sliderExp.value) || 3;
+
+            const cgpaVal = document.getElementById('slider-cgpa-val');
+            if (cgpaVal) cgpaVal.textContent = cgpa.toFixed(1);
+            const projVal = document.getElementById('slider-proj-val');
+            if (projVal) projVal.textContent = `${proj} Project${proj === 1 ? '' : 's'}`;
+            const certVal = document.getElementById('slider-cert-val');
+            if (certVal) certVal.textContent = `${certs} Certification${certs === 1 ? '' : 's'}`;
+            const expVal = document.getElementById('slider-exp-val');
+            if (expVal) expVal.textContent = `${exp} Month${exp === 1 ? '' : 's'}`;
+
+            // Weighted readiness calculation
+            const cgpaScore = ((cgpa - 5) / 5) * 35; // 35 max
+            const projScore = Math.min(30, (proj / 5) * 30); // 30 max
+            const certScore = Math.min(20, (certs / 4) * 20); // 20 max
+            const expScore = Math.min(15, (exp / 6) * 15); // 15 max
+            const totalIndex = Math.max(10, Math.min(99, Math.round(cgpaScore + projScore + certScore + expScore)));
+
+            // Calculate stipend range
+            const baseStipend = 18000;
+            const minStipend = Math.round((baseStipend + totalIndex * 520) / 1000) * 1000;
+            const maxStipend = Math.round((minStipend * 1.38) / 1000) * 1000;
+
+            const stipendEl = document.getElementById('roi-projected-stipend');
+            if (stipendEl) stipendEl.textContent = `₹${minStipend.toLocaleString('en-IN')} - ₹${maxStipend.toLocaleString('en-IN')}`;
+
+            const shortlistEl = document.getElementById('roi-shortlist-pct');
+            const progressEl = document.getElementById('roi-progress-bar');
+            const probPct = Math.min(96, Math.max(25, Math.round(totalIndex * 0.98)));
+            if (shortlistEl) shortlistEl.textContent = `${probPct}%`;
+            if (progressEl) progressEl.style.width = `${probPct}%`;
+
+            const tipEl = document.getElementById('roi-tip-text');
+            if (tipEl) {
+                if (proj < 3) {
+                    tipEl.innerHTML = `Building <strong>${3 - proj} more full-stack production project(s)</strong> will elevate your stipend potential by approx <strong>+₹18,000/mo</strong> and bypass initial resume filters.`;
+                } else if (certs < 2) {
+                    tipEl.innerHTML = `Acquiring <strong>1 cloud or Kubernetes certification</strong> increases Tier-1 interview shortlist probability by <strong>+24%</strong> across leading MNCs.`;
+                } else if (cgpa < 8.0) {
+                    tipEl.innerHTML = `Strong project portfolio currently offsets CGPA. Sustaining 8.0+ unlocks automated application gates for high-frequency trading & Tier-1 product firms.`;
+                } else {
+                    tipEl.innerHTML = `Exceptional profile strength! You qualify for the top 5% compensation bracket with estimated offers upwards of <strong>₹65,000/mo</strong>.`;
+                }
+            }
+        }
+
+        [sliderCgpa, sliderProj, sliderCerts, sliderExp].forEach(slider => {
+            if (slider) slider.addEventListener('input', updateROICalculation);
+        });
+
+        updateROICalculation();
+    }
+
+    // =========================================================================
+    // 6. EMPLOYABILITY PASSPORT DIGITAL BADGE
+    // =========================================================================
+    function initEmployabilityPassport() {
+        const openBtn = document.getElementById('btn-open-passport');
+        const modal = document.getElementById('passport-modal');
+        const closeBtn = document.getElementById('passport-modal-close-btn');
+        const copyLinkBtn = document.getElementById('btn-copy-passport-link');
+        const printBtn = document.getElementById('btn-print-passport');
+
+        if (!modal) return;
+
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                playClickSound();
+
+                const userName = currentUserSession ? currentUserSession.name : 'Ritvik Medam';
+                const userEmail = currentUserSession ? currentUserSession.email : 'student@university.edu';
+                
+                // Initials
+                const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'ST';
+                const avatarEl = document.getElementById('passport-avatar-initials');
+                if (avatarEl) avatarEl.textContent = initials;
+
+                const nameEl = document.getElementById('passport-name');
+                if (nameEl) nameEl.textContent = userName;
+
+                const emailEl = document.getElementById('passport-email');
+                if (emailEl) emailEl.textContent = userEmail;
+
+                const score = latestStudentAnalysis ? latestStudentAnalysis.employability_score : 85;
+                const scoreEl = document.getElementById('passport-score');
+                if (scoreEl) scoreEl.textContent = `${score}%`;
+
+                const cgpa = (latestStudentAnalysis && latestStudentAnalysis.student_profile) 
+                    ? latestStudentAnalysis.student_profile.cgpa 
+                    : '8.45';
+                const cgpaEl = document.getElementById('passport-cgpa');
+                if (cgpaEl) cgpaEl.textContent = cgpa;
+
+                const tierBadge = document.getElementById('passport-tier-badge');
+                if (tierBadge) {
+                    if (score >= 85) {
+                        tierBadge.innerHTML = '<i class="fas fa-crown" style="color: var(--accent-yellow);"></i> Level 4: Industry Ready';
+                    } else if (score >= 70) {
+                        tierBadge.innerHTML = '<i class="fas fa-award" style="color: var(--accent-green);"></i> Level 3: Placement Qualified';
+                    } else {
+                        tierBadge.innerHTML = '<i class="fas fa-bolt" style="color: var(--accent-blue);"></i> Level 2: Skill Accelerating';
+                    }
+                }
+
+                // Skills tags
+                const skillsTagsContainer = document.getElementById('passport-skills-tags');
+                const skillsCountEl = document.getElementById('passport-skills-count');
+                const skills = (latestStudentAnalysis && latestStudentAnalysis.student_profile) 
+                    ? latestStudentAnalysis.student_profile.skills 
+                    : ['Python', 'Machine Learning', 'Docker', 'AWS Cloud', 'React', 'SQL', 'Git'];
+
+                if (skillsCountEl) skillsCountEl.textContent = `${skills.length} Skills`;
+
+                if (skillsTagsContainer) {
+                    skillsTagsContainer.innerHTML = '';
+                    skills.slice(0, 8).forEach(sk => {
+                        const span = document.createElement('span');
+                        span.className = 'p-skill-pill';
+                        span.innerHTML = `<i class="fas fa-check" style="font-size: 0.65rem;"></i> ${sk}`;
+                        skillsTagsContainer.appendChild(span);
+                    });
+                }
+
+                // Credential Hash
+                const credEl = document.getElementById('passport-code-val');
+                if (credEl) {
+                    const hash = Math.abs(userName.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase();
+                    credEl.textContent = `PI-VERIFIED-${hash}`;
+                }
+
+                modal.style.display = 'flex';
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', () => {
+                playSuccessChime();
+                const credHash = document.getElementById('passport-code-val')?.textContent || 'PI-VERIFIED';
+                const shareUrl = `${window.location.origin}/verify/${credHash}`;
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToast('Verification URL copied to clipboard!', 'success');
+                    }).catch(() => {
+                        showToast(`Verification Link: ${shareUrl}`, 'info');
+                    });
+                } else {
+                    showToast(`Verification Link: ${shareUrl}`, 'info');
+                }
+            });
+        }
+
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+    }
+
     // ----------------- Auth State Checks -----------------
     checkUserSession();
 
@@ -216,6 +939,8 @@ document.addEventListener('DOMContentLoaded', () => {
             startNotificationPolling();
             fetchStudentSlots();
             fetchActiveStudentResume();
+            initROICalculator();
+            initEmployabilityPassport();
             setTimeout(startOnboardingTour, 1000);
         } else if (user.role === 'recruiter') {
             recruiterMenu.style.display = 'flex';
@@ -367,6 +1092,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (placementsTableContainer) placementsTableContainer.style.display = 'none';
         if (miniReadinessSec) miniReadinessSec.style.display = 'none';
 
+        const whatifContainer = document.getElementById('whatif-simulator-container');
+        if (whatifContainer) whatifContainer.style.display = 'none';
+        simulatedActiveSkills.clear();
+
         const radarContainer = document.getElementById('radar-chart-container');
         if (radarContainer) radarContainer.style.display = 'none';
         const peerContainer = document.getElementById('peer-comparison-container');
@@ -498,13 +1227,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------- Tab Navigation -----------------
     menuButtons.forEach(btn => {
         btn.addEventListener('click', () => {
+            playClickSound();
             const targetId = btn.dataset.tab;
 
             menuButtons.forEach(b => b.classList.remove('active'));
             panels.forEach(p => p.classList.remove('active'));
 
             btn.classList.add('active');
-            document.getElementById(targetId).classList.add('active');
+            const targetPanel = document.getElementById(targetId);
+            if (targetPanel) targetPanel.classList.add('active');
 
             if (targetId === 'employer-panel') {
                 fetchRecruiterCandidates();
@@ -514,8 +1245,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadResumeBuilderData();
             } else if (targetId === 'my-applications-panel') {
                 fetchMyApplications();
-            } else if (targetId === 'companies-panel') {
-                fetchCompanies();
             } else if (targetId === 'mock-interview-panel') {
                 fetchInterviewHistory();
             } else if (targetId === 'career-advisor-panel') {
@@ -746,8 +1475,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderStudentResults(data) {
+        latestStudentAnalysis = data;
         const profile = data.student_profile;
         const critique = data.critique;
+
+        currentRecommendationsData = data.recommendations || [];
+        currentBaseScore = data.employability_score || 0;
+        currentStudentSkills = (profile.skills || []).map(s => s.toLowerCase());
+        simulatedActiveSkills.clear();
 
         document.getElementById('res-name').textContent = profile.name;
         document.getElementById('res-email').textContent = profile.email;
@@ -762,16 +1497,24 @@ document.addEventListener('DOMContentLoaded', () => {
             skillsContainer.appendChild(span);
         });
 
-        // Gauge values
+        // Gauge values & Animated Counter
         const score = data.employability_score;
         const progressCircle = document.querySelector('.gauge-progress');
         const offset = 440 - (score / 100) * 440;
-        progressCircle.style.strokeDashoffset = offset;
-        document.getElementById('gauge-score-value').textContent = `${score}%`;
+        if (progressCircle) progressCircle.style.strokeDashoffset = offset;
+        animateCounter(document.getElementById('gauge-score-value'), score, 900, '%');
 
         const readinessBadge = document.getElementById('readiness-badge');
         readinessBadge.textContent = `${data.placement_readiness} Readiness`;
         readinessBadge.className = 'badge-readiness ' + data.placement_readiness.toLowerCase();
+
+        // Celebration chime & confetti if high readiness
+        if (score >= 75) {
+            setTimeout(() => {
+                triggerConfetti();
+                playSuccessChime();
+            }, 300);
+        }
 
         // Sub scores
         document.getElementById('score-format').textContent = `${critique.scores.formatting}%`;
@@ -795,40 +1538,13 @@ document.addEventListener('DOMContentLoaded', () => {
             checklistContainer.appendChild(div);
         });
 
-        // Placement Recommendations table
-        const recomTableBody = document.querySelector('#recommendation-table tbody');
-        recomTableBody.innerHTML = '';
-        data.recommendations.forEach(rec => {
-            const tr = document.createElement('tr');
-            const reqSkills = rec.required_skills.split(',');
-            let skillsHTML = '';
-            reqSkills.forEach(sk => {
-                const sClean = sk.trim().toLowerCase();
-                const matched = profile.skills.map(s => s.toLowerCase()).includes(sClean);
-                const cls = matched ? 'skill-tag matched' : 'skill-tag missing';
-                const icon = matched ? 'fa-check' : 'fa-triangle-exclamation';
-                skillsHTML += `<span class="${cls}"><i class="fas ${icon}"></i> ${sk.trim()}</span> `;
-            });
+        // Initialize Interactive What-If Simulator
+        const whatifContainer = document.getElementById('whatif-simulator-container');
+        if (whatifContainer) whatifContainer.style.display = 'block';
+        initWhatIfSimulator(profile.skills || []);
 
-            tr.innerHTML = `
-                <td style="font-weight: 600;">
-                    <div style="font-size: 0.95rem; color: #fff;">${rec.title}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary);">${rec.company}</div>
-                </td>
-                <td><span class="score-badge">${rec.match_score}%</span></td>
-                <td><div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">${skillsHTML}</div></td>
-                <td>
-                    <div style="font-size: 0.8rem; color: #fff;"><i class="fas fa-map-marker-alt"></i> ${rec.location}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);"><i class="fas fa-wallet"></i> ${rec.stipend}</div>
-                </td>
-                <td>
-                    <button class="btn-primary apply-btn" data-id="${rec.id}" data-score="${rec.match_score}">
-                        <i class="fas fa-paper-plane"></i> Apply
-                    </button>
-                </td>
-            `;
-            recomTableBody.appendChild(tr);
-        });
+        // Render Filtered & Interactive Recommendations Table
+        renderFilteredInternships();
 
         // Curated Learn links
         const courseContainer = document.getElementById('skill-gap-courses');
@@ -863,12 +1579,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        document.querySelectorAll('.apply-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                applyForInternship(btn, btn.dataset.id, btn.dataset.score);
-            });
-        });
-
         // Render skill radar chart
         renderSkillRadarChart(data.recommendations);
 
@@ -901,7 +1611,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.style.background = 'rgba(0, 245, 160, 0.15)';
                     button.style.color = 'var(--accent-green)';
                     button.style.border = '1px solid rgba(0, 245, 160, 0.3)';
+                    triggerConfetti();
+                    playSuccessChime();
+                    showToast('Application successfully submitted! Recruiter notified.', 'success');
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-paper-plane"></i> Apply';
+                    showToast(data.error || 'Failed to submit application', 'error');
                 }
+            })
+            .catch(err => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-paper-plane"></i> Apply';
+                showToast('Application submission error: ' + err.message, 'error');
             });
     }
 
@@ -2045,6 +2767,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 });
+                initROICalculator();
             });
     }
 

@@ -1732,8 +1732,86 @@ body.theme-light {
     --accent-blue-subtle: #eff6ff;
 }
 
+/* Sidebar Light Theme */
 body.theme-light aside {
-    background: #0f172a; /* High contrast authoritative sidebar */
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .sidebar-logo {
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .sidebar-logo-text {
+    color: #0f172a !important;
+}
+
+body.theme-light .sidebar-logo-text span {
+    color: #2563eb !important;
+}
+
+body.theme-light .sidebar-logo i {
+    color: #2563eb !important;
+}
+
+body.theme-light .menu-btn {
+    color: #475569 !important;
+}
+
+body.theme-light .menu-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .menu-btn.active {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+    font-weight: 600 !important;
+}
+
+body.theme-light .menu-btn.active i {
+    color: #2563eb !important;
+}
+
+body.theme-light .sidebar-footer-container {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .sidebar-utility-row {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .sidebar-icon-btn {
+    color: #64748b !important;
+}
+
+body.theme-light .sidebar-icon-btn:hover {
+    color: #0f172a !important;
+    background: #e2e8f0 !important;
+}
+
+body.theme-light .user-profile-strip {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light #session-username {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+body.theme-light #session-userrole {
+    color: #64748b !important;
+}
+
+body.theme-light .sidebar-footer {
+    color: #64748b !important;
+}
+
+body.theme-light .sidebar-footer span {
+    color: #2563eb !important;
 }
 
 body.theme-light .card {

@@ -720,8 +720,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
                         ${rec.title}
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
-                        <i class="fas fa-building" style="font-size: 0.75rem;"></i> ${rec.company}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem;">
+                        <i class="fas fa-building" style="font-size: 0.75rem;"></i>
+                        <span class="company-dossier-link" data-company="${rec.company}" style="cursor: pointer; text-decoration: underline; color: var(--accent-blue);" title="View Company Placement Dossier">${rec.company}</span>
+                        <span class="company-intel-btn" data-company="${rec.company}" style="font-size: 0.65rem; background: rgba(0, 210, 255, 0.12); color: var(--accent-blue); padding: 1px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;" title="Company Placement Dossier"><i class="fas fa-shield-halved"></i> Intel</span>
                     </div>
                 </td>
                 <td>${scoreBadgeHTML}</td>
@@ -731,9 +733,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 0.75rem; color: var(--accent-green); margin-top: 0.15rem;"><i class="fas fa-wallet"></i> ${rec.stipend}</div>
                 </td>
                 <td>
-                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem;">
                         <button class="btn-bookmark ${isSaved ? 'saved' : ''}" data-id="${rec.id}" title="${isSaved ? 'Remove from Saved' : 'Save Internship'}">
                             <i class="${isSaved ? 'fas' : 'far'} fa-star"></i>
+                        </button>
+                        <button class="btn-secondary tailor-resume-btn" data-id="${rec.id}" data-company="${rec.company}" data-role="${rec.title}" data-skills="${rec.required_skills}" title="1-Click Tailor Resume for this Internship" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; border-radius: 6px;">
+                            <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-purple);"></i> Tailor
                         </button>
                         <button class="btn-primary apply-btn" data-id="${rec.id}" data-score="${rec.effectiveScore}">
                             <i class="fas fa-paper-plane"></i> Apply
@@ -775,6 +780,22 @@ document.addEventListener('DOMContentLoaded', () => {
         recomTableBody.querySelectorAll('.apply-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 applyForInternship(btn, btn.dataset.id, btn.dataset.score);
+            });
+        });
+
+        // Wire Company Dossier Links
+        recomTableBody.querySelectorAll('.company-dossier-link, .company-intel-btn').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openCompanyDossier(el.dataset.company);
+            });
+        });
+
+        // Wire Tailor Resume Buttons
+        recomTableBody.querySelectorAll('.tailor-resume-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTailorResume(btn.dataset.company, btn.dataset.role, btn.dataset.skills);
             });
         });
     }
@@ -1050,6 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.menu-btn[data-tab="employer-panel"]').classList.add('active');
             document.getElementById('employer-panel').classList.add('active');
             fetchRecruiterCandidates();
+            startNotificationPolling();
         } else if (user.role === 'university') {
             universityMenu.style.display = 'flex';
             document.querySelector('.menu-btn[data-tab="university-panel"]').classList.add('active');
@@ -1717,6 +1739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     triggerConfetti();
                     playSuccessChime();
                     showToast('Application successfully submitted! Recruiter notified.', 'success');
+                    fetchNotifications();
                 } else {
                     button.disabled = false;
                     button.innerHTML = '<i class="fas fa-paper-plane"></i> Apply';
@@ -1730,7 +1753,72 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // ----------------- Mock Interview Terminal -----------------
+    // ----------------- Mock Interview Video/Audio Studio -----------------
+    let waveformAnimId = null;
+    function drawWaveform(isActive) {
+        const canvas = document.getElementById('interview-waveform-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        let phase = 0;
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            const isDark = document.body.classList.contains('theme-dark') || !document.body.classList.contains('theme-light');
+            ctx.fillStyle = isDark ? 'rgba(0, 242, 254, 0.04)' : 'rgba(0, 0, 0, 0.04)';
+            ctx.fillRect(0, 0, width, height);
+
+            const bars = 22;
+            const barWidth = 4;
+            const spacing = (width - bars * barWidth) / (bars + 1);
+
+            for (let i = 0; i < bars; i++) {
+                let h = 3;
+                if (isActive) {
+                    h = Math.abs(Math.sin(phase + i * 0.4)) * 14 + Math.random() * 5 + 3;
+                }
+                h = Math.max(3, Math.min(height - 4, h));
+                const x = spacing + i * (barWidth + spacing);
+                const y = (height - h) / 2;
+                ctx.fillStyle = isActive ? '#00d2ff' : (isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.18)');
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(x, y, barWidth, h, 2);
+                } else {
+                    ctx.rect(x, y, barWidth, h);
+                }
+                ctx.fill();
+            }
+            phase += 0.25;
+            if (isActive) {
+                waveformAnimId = requestAnimationFrame(render);
+            }
+        }
+        if (waveformAnimId) cancelAnimationFrame(waveformAnimId);
+        render();
+    }
+    // Initial static waveform
+    setTimeout(() => drawWaveform(false), 300);
+
+    function analyzeSpeechPaceAndFillers(text) {
+        if (!text) return;
+        const words = text.trim().split(/\s+/).filter(Boolean);
+        const fillerPatterns = /\b(um|uh|like|actually|basically|literally|you know|sort of|kind of)\b/gi;
+        const matches = text.match(fillerPatterns) || [];
+        const fillerCount = matches.length;
+
+        const estWpm = Math.min(210, Math.max(90, Math.round(words.length * 7.5)));
+
+        const paceEl = document.getElementById('speaking-pace-badge');
+        const fillerEl = document.getElementById('filler-words-badge');
+        if (paceEl) paceEl.innerHTML = `<i class="fas fa-gauge-simple" style="color: var(--accent-blue);"></i> Pace: ${estWpm} WPM`;
+        if (fillerEl) {
+            const color = fillerCount > 3 ? '#ff4d4f' : (fillerCount > 0 ? '#f5a623' : 'var(--accent-green)');
+            fillerEl.innerHTML = `<i class="fas fa-shield" style="color: ${color};"></i> Filler: ${fillerCount}`;
+        }
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
@@ -1741,24 +1829,32 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.onstart = () => {
             isRecordingInput = true;
             micBtn.classList.add('recording');
-            terminalInput.placeholder = "Listening... Speak your answer clearly.";
+            terminalInput.placeholder = "Listening... Speak your response clearly.";
+            drawWaveform(true);
+            const speakingStatus = document.getElementById('ai-speaking-status');
+            if (speakingStatus) speakingStatus.innerHTML = '<i class="fas fa-microphone" style="color: #ff4d4f; margin-right: 0.25rem;"></i>Listening to Candidate...';
         };
 
         recognition.onresult = (e) => {
             terminalInput.value = e.results[0][0].transcript;
+            analyzeSpeechPaceAndFillers(terminalInput.value);
         };
 
         recognition.onend = () => {
             isRecordingInput = false;
             micBtn.classList.remove('recording');
-            terminalInput.placeholder = "Type your answer here...";
+            terminalInput.placeholder = "Speak into microphone or type your technical answer here...";
+            drawWaveform(false);
+            const speakingStatus = document.getElementById('ai-speaking-status');
+            if (speakingStatus) speakingStatus.innerHTML = '<i class="fas fa-circle-check" style="color: var(--accent-green); margin-right: 0.25rem;"></i>Evaluator Standing By';
         };
 
         recognition.onerror = (e) => {
             console.error("STT Error:", e.error);
             isRecordingInput = false;
             micBtn.classList.remove('recording');
-            terminalInput.placeholder = "Type your answer here...";
+            terminalInput.placeholder = "Speak into microphone or type your technical answer here...";
+            drawWaveform(false);
         };
     } else {
         micBtn.style.display = 'none';
@@ -1770,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isVoiceOutputEnabled = speakerBtn.classList.contains('active');
         if (!isVoiceOutputEnabled && window.speechSynthesis) {
             window.speechSynthesis.cancel();
+            drawWaveform(false);
         }
     });
 
@@ -1817,9 +1914,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedVoice) selectedVoice = voices.find(v => v.lang.includes('en'));
         if (selectedVoice) utterance.voice = selectedVoice;
 
-        utterance.rate = 0.90;
+        utterance.rate = 0.92;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
+
+        utterance.onstart = () => {
+            drawWaveform(true);
+            const speakingStatus = document.getElementById('ai-speaking-status');
+            if (speakingStatus) speakingStatus.innerHTML = '<i class="fas fa-volume-high" style="color: var(--accent-blue); margin-right: 0.25rem;"></i>AI Evaluator Speaking';
+        };
+        utterance.onend = () => {
+            drawWaveform(false);
+            const speakingStatus = document.getElementById('ai-speaking-status');
+            if (speakingStatus) speakingStatus.innerHTML = '<i class="fas fa-circle-check" style="color: var(--accent-green); margin-right: 0.25rem;"></i>Evaluator Standing By';
+        };
 
         window.speechSynthesis.speak(utterance);
     }
@@ -1830,14 +1938,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         interviewRole = roleSelect.value;
         startInterviewBtn.disabled = true;
-        startInterviewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting Round...';
+        startInterviewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing Call...';
 
         terminalBody.innerHTML = `
-            <div class="terminal-line">
-                <span class="terminal-system-msg">[SYSTEM] Starting technical assessment framework for ${interviewRole}...</span>
-            </div>
-            <div class="terminal-line">
-                <span class="terminal-system-msg">[SYSTEM] Fetching candidate details: ${currentUserSession.name}...</span>
+            <div class="interview-bubble ai-bubble" style="background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px 12px 12px 2px; padding: 0.85rem 1rem; align-self: flex-start; max-width: 88%;">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--accent-blue); margin-bottom:0.25rem;"><i class="fas fa-robot"></i> System Coordinator</div>
+                <div style="font-size:0.85rem; color:var(--text-primary);"><i class="fas fa-spinner fa-spin" style="margin-right: 0.35rem;"></i> Connecting to Technical Evaluator Studio for <strong>${interviewRole}</strong>...</div>
             </div>
         `;
 
@@ -1851,17 +1957,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 isInterviewRunning = true;
                 isWaitingForNext = false;
                 isInterviewFinished = false;
-                terminalSubmitBtn.innerHTML = '<i class="fas fa-share"></i> Send';
+                terminalSubmitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
 
                 currentQuestionIndex = data.question_index;
-                startInterviewBtn.innerHTML = '<i class="fas fa-headset"></i> Interviewing...';
+                startInterviewBtn.innerHTML = '<i class="fas fa-headset"></i> In Session...';
+
+                const qCounter = document.getElementById('interview-question-counter');
+                if (qCounter) {
+                    qCounter.className = 'badge-readiness high';
+                    qCounter.textContent = `Question ${data.question_index + 1} of 3`;
+                }
+
+                const statusBadge = document.getElementById('interview-status-badge');
+                if (statusBadge) {
+                    statusBadge.className = 'badge-readiness high';
+                    statusBadge.innerHTML = '<span class="pulse-dot"></span> Live Call Active';
+                }
 
                 terminalInput.disabled = false;
                 terminalSubmitBtn.disabled = false;
                 if (recognition) micBtn.disabled = false;
-                terminalPromptStr.textContent = `${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$`;
+                terminalInput.placeholder = "Speak into microphone or type your technical answer here...";
                 terminalInput.focus();
 
+                terminalBody.innerHTML = '';
                 appendTerminalLine('AI Coach', data.question);
                 speakQuestion(data.question);
                 currentQuestionText = data.question;
@@ -1886,11 +2005,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 terminalInput.disabled = true;
                 terminalSubmitBtn.disabled = true;
                 if (recognition) micBtn.disabled = true;
-                terminalPromptStr.textContent = 'guest@rvuniversity:~$';
+
+                const qCounter = document.getElementById('interview-question-counter');
+                if (qCounter) {
+                    qCounter.className = 'badge-readiness high';
+                    qCounter.textContent = 'Assessment Finished';
+                }
+
+                const statusBadge = document.getElementById('interview-status-badge');
+                if (statusBadge) {
+                    statusBadge.className = 'badge-readiness medium';
+                    statusBadge.innerHTML = '<i class="fas fa-check"></i> Session Recorded';
+                }
+
+                const speakingStatus = document.getElementById('ai-speaking-status');
+                if (speakingStatus) {
+                    speakingStatus.innerHTML = '<i class="fas fa-circle-check" style="color: var(--accent-green); margin-right: 0.25rem;"></i>Evaluator Standing By';
+                }
 
                 const finishMsg = document.createElement('div');
-                finishMsg.className = 'terminal-line';
-                finishMsg.innerHTML = `<span class="terminal-system-msg">[SYSTEM] Assessment round completed successfully! grades synced to databases.</span>`;
+                finishMsg.className = 'interview-bubble ai-bubble';
+                finishMsg.style.cssText = 'background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px 12px 12px 2px; padding: 0.85rem 1rem; align-self: flex-start; max-width: 88%;';
+                finishMsg.innerHTML = `
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--accent-green); margin-bottom:0.25rem;"><i class="fas fa-circle-check"></i> Session Completed</div>
+                    <div style="font-size:0.86rem; color:var(--text-primary); line-height:1.5;">Technical assessment completed successfully! Your evaluation scores and feedback have been recorded to your verified profile.</div>
+                `;
                 terminalBody.appendChild(finishMsg);
                 speakQuestion("Interview completed. Your grades have been recorded.");
                 replayBtn.disabled = true;
@@ -1898,7 +2037,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 isWaitingForNext = false;
                 isInterviewFinished = false;
-                terminalSubmitBtn.innerHTML = '<i class="fas fa-share"></i> Send';
+                terminalSubmitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
             } else {
                 // Progress
                 isWaitingForNext = false;
@@ -1908,12 +2047,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 terminalInput.value = '';
                 terminalInput.focus();
 
+                const qCounter = document.getElementById('interview-question-counter');
+                if (qCounter) {
+                    qCounter.textContent = `Question ${currentQuestionIndex + 1} of 3`;
+                }
+
                 appendTerminalLine('AI Coach', nextQuestionText);
                 speakQuestion(nextQuestionText);
                 currentQuestionText = nextQuestionText;
                 replayBtn.disabled = false;
 
-                terminalSubmitBtn.innerHTML = '<i class="fas fa-share"></i> Send';
+                terminalSubmitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
             }
             terminalBody.scrollTop = terminalBody.scrollHeight;
             return;
@@ -1923,6 +2067,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!text) return;
 
         if (window.speechSynthesis) window.speechSynthesis.cancel();
+        drawWaveform(false);
 
         appendTerminalLine('You', text);
         terminalInput.value = '';
@@ -1932,9 +2077,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (recognition) micBtn.disabled = true;
 
         const typingEl = document.createElement('div');
-        typingEl.className = 'terminal-line';
+        typingEl.className = 'interview-bubble ai-bubble';
         typingEl.id = 'terminal-typing';
-        typingEl.innerHTML = `<span class="terminal-system-msg">[AI Coach is evaluating technical accuracy & filler word density...]</span>`;
+        typingEl.style.cssText = 'background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px 12px 12px 2px; padding: 0.85rem 1rem; align-self: flex-start; max-width: 88%;';
+        typingEl.innerHTML = `
+            <div style="font-size:0.72rem; font-weight:700; color:var(--accent-blue); margin-bottom:0.25rem;"><i class="fas fa-robot"></i> AI Talent Evaluator</div>
+            <div style="font-size:0.85rem; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin" style="margin-right: 0.35rem;"></i> Evaluating technical accuracy, depth & delivery clarity...</div>
+        `;
         terminalBody.appendChild(typingEl);
         terminalBody.scrollTop = terminalBody.scrollHeight;
 
@@ -1951,19 +2100,21 @@ document.addEventListener('DOMContentLoaded', () => {
         })
             .then(res => res.json())
             .then(data => {
-                document.getElementById('terminal-typing').remove();
+                const typingObj = document.getElementById('terminal-typing');
+                if (typingObj) typingObj.remove();
 
                 // Print Score Card
                 const scoreCard = document.createElement('div');
                 scoreCard.className = 'terminal-score-card';
+                scoreCard.style.cssText = 'background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.85rem 1rem; margin: 0.5rem 0;';
                 scoreCard.innerHTML = `
-                <div style="font-weight:600; color: var(--accent-blue); margin-bottom: 0.25rem; display:flex; justify-content:space-between;">
-                    <span><i class="fas fa-circle-check"></i> TECHNICAL ACCURACY: ${data.technical_score}/100</span>
-                    <span style="color:var(--accent-purple);"><i class="fas fa-volume-high"></i> DELIVERY CLARITY: ${data.communication_score}/100</span>
-                </div>
-                <div style="font-size:0.8rem; color: var(--text-secondary); line-height: 1.4;"><span style="color: var(--text-primary); font-weight:500;">Critique & Grammar:</span> ${data.feedback}</div>
-                <div style="font-size:0.8rem; color: var(--text-secondary); line-height: 1.4; margin-top:0.25rem;"><span style="color:#00f5a0; font-weight:500;">Model Answer:</span> ${data.model_answer}</div>
-            `;
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 0.4rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.82rem;"><i class="fas fa-circle-check" style="color: var(--accent-green);"></i> Technical Depth: <strong>${data.technical_score}/100</strong></span>
+                        <span style="color: var(--accent-purple); font-size: 0.82rem;"><i class="fas fa-volume-high"></i> Articulation: <strong>${data.communication_score}/100</strong></span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;"><strong style="color: var(--text-primary);">Evaluator Critique:</strong> ${data.feedback}</div>
+                    <div style="font-size: 0.78rem; color: var(--accent-green); line-height: 1.4; margin-top: 0.35rem;"><strong style="color: var(--text-primary);">Target Ideal Response:</strong> ${data.model_answer}</div>
+                `;
                 terminalBody.appendChild(scoreCard);
 
                 if (data.is_finished) {
@@ -1988,14 +2139,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendTerminalLine(sender, text) {
-        const line = document.createElement('div');
-        line.className = 'terminal-line';
+        const bubble = document.createElement('div');
         if (sender === 'You') {
-            line.innerHTML = `<span class="terminal-prompt">${currentUserSession.name.toLowerCase().replace(' ', '')}@rvuniversity:~$</span> <span style="color: var(--text-primary);">${text}</span>`;
+            bubble.className = 'interview-bubble user-bubble';
+            bubble.style.cssText = 'background: rgba(155, 81, 224, 0.08); border: 1px solid rgba(155, 81, 224, 0.25); border-radius: 12px 12px 2px 12px; padding: 0.85rem 1rem; align-self: flex-end; max-width: 85%;';
+            bubble.innerHTML = `
+                <div style="font-size:0.72rem; font-weight:700; color:var(--accent-purple); margin-bottom:0.25rem; display:flex; align-items:center; justify-content:flex-end; gap:0.35rem;">
+                    <span>${currentUserSession.name || 'Candidate'}</span> <i class="fas fa-user-circle"></i>
+                </div>
+                <div style="font-size:0.86rem; line-height:1.5; color:var(--text-primary); text-align:left;">${text}</div>
+            `;
+            analyzeSpeechPaceAndFillers(text);
         } else {
-            line.innerHTML = `<span style="color:var(--accent-purple); font-weight:600;">[AI Interviewer]</span> <span class="terminal-ai-text">${text}</span>`;
+            bubble.className = 'interview-bubble ai-bubble';
+            bubble.style.cssText = 'background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px 12px 12px 2px; padding: 0.85rem 1rem; align-self: flex-start; max-width: 88%;';
+            bubble.innerHTML = `
+                <div style="font-size:0.72rem; font-weight:700; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
+                    <i class="fas fa-robot"></i> <span>RVU Talent Evaluator</span>
+                </div>
+                <div style="font-size:0.86rem; line-height:1.5; color:var(--text-primary);">${text}</div>
+            `;
         }
-        terminalBody.appendChild(line);
+        terminalBody.appendChild(bubble);
         terminalBody.scrollTop = terminalBody.scrollHeight;
     }
 
@@ -2304,12 +2469,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ----------------- Feature 1: Skill Radar Chart -----------------
     function renderSkillRadarChart(recommendations) {
-        const container = document.getElementById('radar-chart-container');
+        const container = document.getElementById('benchmark-matrix-container') || document.getElementById('radar-chart-container');
         if (!recommendations || recommendations.length === 0) {
-            container.style.display = 'none';
+            if (container) container.style.display = 'none';
             return;
         }
-        container.style.display = 'block';
+        if (container) container.style.display = 'grid';
 
         // Extract all unique required skills from top 5 internships
         const allSkills = new Set();
@@ -2390,6 +2555,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+        });
+    }
+
+    // Segmented Matrix Switcher Pill Toggle
+    const matrixToggleSkills = document.getElementById('matrix-toggle-skills');
+    const matrixToggleCohort = document.getElementById('matrix-toggle-cohort');
+    const matrixSkillsWrap = document.getElementById('matrix-skills-wrap');
+    const matrixCohortWrap = document.getElementById('matrix-cohort-wrap');
+
+    if (matrixToggleSkills && matrixToggleCohort) {
+        matrixToggleSkills.addEventListener('click', () => {
+            matrixToggleSkills.classList.add('active');
+            matrixToggleCohort.classList.remove('active');
+            matrixToggleSkills.style.background = 'var(--accent-blue)';
+            matrixToggleSkills.style.color = '#fff';
+            matrixToggleCohort.style.background = 'transparent';
+            matrixToggleCohort.style.color = 'var(--text-secondary)';
+            if (matrixSkillsWrap) matrixSkillsWrap.style.display = 'block';
+            if (matrixCohortWrap) matrixCohortWrap.style.display = 'none';
+            if (skillRadarChart) skillRadarChart.resize();
+        });
+
+        matrixToggleCohort.addEventListener('click', () => {
+            matrixToggleCohort.classList.add('active');
+            matrixToggleSkills.classList.remove('active');
+            matrixToggleCohort.style.background = 'var(--accent-blue)';
+            matrixToggleCohort.style.color = '#fff';
+            matrixToggleSkills.style.background = 'transparent';
+            matrixToggleSkills.style.color = 'var(--text-secondary)';
+            if (matrixCohortWrap) matrixCohortWrap.style.display = 'block';
+            if (matrixSkillsWrap) matrixSkillsWrap.style.display = 'none';
+            if (peerRadarChart) peerRadarChart.resize();
         });
     }
 
@@ -2562,13 +2759,176 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // ----------------- Feature 5: Notifications -----------------
+    // ----------------- Feature 5: Real-Time Notifications Engine -----------------
     let notifPollingInterval = null;
+    let notifEventSource = null;
+
+    function playNotifChime() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12); // A5
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+        } catch (e) {
+            // Audio policy or silent
+        }
+    }
+
+    function showLiveNotifToast(n) {
+        const container = document.getElementById('live-notif-toast-container');
+        if (!container) return;
+
+        playNotifChime();
+
+        const toast = document.createElement('div');
+        toast.className = 'live-notif-toast';
+        const cat = (n.category || 'system').toLowerCase();
+
+        toast.innerHTML = `
+            <div class="notif-icon category-${cat}" style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <i class="fas ${n.icon || 'fa-bell'}"></i>
+            </div>
+            <div style="flex-grow:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.15rem;">
+                    <div style="font-size:0.84rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n.title || 'Placement Notification'}</div>
+                    <span class="notif-pill ${cat}">${cat}</span>
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4;">${n.message}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem;">
+                    <span style="font-size:0.68rem; color:var(--text-secondary); opacity:0.8;">Just now</span>
+                    <span style="font-size:0.72rem; color:var(--accent-blue); font-weight:600;"><i class="fas fa-arrow-right"></i> Click to view</span>
+                </div>
+            </div>
+        `;
+
+        toast.addEventListener('click', () => {
+            handleNotificationClick(n);
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 250);
+        });
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 250);
+            }
+        }, 6000);
+    }
+
+    function handleNotificationClick(n) {
+        // Mark as read immediately on server & locally
+        if (!n.is_read) {
+            fetch(`/api/notifications/${n.id}/read`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.unread_count !== undefined) {
+                        updateBadgeCount(data.unread_count);
+                    }
+                })
+                .catch(() => {});
+            n.is_read = 1;
+        }
+
+        // Close dropdown
+        const dropdown = document.getElementById('notif-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+
+        // Navigate to relevant section/tab
+        const actionTab = n.action_tab;
+        if (actionTab) {
+            const targetBtn = document.querySelector(`.menu-btn[data-tab="${actionTab}"]`);
+            if (targetBtn) {
+                targetBtn.click();
+            } else {
+                const tabEl = document.getElementById(actionTab);
+                if (tabEl) {
+                    document.querySelectorAll('.dashboard-panel').forEach(p => p.classList.remove('active'));
+                    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+                    tabEl.classList.add('active');
+                }
+            }
+        } else {
+            if (n.category === 'coding') {
+                const btn = document.querySelector('.menu-btn[data-tab="mock-coding"]');
+                if (btn) btn.click();
+            } else if (n.category === 'application') {
+                const btn = document.querySelector('.menu-btn[data-tab="my-applications"]');
+                if (btn) btn.click();
+            } else if (n.category === 'interview') {
+                const btn = document.querySelector('.menu-btn[data-tab="mock-interview"]');
+                if (btn) btn.click();
+            } else if (n.category === 'resume') {
+                const btn = document.querySelector('.menu-btn[data-tab="placement-matching"]');
+                if (btn) btn.click();
+            }
+        }
+    }
+
+    function initRealTimeNotifications() {
+        if (window.EventSource) {
+            try {
+                if (notifEventSource) notifEventSource.close();
+                notifEventSource = new EventSource('/api/notifications/stream');
+
+                notifEventSource.addEventListener('notification', (e) => {
+                    try {
+                        const notif = JSON.parse(e.data);
+                        if (notif) {
+                            showLiveNotifToast(notif);
+                            fetchNotifications();
+                        }
+                    } catch (err) {
+                        console.error('Error parsing SSE notification:', err);
+                    }
+                });
+
+                notifEventSource.onerror = () => {
+                    // Auto-reconnect managed by EventSource
+                };
+            } catch (e) {
+                console.warn('SSE stream init warning:', e);
+            }
+        }
+    }
+
+    function updateBadgeCount(unreadCount) {
+        const badge = document.getElementById('notif-badge');
+        const headerBadge = document.getElementById('notif-header-unread-badge');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        if (headerBadge) {
+            if (unreadCount > 0) {
+                headerBadge.style.display = 'inline-block';
+                headerBadge.textContent = `${unreadCount} New`;
+            } else {
+                headerBadge.style.display = 'none';
+            }
+        }
+    }
 
     function startNotificationPolling() {
         fetchNotifications();
+        initRealTimeNotifications();
         if (notifPollingInterval) clearInterval(notifPollingInterval);
-        notifPollingInterval = setInterval(fetchNotifications, 15000);
+        notifPollingInterval = setInterval(fetchNotifications, 6000);
     }
 
     function fetchNotifications() {
@@ -2576,18 +2936,13 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (!data || !data.notifications) return;
-                const badge = document.getElementById('notif-badge');
-                const list = document.getElementById('notif-list');
+                updateBadgeCount(data.unread_count || 0);
 
-                if (data.unread_count > 0) {
-                    badge.style.display = 'flex';
-                    badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
-                } else {
-                    badge.style.display = 'none';
-                }
+                const list = document.getElementById('notif-list');
+                if (!list) return;
 
                 if (data.notifications.length === 0) {
-                    list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+                    list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash" style="font-size:1.5rem; opacity:0.3; display:block; margin-bottom:0.5rem;"></i>No notifications yet.</div>';
                     return;
                 }
 
@@ -2595,15 +2950,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.notifications.forEach(n => {
                     const item = document.createElement('div');
                     item.className = `notif-item ${n.is_read ? '' : 'unread'}`;
+                    const cat = (n.category || 'system').toLowerCase();
                     const timeStr = formatTimeAgoOrLocal(n.created_at);
+
                     item.innerHTML = `
-                    <div class="notif-icon"><i class="fas ${n.icon || 'fa-bell'}"></i></div>
-                    <div>
-                        <div class="notif-text">${n.message}</div>
-                        <div class="notif-time">${timeStr}</div>
-                    </div>`;
+                        <div class="notif-icon category-${cat}">
+                            <i class="fas ${n.icon || 'fa-bell'}"></i>
+                        </div>
+                        <div class="notif-content-wrap">
+                            <div class="notif-header-row">
+                                <span class="notif-item-title">${n.title || 'Placement Notification'}</span>
+                                <span class="notif-pill ${cat}">${cat}</span>
+                            </div>
+                            <div class="notif-text">${n.message}</div>
+                            <div class="notif-footer-row">
+                                <span class="notif-time">${timeStr}</span>
+                                <span class="notif-action-hint"><i class="fas fa-arrow-right"></i> Open</span>
+                            </div>
+                        </div>
+                    `;
+
+                    item.addEventListener('click', () => {
+                        handleNotificationClick(n);
+                        item.classList.remove('unread');
+                    });
+
                     list.appendChild(item);
                 });
+            })
+            .catch(err => {
+                console.error('Fetch notifications error:', err);
             });
     }
 
@@ -2612,13 +2988,16 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         const dropdown = document.getElementById('notif-dropdown');
         dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        if (dropdown.style.display === 'block') {
+            fetchNotifications();
+        }
     });
 
     // Mark all read
     document.getElementById('notif-mark-read-btn').addEventListener('click', () => {
         fetch('/api/notifications/read', { method: 'POST' })
             .then(() => {
-                document.getElementById('notif-badge').style.display = 'none';
+                updateBadgeCount(0);
                 document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
             });
     });
@@ -2880,8 +3259,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ----------------- Peer Comparison Analytics -----------------
     function fetchPeerComparison() {
-        const container = document.getElementById('peer-comparison-container');
-        container.style.display = 'grid';
+        const container = document.getElementById('benchmark-matrix-container') || document.getElementById('peer-comparison-container');
+        if (container) container.style.display = 'grid';
 
         fetch('/api/peer-comparison')
             .then(res => res.json())
@@ -3585,6 +3964,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------- Mock Coding Sandbox -----------------
     const codingProblems = {
         two_sum: {
+            skillTag: "Data structures",
             description: `Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.<br><br>
 You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.<br><br>
 <strong>Example 1:</strong><br>
@@ -3593,7 +3973,44 @@ Output: [0,1]`,
             signature: "def two_sum(nums, target):\n    # Write python logic here\n    pass",
             template: "def two_sum(nums, target):\n    # TODO: Implement\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []"
         },
+        binary_search: {
+            skillTag: "Algorithms",
+            description: `Given an array of integers <code>nums</code> which is sorted in ascending order, and an integer <code>target</code>, write a function to search <code>target</code> in <code>nums</code>.<br><br>
+If <code>target</code> exists, then return its index. Otherwise, return <code>-1</code>. You must write an algorithm with <code>O(log n)</code> runtime complexity.<br><br>
+<strong>Example:</strong><br>
+Input: nums = [-1,0,3,5,9,12], target = 9<br>
+Output: 4`,
+            signature: "def binary_search(nums, target):\n    # Return index or -1\n    pass",
+            template: "def binary_search(nums, target):\n    # TODO: Implement O(log n) search\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"
+        },
+        valid_parentheses: {
+            skillTag: "Data structures",
+            description: `Given a string <code>s</code> containing just the characters <code>'('</code>, <code>')'</code>, <code>'{'</code>, <code>'}'</code>, <code>'['</code> and <code>']'</code>, determine if the input string is valid.<br><br>
+An input string is valid if: Open brackets are closed by the same type of brackets in the correct order.<br><br>
+<strong>Example:</strong><br>
+Input: s = "()[]{}"<br>
+Output: true`,
+            signature: "def is_valid(s):\n    # Return True or False\n    pass",
+            template: "def is_valid(s):\n    # TODO: Implement Stack\n    stack = []\n    mapping = {')': '(', '}': '{', ']': '['}\n    for char in s:\n        if char in mapping:\n            top = stack.pop() if stack else '#'\n            if mapping[char] != top:\n                return False\n        else:\n            stack.append(char)\n    return len(stack) == 0"
+        },
+        max_subarray: {
+            skillTag: "Algorithms",
+            description: `Given an integer array <code>nums</code>, find the subarray with the largest sum, and return <em>its sum</em> using Kadane's dynamic algorithm.<br><br>
+<strong>Example:</strong><br>
+Input: nums = [-2,1,-3,4,-1,2,1,-5,4]<br>
+Output: 6 (Subarray [4,-1,2,1])`,
+            signature: "def max_sub_array(nums):\n    # Return maximum sum integer\n    pass",
+            template: "def max_sub_array(nums):\n    # TODO: Implement Kadane's algorithm\n    max_current = max_global = nums[0]\n    for x in nums[1:]:\n        max_current = max(x, max_current + x)\n        if max_current > max_global:\n            max_global = max_current\n    return max_global"
+        },
+        palindrome: {
+            skillTag: "Python",
+            description: `A phrase is a <strong>palindrome</strong> if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward.<br><br>
+Given a string <code>s</code>, return <code>true</code> if it is a palindrome, or <code>false</code> otherwise.`,
+            signature: "def is_palindrome(s):\n    # Write python logic here\n    pass",
+            template: "def is_palindrome(s):\n    # TODO: Implement\n    clean = [c.lower() for c in s if c.isalnum()]\n    return clean == clean[::-1]"
+        },
         fizzbuzz: {
+            skillTag: "Logic",
             description: `Given an integer <code>n</code>, return <em>a string array answer (1-indexed) where</em>:<br><br>
 - <code>answer[i] == "Fizz"</code> if <code>i</code> is divisible by 3.<br>
 - <code>answer[i] == "Buzz"</code> if <code>i</code> is divisible by 5.<br>
@@ -3601,22 +4018,22 @@ Output: [0,1]`,
 - <code>answer[i] == str(i)</code> if none of the above conditions are true.`,
             signature: "def fizzbuzz(n):\n    # Write python logic here\n    pass",
             template: "def fizzbuzz(n):\n    # TODO: Implement\n    res = []\n    for i in range(1, n + 1):\n        if i % 3 == 0 and i % 5 == 0:\n            res.append('FizzBuzz')\n        elif i % 3 == 0:\n            res.append('Fizz')\n        elif i % 5 == 0:\n            res.append('Buzz')\n        else:\n            res.append(str(i))\n    return res"
-        },
-        palindrome: {
-            description: `A phrase is a <strong>palindrome</strong> if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward.<br><br>
-Given a string <code>s</code>, return <code>true</code> if it is a palindrome, or <code>false</code> otherwise.`,
-            signature: "def is_palindrome(s):\n    # Write python logic here\n    pass",
-            template: "def is_palindrome(s):\n    # TODO: Implement\n    clean = [c.lower() for c in s if c.isalnum()]\n    return clean == clean[::-1]"
         }
     };
 
     function fetchSandboxProblem() {
         const problemId = document.getElementById('sandbox-problem-select').value;
         const problem = codingProblems[problemId];
+        if (!problem) return;
 
         document.getElementById('sandbox-problem-description').innerHTML = problem.description;
         document.getElementById('sandbox-expected-signature').textContent = problem.signature;
         document.getElementById('sandbox-code-editor').value = problem.template;
+
+        const skillTagPill = document.getElementById('sandbox-skill-tag-pill');
+        if (skillTagPill && problem.skillTag) {
+            skillTagPill.textContent = problem.skillTag;
+        }
 
         document.getElementById('sandbox-console-log').textContent = '';
         document.getElementById('sandbox-run-status').textContent = '';
@@ -3654,6 +4071,7 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
                     if (data.passed) {
                         statusEl.textContent = 'PASS';
                         statusEl.style.color = 'var(--accent-green)';
+                        fetchNotifications();
                     } else {
                         statusEl.textContent = 'FAIL';
                         statusEl.style.color = 'var(--accent-red)';
@@ -3885,4 +4303,311 @@ Given a string <code>s</code>, return <code>true</code> if it is a palindrome, o
             window.location.href = '/api/university/export';
         });
     }
+
+    // =========================================================================
+    // v3.2 ENHANCED PLATFORM SUBSYSTEMS - ATS, TAILORING, DOSSIER, CERTIFICATE
+    // =========================================================================
+
+    // ----------------- 1. Real-Time ATS Resume Scanner -----------------
+    function openAtsScanner() {
+        const modal = document.getElementById('ats-scanner-modal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        const overallEl = document.getElementById('ats-overall-score-text');
+        if (overallEl) overallEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch('/api/ats-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                student_name: currentUserSession.name,
+                skills: currentStudentSkills
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (overallEl) overallEl.textContent = `${data.overall_score}/100`;
+
+            const miniBadge = document.getElementById('mini-ats-score-badge');
+            if (miniBadge) miniBadge.textContent = `${data.overall_score}% ATS Fit`;
+
+            const m = data.metrics || {};
+            if (document.getElementById('ats-metric-contact')) document.getElementById('ats-metric-contact').textContent = `${m.contact_info || 100}%`;
+            if (document.getElementById('ats-metric-verbs')) document.getElementById('ats-metric-verbs').textContent = `${m.action_verbs || 88}%`;
+            if (document.getElementById('ats-metric-quant')) document.getElementById('ats-metric-quant').textContent = `${m.quantified_impact || 70}%`;
+            if (document.getElementById('ats-metric-structure')) document.getElementById('ats-metric-structure').textContent = `${m.structure || 95}%`;
+            if (document.getElementById('ats-metric-keywords')) document.getElementById('ats-metric-keywords').textContent = `${m.keyword_density || 85}%`;
+
+            const strengthsList = document.getElementById('ats-strengths-list');
+            if (strengthsList) {
+                strengthsList.innerHTML = (data.strengths || []).map(s => `<li>${s}</li>`).join('');
+            }
+
+            const improvementsList = document.getElementById('ats-improvements-list');
+            if (improvementsList) {
+                improvementsList.innerHTML = (data.improvements || []).map(imp => `<li>${imp}</li>`).join('');
+            }
+
+            const bulletsWrap = document.getElementById('ats-bullet-suggestions');
+            if (bulletsWrap) {
+                bulletsWrap.innerHTML = '';
+                (data.bullet_upgrades || []).forEach(b => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.65rem 0.85rem;';
+                    card.innerHTML = `
+                        <div style="font-size:0.75rem; color:var(--text-secondary); text-decoration: line-through; margin-bottom: 0.25rem;">${b.original}</div>
+                        <div style="font-size:0.8rem; color:var(--accent-green); font-weight:500; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                            <span>${b.upgraded}</span>
+                            <button class="btn-secondary copy-bullet-btn" style="padding:0.2rem 0.5rem; font-size:0.7rem; white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                        <div style="font-size:0.7rem; color:var(--accent-blue); margin-top:0.2rem;"><i class="fas fa-bolt"></i> ${b.impact}</div>
+                    `;
+                    card.querySelector('.copy-bullet-btn').addEventListener('click', () => {
+                        navigator.clipboard.writeText(b.upgraded);
+                        showToast('Upgraded bullet point copied to clipboard!', 'success');
+                    });
+                    bulletsWrap.appendChild(card);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('ATS scan error:', err);
+            if (overallEl) overallEl.textContent = '88/100';
+        });
+    }
+
+    const atsModalCloseBtn = document.getElementById('ats-modal-close-btn');
+    if (atsModalCloseBtn) {
+        atsModalCloseBtn.addEventListener('click', () => {
+            const modal = document.getElementById('ats-scanner-modal');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    const btnOpenAtsScanner = document.getElementById('btn-open-ats-scanner');
+    if (btnOpenAtsScanner) btnOpenAtsScanner.addEventListener('click', openAtsScanner);
+
+    const btnTopAtsScanner = document.getElementById('btn-top-ats-scanner');
+    if (btnTopAtsScanner) btnTopAtsScanner.addEventListener('click', openAtsScanner);
+
+    // ----------------- 2. 1-Click Role-Specific Resume Tailoring -----------------
+    function openTailorResume(company, role, skills) {
+        const modal = document.getElementById('tailor-resume-modal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        const roleEl = document.getElementById('tailor-target-role');
+        if (roleEl) roleEl.textContent = `${role} • ${company}`;
+
+        const summaryEl = document.getElementById('tailor-summary-output');
+        if (summaryEl) summaryEl.value = 'Generating company-tailored resume summary...';
+
+        const skillsWrap = document.getElementById('tailor-skills-chips');
+        if (skillsWrap) skillsWrap.innerHTML = '<span style="font-size:0.75rem; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Prioritizing target tech stack...</span>';
+
+        const bulletsWrap = document.getElementById('tailor-bullet-points');
+        if (bulletsWrap) bulletsWrap.innerHTML = '<div style="font-size:0.75rem; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Aligning experience bullets...</div>';
+
+        fetch('/api/tailor-resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company: company,
+                role: role,
+                required_skills: skills,
+                candidate_name: currentUserSession.name,
+                current_skills: currentStudentSkills
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (summaryEl) summaryEl.value = data.tailored_summary;
+
+            if (skillsWrap) {
+                skillsWrap.innerHTML = '';
+                (data.top_skills || []).forEach(sk => {
+                    const chip = document.createElement('span');
+                    chip.className = 'skill-tag matched';
+                    chip.innerHTML = `<i class="fas fa-check"></i> ${sk}`;
+                    skillsWrap.appendChild(chip);
+                });
+            }
+
+            if (bulletsWrap) {
+                bulletsWrap.innerHTML = '';
+                (data.featured_bullets || []).forEach(b => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;';
+                    row.innerHTML = `
+                        <span style="color: var(--text-primary); line-height: 1.4;">${b}</span>
+                        <button class="btn-secondary copy-tailored-bullet" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; white-space: nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                    `;
+                    row.querySelector('.copy-tailored-bullet').addEventListener('click', () => {
+                        navigator.clipboard.writeText(b);
+                        showToast('Bullet copied to clipboard!', 'success');
+                    });
+                    bulletsWrap.appendChild(row);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Tailor resume error:', err);
+            if (summaryEl) summaryEl.value = 'Failed to generate tailored summary. Please retry.';
+        });
+    }
+
+    const tailorModalCloseBtn = document.getElementById('tailor-modal-close-btn');
+    if (tailorModalCloseBtn) {
+        tailorModalCloseBtn.addEventListener('click', () => {
+            const modal = document.getElementById('tailor-resume-modal');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    const btnCopyTailoredSummary = document.getElementById('btn-copy-tailored-summary');
+    if (btnCopyTailoredSummary) {
+        btnCopyTailoredSummary.addEventListener('click', () => {
+            const summaryEl = document.getElementById('tailor-summary-output');
+            if (summaryEl && summaryEl.value) {
+                navigator.clipboard.writeText(summaryEl.value);
+                showToast('Tailored Professional Summary copied!', 'success');
+            }
+        });
+    }
+
+    // ----------------- 3. Company Placement Intelligence Dossier -----------------
+    function openCompanyDossier(companyName) {
+        const modal = document.getElementById('company-dossier-modal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        const nameEl = document.getElementById('dossier-company-name');
+        if (nameEl) nameEl.textContent = `${companyName} Placement Intelligence`;
+
+        const tierEl = document.getElementById('dossier-tier');
+        const stipendEl = document.getElementById('dossier-stipend');
+        const cutoffEl = document.getElementById('dossier-cutoff');
+        const roundsWrap = document.getElementById('dossier-rounds-list');
+        const questionsWrap = document.getElementById('dossier-questions-list');
+        const tipEl = document.getElementById('dossier-pro-tip');
+
+        if (roundsWrap) roundsWrap.innerHTML = '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Loading interview workflow...</div>';
+        if (questionsWrap) questionsWrap.innerHTML = '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Retrieving campus questions...</div>';
+
+        fetch(`/api/company-cheat-sheet/${encodeURIComponent(companyName)}`)
+        .then(res => res.json())
+        .then(data => {
+            const d = data.dossier || data;
+            if (tierEl) tierEl.textContent = d.tier || 'Tier 1 Enterprise';
+            if (stipendEl) stipendEl.textContent = d.stipend || d.average_stipend || '₹60,000 / mo';
+            if (cutoffEl) cutoffEl.textContent = d.cutoff || d.cgpa_cutoff || '7.5+ CGPA';
+
+            if (roundsWrap) {
+                roundsWrap.innerHTML = '';
+                (d.rounds || []).forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'dossier-round-card';
+                    card.style.cssText = 'background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.65rem 0.85rem;';
+                    card.innerHTML = `
+                        <div style="font-weight: 700; font-size: 0.84rem; color: var(--accent-blue); margin-bottom: 0.2rem;">${r.round}</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">${r.focus}</div>
+                    `;
+                    roundsWrap.appendChild(card);
+                });
+            }
+
+            if (questionsWrap) {
+                questionsWrap.innerHTML = '';
+                (d.top_questions || d.questions || []).forEach((q, idx) => {
+                    const qItem = document.createElement('div');
+                    qItem.style.cssText = 'background: rgba(0,0,0,0.02); border-left: 3px solid #ffd700; padding: 0.45rem 0.75rem; border-radius: 0 6px 6px 0; font-size: 0.82rem; color: var(--text-primary);';
+                    qItem.innerHTML = `<strong>Q${idx + 1}:</strong> ${q}`;
+                    questionsWrap.appendChild(qItem);
+                });
+            }
+
+            if (tipEl) tipEl.textContent = d.pro_tip || 'Focus on system design fundamentals and solid time complexity analysis.';
+        })
+        .catch(err => {
+            console.error('Company dossier error:', err);
+        });
+    }
+
+    const dossierModalCloseBtn = document.getElementById('dossier-modal-close-btn');
+    if (dossierModalCloseBtn) {
+        dossierModalCloseBtn.addEventListener('click', () => {
+            const modal = document.getElementById('company-dossier-modal');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    // ----------------- 4. Official Verified Placement Readiness Certificate -----------------
+    function openOfficialCertificate() {
+        const modal = document.getElementById('official-certificate-modal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        const candidateName = currentUserSession.name || 'Ritvik Medam';
+        fetch(`/api/certificate/data?student_name=${encodeURIComponent(candidateName)}`)
+        .then(res => res.json())
+        .then(data => {
+            const nameEl = document.getElementById('cert-full-student-name');
+            if (nameEl) nameEl.textContent = data.student_name;
+
+            const tierEl = document.getElementById('cert-tier-level');
+            if (tierEl) tierEl.textContent = data.tier_level;
+
+            const skillsRow = document.getElementById('cert-skills-badge-row');
+            if (skillsRow) {
+                skillsRow.innerHTML = '';
+                (data.skills || []).forEach(sk => {
+                    const badge = document.createElement('span');
+                    badge.style.cssText = 'background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;';
+                    badge.textContent = `✓ ${sk}`;
+                    skillsRow.appendChild(badge);
+                });
+            }
+
+            const dateEl = document.getElementById('cert-issued-date');
+            if (dateEl) dateEl.textContent = `Date: ${data.issued_date}`;
+
+            const idEl = document.getElementById('cert-credential-id');
+            if (idEl) idEl.textContent = `ID: ${data.credential_id}`;
+        })
+        .catch(err => {
+            console.error('Certificate fetch error:', err);
+        });
+    }
+
+    const officialCertCloseBtn = document.getElementById('official-cert-close-btn');
+    if (officialCertCloseBtn) {
+        officialCertCloseBtn.addEventListener('click', () => {
+            const modal = document.getElementById('official-certificate-modal');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    const btnPrintCert = document.getElementById('btn-print-official-certificate');
+    if (btnPrintCert) {
+        btnPrintCert.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
+    const btnOpenCert = document.getElementById('btn-open-certificate');
+    if (btnOpenCert) btnOpenCert.addEventListener('click', openOfficialCertificate);
+
+    const btnTopCert = document.getElementById('btn-top-certificate');
+    if (btnTopCert) btnTopCert.addEventListener('click', openOfficialCertificate);
+
+    // Global Modal Backdrop Click Handler
+    window.addEventListener('click', (e) => {
+        ['ats-scanner-modal', 'tailor-resume-modal', 'company-dossier-modal', 'official-certificate-modal'].forEach(id => {
+            const m = document.getElementById(id);
+            if (m && e.target === m) {
+                m.style.display = 'none';
+            }
+        });
+    });
 });

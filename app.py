@@ -4,10 +4,13 @@ import time
 import json
 import pickle
 import sqlite3
+import hashlib
+import queue
+from datetime import datetime
 import pypdf
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, session, send_file
+from flask import Flask, request, jsonify, render_template, session, send_file, Response
 from werkzeug.utils import secure_filename
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -212,12 +215,24 @@ def init_db():
     CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_email TEXT NOT NULL,
+        title TEXT DEFAULT 'Notification',
         message TEXT NOT NULL,
+        category TEXT DEFAULT 'system',
+        action_tab TEXT DEFAULT '',
         icon TEXT DEFAULT 'fa-bell',
         is_read INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+    for col, col_type, col_def in [
+        ('title', 'TEXT', "'Notification'"),
+        ('category', 'TEXT', "'system'"),
+        ('action_tab', 'TEXT', "''")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE notifications ADD COLUMN {col} {col_type} DEFAULT {col_def}")
+        except Exception:
+            pass
 
     # 7. Create Interview Slots table
     cursor.execute('''
@@ -799,7 +814,14 @@ def upload_resume():
     conn.commit()
     conn.close()
     
-    insert_notification(user_email, f"Resume '{original_filename}' uploaded and analyzed. Employability Score: {analysis['employability_score']}%.", "fa-file-circle-check")
+    insert_notification(
+        user_email,
+        f"Resume '{original_filename}' audited successfully. Extracted {analysis['cgpa']} CGPA and {len(analysis['skills'])} technical competencies with {analysis['employability_score']}% Employability Readiness.",
+        icon="fa-file-circle-check",
+        title="Resume Verified & Analyzed",
+        category="resume",
+        action_tab="placement-matching"
+    )
     
     return jsonify({
         'success': True,
@@ -1045,9 +1067,19 @@ def apply_internship():
         (name, email, internship_id, match_score, 'Screening')
     )
     conn.commit()
+    internship = conn.execute('SELECT title, company FROM internships WHERE id = ?', (internship_id,)).fetchone()
     conn.close()
     
-    insert_notification(email, f"You successfully applied for internship ID #{internship_id} (Match: {match_score}%).", "fa-paper-plane")
+    co = internship['company'] if internship else 'Employer'
+    role_name = internship['title'] if internship else 'Internship'
+    insert_notification(
+        email,
+        f"Application submitted for '{role_name}' at {co}. Your {match_score}% match profile has been routed to the talent team.",
+        icon="fa-paper-plane",
+        title=f"Applied to {co}",
+        category="application",
+        action_tab="my-applications"
+    )
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
 
 @app.route('/api/apply/update_status', methods=['POST'])
@@ -1069,10 +1101,20 @@ def update_application_status():
         'UPDATE applications SET status = ? WHERE student_email = ? AND internship_id = ?',
         (new_status, email, internship_id)
     )
+    internship = cursor.execute('SELECT title, company FROM internships WHERE id = ?', (internship_id,)).fetchone()
     conn.commit()
     conn.close()
-    # Send notification to the student
-    insert_notification(email, f'Your application status has been updated to "{new_status}".', 'fa-clipboard-check')
+
+    co = internship['company'] if internship else 'Campus Recruiter'
+    role_name = internship['title'] if internship else 'Opportunity'
+    insert_notification(
+        email,
+        f"{co} Recruitment Team advanced your application for '{role_name}' to stage: {new_status}.",
+        icon="fa-clipboard-check",
+        title=f"Application Update: {new_status}",
+        category="application",
+        action_tab="my-applications"
+    )
     return jsonify({'success': True, 'message': f'Status updated to {new_status}'})
 
 @app.route('/api/employer_candidates', methods=['GET'])
@@ -1212,7 +1254,14 @@ def submit_answer():
         conn.commit()
         conn.close()
         # Send notification to the student
-        insert_notification(student_email, f'Your mock interview for "{role}" has been graded: {calculated_score}%.', 'fa-microphone')
+        insert_notification(
+            student_email,
+            f"AI Evaluator completed technical assessment for '{role}'. Scored {calculated_score}% ({tech_score}/100 Technical Depth, {comm_score}/100 Delivery).",
+            icon="fa-microphone",
+            title="Mock Interview Evaluated",
+            category="interview",
+            action_tab="mock-interview"
+        )
         
     return jsonify(response_data)
 
@@ -1395,38 +1444,162 @@ def get_leaderboard():
     
     return jsonify(leaderboard)
 
-# ----------------- Notifications -----------------
+# ----------------- Real-Time Notifications Engine -----------------
+NOTIFICATION_SUBSCRIBERS = {}  # email -> list of queue.Queue()
+
+def broadcast_notification(email, notif_payload):
+    """Deliver real-time notification to active client SSE listeners."""
+    subscribers = NOTIFICATION_SUBSCRIBERS.get(email, [])
+    dead_subscribers = []
+    for q in subscribers:
+        try:
+            q.put_nowait(notif_payload)
+        except Exception:
+            dead_subscribers.append(q)
+    for dq in dead_subscribers:
+        if dq in subscribers:
+            subscribers.remove(dq)
+
+def insert_notification(email, message, icon='fa-bell', title=None, category='system', action_tab=''):
+    """Helper to insert a rich notification for a user and push in real-time."""
+    if not title:
+        msg_l = message.lower()
+        if 'applied' in msg_l or 'application' in msg_l:
+            title = 'Application Update'
+            category = category or 'application'
+            action_tab = action_tab or 'my-applications'
+        elif 'challenge' in msg_l or 'code' in msg_l or 'solved' in msg_l:
+            title = 'Coding Challenge Passed'
+            category = category or 'coding'
+            action_tab = action_tab or 'mock-coding'
+        elif 'interview' in msg_l or 'graded' in msg_l or 'slot' in msg_l:
+            title = 'Interview Update'
+            category = category or 'interview'
+            action_tab = action_tab or 'mock-interview'
+        elif 'resume' in msg_l or 'ats' in msg_l:
+            title = 'Resume & ATS Audit'
+            category = category or 'resume'
+            action_tab = action_tab or 'placement-matching'
+        else:
+            title = 'Campus Notification'
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO notifications (user_email, title, message, category, action_tab, icon)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (email, title, message, category, action_tab, icon))
+        conn.commit()
+        notif_id = cursor.lastrowid
+        unread_count = conn.execute('SELECT COUNT(*) FROM notifications WHERE user_email = ? AND is_read = 0', (email,)).fetchone()[0]
+        conn.close()
+
+        payload = {
+            'id': notif_id,
+            'user_email': email,
+            'title': title,
+            'message': message,
+            'category': category,
+            'action_tab': action_tab,
+            'icon': icon,
+            'is_read': 0,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'unread_count': unread_count
+        }
+        broadcast_notification(email, payload)
+        return notif_id
+    except Exception as e:
+        print(f"Notification insert error: {e}")
+        return None
+
 @app.route('/api/notifications', methods=['GET'])
 def get_notifications():
     if 'user_id' not in session:
-        return jsonify([]), 200
-    email = session['email']
+        return jsonify({'notifications': [], 'unread_count': 0}), 200
+    email = session.get('email')
     conn = get_db_connection()
-    rows = conn.execute('SELECT * FROM notifications WHERE user_email = ? ORDER BY created_at DESC LIMIT 20', (email,)).fetchall()
+    rows = conn.execute('SELECT * FROM notifications WHERE user_email = ? ORDER BY created_at DESC LIMIT 30', (email,)).fetchall()
     unread = conn.execute('SELECT COUNT(*) FROM notifications WHERE user_email = ? AND is_read = 0', (email,)).fetchone()[0]
     conn.close()
-    return jsonify({'notifications': [dict(r) for r in rows], 'unread_count': unread})
+
+    notifs = []
+    for r in rows:
+        d = dict(r)
+        if not d.get('title'):
+            msg_l = d.get('message', '').lower()
+            if 'applied' in msg_l or 'application' in msg_l:
+                d['title'] = 'Application Update'
+                d['category'] = d.get('category') or 'application'
+                d['action_tab'] = d.get('action_tab') or 'my-applications'
+            elif 'challenge' in msg_l or 'code' in msg_l or 'solved' in msg_l:
+                d['title'] = 'Coding Challenge Passed'
+                d['category'] = d.get('category') or 'coding'
+                d['action_tab'] = d.get('action_tab') or 'mock-coding'
+            elif 'interview' in msg_l or 'slot' in msg_l:
+                d['title'] = 'Interview Update'
+                d['category'] = d.get('category') or 'interview'
+                d['action_tab'] = d.get('action_tab') or 'mock-interview'
+            elif 'resume' in msg_l:
+                d['title'] = 'Resume Verified'
+                d['category'] = d.get('category') or 'resume'
+                d['action_tab'] = d.get('action_tab') or 'placement-matching'
+            else:
+                d['title'] = 'Placement Update'
+                d['category'] = d.get('category') or 'system'
+        notifs.append(d)
+
+    return jsonify({'notifications': notifs, 'unread_count': unread})
 
 @app.route('/api/notifications/read', methods=['POST'])
 def mark_notifications_read():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    email = session['email']
+    email = session.get('email')
     conn = get_db_connection()
     conn.execute('UPDATE notifications SET is_read = 1 WHERE user_email = ?', (email,))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
 
-def insert_notification(email, message, icon='fa-bell'):
-    """Helper to insert a notification for a user."""
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO notifications (user_email, message, icon) VALUES (?, ?, ?)', (email, message, icon))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"Notification insert error: {e}")
+@app.route('/api/notifications/<int:notif_id>/read', methods=['POST'])
+def mark_single_notification_read(notif_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    email = session.get('email')
+    conn = get_db_connection()
+    conn.execute('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_email = ?', (notif_id, email))
+    conn.commit()
+    unread = conn.execute('SELECT COUNT(*) FROM notifications WHERE user_email = ? AND is_read = 0', (email,)).fetchone()[0]
+    conn.close()
+    return jsonify({'success': True, 'unread_count': unread})
+
+@app.route('/api/notifications/stream')
+def notifications_stream():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    email = session.get('email')
+    if not email:
+        return jsonify({'error': 'No email'}), 400
+
+    def event_stream():
+        q = queue.Queue(maxsize=30)
+        if email not in NOTIFICATION_SUBSCRIBERS:
+            NOTIFICATION_SUBSCRIBERS[email] = []
+        NOTIFICATION_SUBSCRIBERS[email].append(q)
+        yield f"event: connected\ndata: {json.dumps({'status': 'connected', 'email': email})}\n\n"
+        try:
+            while True:
+                try:
+                    payload = q.get(timeout=20)
+                    yield f"event: notification\ndata: {json.dumps(payload)}\n\n"
+                except queue.Empty:
+                    yield ": ping\n\n"
+        except GeneratorExit:
+            if email in NOTIFICATION_SUBSCRIBERS and q in NOTIFICATION_SUBSCRIBERS[email]:
+                NOTIFICATION_SUBSCRIBERS[email].remove(q)
+
+    return Response(event_stream(), mimetype="text/event-stream")
 
 # ----------------- Company Profiles -----------------
 COMPANY_DATA = {
@@ -1833,7 +2006,17 @@ def bulk_update_applications():
             'UPDATE applications SET status = ? WHERE student_email = ? AND internship_id = ?',
             (new_status, email, int_id)
         )
-        insert_notification(email, f'Your application status has been updated to "{new_status}".', 'fa-clipboard-check')
+        internship = cursor.execute('SELECT title, company FROM internships WHERE id = ?', (int_id,)).fetchone()
+        co = internship['company'] if internship else 'Employer'
+        r_title = internship['title'] if internship else 'Role'
+        insert_notification(
+            email,
+            f"{co} Recruitment Team advanced your application for '{r_title}' to stage: {new_status}.",
+            icon="fa-clipboard-check",
+            title=f"Application Update: {new_status}",
+            category="application",
+            action_tab="my-applications"
+        )
         
     conn.commit()
     conn.close()
@@ -1943,6 +2126,48 @@ def sandbox_run():
                     output = "All 3 test cases passed successfully!\nTest 1: is_palindrome('A man, a plan, a canal: Panama') -> True (Pass)\nTest 2: is_palindrome('race a car') -> False (Pass)\nTest 3: is_palindrome(' ') -> True (Pass)"
                 else:
                     output = f"Failed test cases.\nExample: is_palindrome('race a car') returned {f('race a car')}"
+
+        elif problem_id == 'binary_search':
+            if 'binary_search' not in loc:
+                output = "Error: Function 'binary_search(nums, target)' not found."
+            else:
+                f = loc['binary_search']
+                test1 = f([-1, 0, 3, 5, 9, 12], 9) == 4
+                test2 = f([-1, 0, 3, 5, 9, 12], 2) == -1
+                test3 = f([5], 5) == 0
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: binary_search([-1,0,3,5,9,12], 9) -> 4 (Pass)\nTest 2: binary_search([-1,0,3,5,9,12], 2) -> -1 (Pass)\nTest 3: binary_search([5], 5) -> 0 (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: binary_search([-1,0,3,5,9,12], 9) returned {f([-1,0,3,5,9,12], 9)}"
+
+        elif problem_id == 'valid_parentheses':
+            if 'is_valid' not in loc:
+                output = "Error: Function 'is_valid(s)' not found."
+            else:
+                f = loc['is_valid']
+                test1 = f("()[]{}") == True
+                test2 = f("(]") == False
+                test3 = f("([{}])") == True
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: is_valid('()[]{}') -> True (Pass)\nTest 2: is_valid('(]') -> False (Pass)\nTest 3: is_valid('([{}])') -> True (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: is_valid('(]') returned {f('(]')}"
+
+        elif problem_id == 'max_subarray':
+            if 'max_sub_array' not in loc:
+                output = "Error: Function 'max_sub_array(nums)' not found."
+            else:
+                f = loc['max_sub_array']
+                test1 = f([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6
+                test2 = f([1]) == 1
+                test3 = f([5, 4, -1, 7, 8]) == 23
+                if test1 and test2 and test3:
+                    passed = True
+                    output = "All 3 test cases passed successfully!\nTest 1: max_sub_array([-2,1,-3,4,-1,2,1,-5,4]) -> 6 (Pass)\nTest 2: max_sub_array([1]) -> 1 (Pass)\nTest 3: max_sub_array([5,4,-1,7,8]) -> 23 (Pass)"
+                else:
+                    output = f"Failed test cases.\nExample: max_sub_array([5,4,-1,7,8]) returned {f([5,4,-1,7,8])}"
                     
     except Exception as e:
         output = f"Runtime Execution Error: {e}"
@@ -1952,7 +2177,17 @@ def sandbox_run():
         cursor = conn.cursor()
         profile = cursor.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
         if profile:
-            insert_notification(session['email'], f"Coding Challenge '{problem_id.upper()}' solved successfully! Employability index updated.", "fa-code")
+            chal = CODING_CHALLENGES_CATALOG.get(problem_id, {})
+            chal_title = chal.get('title', problem_id.replace('_', ' ').title())
+            chal_tag = chal.get('tag', 'Algorithms')
+            insert_notification(
+                session['email'],
+                f"Passed all test cases for {chal_title} ({chal_tag}). Earned +15 skill points towards your technical readiness index.",
+                icon="fa-code",
+                title="Coding Challenge Passed",
+                category="coding",
+                action_tab="mock-coding"
+            )
         conn.commit()
         conn.close()
         
@@ -2047,8 +2282,22 @@ def book_scheduler_slot():
     except Exception:
         pass
 
-    insert_notification(session['email'], f"Your mock interview slot with {slot['interviewer_name']} on {formatted_date} has been confirmed.", "fa-calendar-check")
-    insert_notification(slot['recruiter_email'], f"Candidate {session['email']} has booked the interview slot on {formatted_date} at {slot['slot_time']}.", "fa-calendar-check")
+    insert_notification(
+        session['email'],
+        f"Technical assessment confirmed with {slot['interviewer_name']} on {formatted_date} at {slot['slot_time']}. Review company intelligence dossier in preparation.",
+        icon="fa-calendar-check",
+        title="Technical Interview Scheduled",
+        category="interview",
+        action_tab="mock-interview"
+    )
+    insert_notification(
+        slot['recruiter_email'],
+        f"Candidate {session.get('name', session['email'])} booked technical interview on {formatted_date} at {slot['slot_time']}.",
+        icon="fa-calendar-check",
+        title="Candidate Interview Booked",
+        category="interview",
+        action_tab="employer-panel"
+    )
     
     return jsonify({'success': True, 'message': 'Interview slot booked successfully!'})
 
@@ -2113,6 +2362,461 @@ def university_export_csv():
     response = Response(output.getvalue(), mimetype='text/csv')
     response.headers['Content-Disposition'] = 'attachment; filename=placement_cohort_report.csv'
     return response
+
+
+# ==============================================================================
+# ENHANCED MODULES: ATS SCANNER, RESUME TAILORING, COMPANY DOSSIERS & CERTIFICATES
+# ==============================================================================
+
+CODING_CHALLENGES_CATALOG = [
+    {
+        "id": "two_sum",
+        "title": "Two Sum (Array Hash Map)",
+        "difficulty": "Easy",
+        "skill": "Data structures",
+        "signature": "def two_sum(nums: list[int], target: int) -> list[int]:",
+        "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume each input has exactly one solution.",
+        "starter_code": "def two_sum(nums, target):\n    # Write your solution using a dictionary hash map for O(n) runtime\n    seen = {}\n    for i, n in enumerate(nums):\n        diff = target - n\n        if diff in seen:\n            return [seen[diff], i]\n        seen[n] = i\n    return []\n"
+    },
+    {
+        "id": "binary_search",
+        "title": "Binary Search (O(log n) Lookup)",
+        "difficulty": "Easy",
+        "skill": "Algorithms",
+        "signature": "def binary_search(nums: list[int], target: int) -> int:",
+        "description": "Given an array of integers nums sorted in ascending order and a target value, return the index if target exists or -1 otherwise in O(log n) time.",
+        "starter_code": "def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n"
+    },
+    {
+        "id": "valid_parentheses",
+        "title": "Valid Parentheses (Stack)",
+        "difficulty": "Medium",
+        "skill": "Data structures",
+        "signature": "def is_valid(s: str) -> bool:",
+        "description": "Given a string s containing '()[]{}', determine if the bracket sequences are valid. Open brackets must be closed by the same type of brackets in the correct order.",
+        "starter_code": "def is_valid(s):\n    stack = []\n    mapping = {')': '(', '}': '{', ']': '['}\n    for char in s:\n        if char in mapping:\n            top = stack.pop() if stack else '#'\n            if mapping[char] != top:\n                return False\n        else:\n            stack.append(char)\n    return not stack\n"
+    },
+    {
+        "id": "max_subarray",
+        "title": "Maximum Subarray (Kadane's Dynamic Programming)",
+        "difficulty": "Medium",
+        "skill": "Algorithms",
+        "signature": "def max_sub_array(nums: list[int]) -> int:",
+        "description": "Given an integer array nums, find the contiguous subarray (containing at least one number) which has the largest sum and return its sum.",
+        "starter_code": "def max_sub_array(nums):\n    max_sum = current_sum = nums[0]\n    for num in nums[1:]:\n        current_sum = max(num, current_sum + num)\n        max_sum = max(max_sum, current_sum)\n    return max_sum\n"
+    },
+    {
+        "id": "palindrome",
+        "title": "Valid Palindrome (String Two Pointers)",
+        "difficulty": "Easy",
+        "skill": "Python",
+        "signature": "def is_palindrome(s: str) -> bool:",
+        "description": "A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing non-alphanumeric characters, it reads the same forward and backward.",
+        "starter_code": "def is_palindrome(s):\n    filtered = [c.lower() for c in s if c.isalnum()]\n    return filtered == filtered[::-1]\n"
+    },
+    {
+        "id": "fizzbuzz",
+        "title": "FizzBuzz (Modulo Control Flow)",
+        "difficulty": "Easy",
+        "skill": "Python",
+        "signature": "def fizzbuzz(n: int) -> list[str]:",
+        "description": "Given an integer n, return a string array answer where answer[i] is 'FizzBuzz' if i is divisible by 3 and 5, 'Fizz' if divisible by 3, 'Buzz' if divisible by 5, or str(i) otherwise.",
+        "starter_code": "def fizzbuzz(n):\n    res = []\n    for i in range(1, n + 1):\n        if i % 15 == 0:\n            res.append('FizzBuzz')\n        elif i % 3 == 0:\n            res.append('Fizz')\n        elif i % 5 == 0:\n            res.append('Buzz')\n        else:\n            res.append(str(i))\n    return res\n"
+    }
+]
+
+COMPANY_INTELLIGENCE = {
+    "google": {
+        "company": "Google",
+        "tier": "Tier 1 Global Product",
+        "stipend": "₹1,25,000 / month",
+        "cutoff": "8.5+ CGPA",
+        "key_skills": ["Data structures", "Algorithms", "C++", "Python", "Distributed systems"],
+        "rounds": [
+            {"round": "Online Assessment (OA)", "duration": "90 mins", "focus": "2 LeetCode Medium/Hard algorithmic questions + CS Core concepts"},
+            {"round": "Technical Round 1", "duration": "45 mins", "focus": "Trees, Graphs, Recursion, Time & Space Complexity analysis"},
+            {"round": "Technical Round 2", "duration": "45 mins", "focus": "Dynamic Programming, Memory Locality, System Architecture"},
+            {"round": "Googlyness & Leadership", "duration": "30 mins", "focus": "Collaboration, Handling ambiguity, Inclusive teamwork"}
+        ],
+        "top_questions": [
+            "Implement an LRU Cache with O(1) get and put operations.",
+            "Find the median in a real-time stream of integers using two heaps.",
+            "Explain how Google handles distributed consensus across nodes.",
+            "Serialize and deserialize a N-ary tree.",
+            "Optimize a SQL query and index design for a database with 100M rows."
+        ],
+        "pro_tip": "Always state edge cases (empty inputs, nulls, negative values) and analyze time/space complexities before typing a single line of code."
+    },
+    "microsoft": {
+        "company": "Microsoft",
+        "tier": "Tier 1 Global Product",
+        "stipend": "₹1,00,000 / month",
+        "cutoff": "8.0+ CGPA",
+        "key_skills": ["C++", "C#", "Java", "OOP design", "Data structures", "Cloud basics"],
+        "rounds": [
+            {"round": "Codility Online Test", "duration": "60 mins", "focus": "3 coding questions focusing on arrays, strings, and hash sets"},
+            {"round": "Technical Round 1", "duration": "45 mins", "focus": "Linked lists, Trees, OOP inheritance vs composition"},
+            {"round": "Technical Round 2", "duration": "45 mins", "focus": "Low Level Design (LLD), concurrency, debugging scenarios"},
+            {"round": "As-Appropriate (AA) Bar Raiser", "duration": "45 mins", "focus": "Growth mindset, technical depth, project architecture"}
+        ],
+        "top_questions": [
+            "Detect and remove loop in a singly linked list.",
+            "Implement an autocomplete search feature using a Trie data structure.",
+            "Explain the difference between synchronous and asynchronous microservices.",
+            "Design an in-memory Parking Lot system following SOLID principles.",
+            "Find the lowest common ancestor (LCA) in a binary search tree."
+        ],
+        "pro_tip": "Microsoft values clean Object-Oriented Design. Use design patterns (Factory, Strategy, Observer) and write self-documenting code."
+    },
+    "amazon": {
+        "company": "Amazon",
+        "tier": "Tier 1 Global Tech",
+        "stipend": "₹85,000 / month",
+        "cutoff": "7.5+ CGPA",
+        "key_skills": ["Java", "Python", "AWS", "Algorithms", "System scalability"],
+        "rounds": [
+            {"round": "Online Assessment (OA)", "duration": "90 mins", "focus": "2 coding problems + Work Simulation Assessment"},
+            {"round": "Technical Round 1", "duration": "60 mins", "focus": "Hashmaps, Priority Queues, Binary Trees + 2 Leadership Principles"},
+            {"round": "Technical Round 2", "duration": "60 mins", "focus": "System Design / Scalability + 2 Leadership Principles"},
+            {"round": "Bar Raiser Round", "duration": "60 mins", "focus": "Deep architectural critique + Customer Obsession scenarios"}
+        ],
+        "top_questions": [
+            "Top K Frequent Elements in an array using Min-Heap.",
+            "Course Schedule II (Topological Sort on Directed Acyclic Graph).",
+            "Trapping Rain Water problem using Two Pointer approach.",
+            "Design a Key-Value Cache with eventual consistency and TTL expiration.",
+            "Tell me about a time you made a decision without complete data (Bias for Action)."
+        ],
+        "pro_tip": "Every answer must be structured strictly in STAR format (Situation, Task, Action, Result) mapped directly to Amazon's 16 Leadership Principles."
+    },
+    "cisco": {
+        "company": "Cisco",
+        "tier": "Tier 1 Enterprise Networking",
+        "stipend": "₹75,000 / month",
+        "cutoff": "8.0+ CGPA",
+        "key_skills": ["Networking", "TCP/IP", "C++", "Python", "Linux kernel", "Socket programming"],
+        "rounds": [
+            {"round": "Aptitude + Technical OA", "duration": "60 mins", "focus": "Aptitude, Networking MCQs, 2 coding problems"},
+            {"round": "Technical Round 1", "duration": "45 mins", "focus": "TCP 3-way handshake, OSI layers, socket APIs in C/Python"},
+            {"round": "Technical Round 2", "duration": "45 mins", "focus": "Operating Systems, paging, concurrency, network packet routing"},
+            {"round": "Managerial & HR", "duration": "30 mins", "focus": "Culture fit, communication, passion for networking infrastructure"}
+        ],
+        "top_questions": [
+            "Explain TCP 3-way handshake and how SYN flood attacks are mitigated.",
+            "Implement a CIDR subnet calculator and explain IP routing tables.",
+            "Difference between Process and Thread; explain virtual memory paging.",
+            "Reverse words in a given sentence in-place without auxiliary space.",
+            "Explain the exact packet flow when you type 'google.com' in a browser."
+        ],
+        "pro_tip": "Know the OSI model and TCP/IP stack inside out. Be ready to explain how switches, routers, and firewalls handle packet headers."
+    },
+    "meta": {
+        "company": "Meta",
+        "tier": "Tier 1 Global Product",
+        "stipend": "₹1,30,000 / month",
+        "cutoff": "8.5+ CGPA",
+        "key_skills": ["Python", "C++", "React", "Distributed systems", "Algorithms"],
+        "rounds": [
+            {"round": "Technical Screening", "duration": "45 mins", "focus": "2 coding problems under strict time limit (20 mins each)"},
+            {"round": "Onsite Coding 1", "duration": "45 mins", "focus": "Graph traversals (BFS/DFS), Dynamic Programming"},
+            {"round": "Onsite Coding 2", "duration": "45 mins", "focus": "String/Array algorithms, Binary Search variations"},
+            {"round": "Behavioral Round", "duration": "45 mins", "focus": "Ownership, conflict resolution, technical trade-offs"}
+        ],
+        "top_questions": [
+            "Word Break II using Dynamic Programming and Memoization.",
+            "Lowest Common Ancestor in a Binary Tree with parent pointers.",
+            "Design a real-time newsfeed ranking algorithm.",
+            "Merge K Sorted Lists using Min-Heap.",
+            "Find minimum window substring containing all characters."
+        ],
+        "pro_tip": "Meta values coding speed. You are expected to solve 2 medium/hard questions in a 45-minute call with working, clean code."
+    },
+    "infosys": {
+        "company": "Infosys",
+        "tier": "Global IT Services & Consulting",
+        "stipend": "₹35,000 - ₹50,000 / month",
+        "cutoff": "6.5+ CGPA",
+        "key_skills": ["Java", "SQL", "Python", "Web development", "Communication"],
+        "rounds": [
+            {"round": "HackWithInfy / InfyTQ Exam", "duration": "90 mins", "focus": "Core DSA, DBMS, OOP MCQs + 2 coding questions"},
+            {"round": "Technical Interview", "duration": "30 mins", "focus": "Core Java, SQL queries, Final Year Capstone Project review"},
+            {"round": "HR Interview", "duration": "20 mins", "focus": "Communication, adaptability, relocation willingness"}
+        ],
+        "top_questions": [
+            "Explain OOP pillars with real-world examples.",
+            "Write a SQL query to find the second highest salary without using LIMIT.",
+            "Difference between ArrayList and LinkedList in Java.",
+            "Explain database normalization (1NF, 2NF, 3NF).",
+            "What was your individual contribution to your academic project?"
+        ],
+        "pro_tip": "Speak clearly and confidently. Thoroughly understand every project and technology written on your resume."
+    }
+}
+
+@app.route('/api/sandbox/challenges', methods=['GET'])
+def get_sandbox_challenges():
+    return jsonify({
+        'success': True,
+        'challenges': CODING_CHALLENGES_CATALOG
+    })
+
+@app.route('/api/company-cheat-sheet/<company_name>', methods=['GET'])
+def get_company_cheat_sheet(company_name):
+    c_key = company_name.strip().lower()
+    for key, data in COMPANY_INTELLIGENCE.items():
+        if key in c_key or c_key in key:
+            return jsonify({'success': True, 'dossier': data})
+    
+    # Generic fallback dossier
+    return jsonify({
+        'success': True,
+        'dossier': {
+            'company': company_name,
+            'tier': 'Corporate Technology Hiring',
+            'stipend': '₹40,000 - ₹75,000 / month',
+            'cutoff': '7.0+ CGPA',
+            'key_skills': ['Data structures', 'Algorithms', 'SQL', 'Python', 'Problem solving'],
+            'rounds': [
+                {'round': 'Online Coding Assessment', 'duration': '60-90 mins', 'focus': '2-3 algorithmic problems + CS fundamentals'},
+                {'round': 'Technical Interview 1', 'duration': '45 mins', 'focus': 'Data structures, Projects, Core subject fundamentals'},
+                {'round': 'Technical Interview 2', 'duration': '45 mins', 'focus': 'Problem solving, SQL queries, System scenarios'},
+                {'round': 'HR & Behavioral', 'duration': '30 mins', 'focus': 'Communication skills, culture fit, situational judgment'}
+            ],
+            'top_questions': [
+                'Reverse a linked list iteratively and recursively.',
+                'Write an optimized SQL query involving JOINs and GROUP BY.',
+                'Explain how you handled a technical roadblock in your college project.',
+                'Explain how hash collisions are resolved in a hash table.',
+                'Describe the difference between process and thread concurrency.'
+            ],
+            'pro_tip': 'Review your resume thoroughly, explain your thought process out loud, and test your code with boundary cases.'
+        }
+    })
+
+@app.route('/api/ats-scan', methods=['GET', 'POST'])
+def ats_scanner():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    profile = cursor.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+
+    if not profile:
+        return jsonify({'success': False, 'error': 'No profile found. Please upload a resume first.'}), 400
+
+    profile_dict = dict(profile)
+    text = (profile_dict.get('parsed_text') or '')
+    email = profile_dict.get('email') or session.get('email') or ''
+    cgpa = profile_dict.get('cgpa') or 0.0
+    skills_str = profile_dict.get('skills') or ''
+
+    # Evaluate ATS Breakdown
+    # 1. Contact & Header (20 pts)
+    contact_score = 10
+    if email and '@' in email: contact_score += 5
+    if re.search(r'github\.com|linkedin\.com', text, re.I): contact_score += 5
+
+    # 2. Action Verbs (25 pts)
+    ACTION_VERBS = [
+        'architected', 'engineered', 'developed', 'deployed', 'implemented', 'optimized',
+        'spearheaded', 'refactored', 'automated', 'scaled', 'integrated', 'designed',
+        'accelerated', 'orchestrated', 'built', 'analyzed', 'configured', 'transformed',
+        'reduced', 'increased', 'streamlined', 'modeled', 'trained', 'evaluated'
+    ]
+    found_verbs = [v for v in ACTION_VERBS if re.search(rf'\b{v}\b', text, re.I)]
+    action_verb_score = min(25, max(12, len(found_verbs) * 4))
+
+    # 3. Quantified Metrics (20 pts)
+    quant_matches = re.findall(r'\b\d+%\b|\b\d+x\b|\b\d+\s*(?:ms|users|requests|records|k|m)\b', text, re.I)
+    quant_score = min(20, max(8, len(quant_matches) * 5))
+
+    # 4. Standard Section Structure (20 pts)
+    structure_score = 10
+    sections_found = []
+    for s_name in ['education', 'skills', 'projects', 'experience', 'certifications']:
+        if re.search(rf'\b{s_name}\b', text, re.I):
+            sections_found.append(s_name.capitalize())
+    structure_score += min(10, len(sections_found) * 2)
+
+    # 5. Technical Keyword Density (15 pts)
+    skills_list = [s.strip() for s in skills_str.split(',') if s.strip()]
+    keyword_score = min(15, max(8, len(skills_list) * 2))
+
+    total_ats = min(100, contact_score + action_verb_score + quant_score + structure_score + keyword_score)
+
+    strengths = []
+    improvements = []
+    
+    if contact_score >= 18:
+        strengths.append("Clean contact information and professional profile links detected.")
+    else:
+        improvements.append("Add clear LinkedIn and GitHub profile links in your resume header.")
+
+    if len(found_verbs) >= 4:
+        strengths.append(f"Strong active voice: Identified {len(found_verbs)} high-impact action verbs ({', '.join(found_verbs[:3])}).")
+    else:
+        improvements.append("Start each project bullet point with strong action verbs (e.g. 'Architected', 'Optimized', 'Deployed').")
+
+    if quant_score >= 15:
+        strengths.append("High metric density: Resume includes quantified results and measurable business impact.")
+    else:
+        improvements.append("Quantify your project outcomes (e.g., 'Reduced query latency by 35%', 'Scaled to 1,000+ users').")
+
+    if len(skills_list) >= 5:
+        strengths.append(f"ATS keyword count is healthy: {len(skills_list)} industry technical skills parsed.")
+    else:
+        improvements.append("Incorporate more industry-standard keywords like Docker, Cloud (AWS), and CI/CD.")
+
+    bullet_enhancements = [
+        {
+            "original": "Worked on a machine learning project using python to predict house prices.",
+            "enhanced": "Engineered an end-to-end predictive ML pipeline in Python using Random Forest; achieved 92.4% R² accuracy and reduced latency by 40%."
+        },
+        {
+            "original": "Built a website in React and Node.js for college events.",
+            "enhanced": "Architected a full-stack event portal in React and Express.js with JWT authentication; supported 2,500+ student registrations without downtime."
+        }
+    ]
+
+    insert_notification(
+        session['email'],
+        f"ATS scan completed: {total_ats}/100 score ({len(found_verbs)} action verbs, {len(sections_found)} standard sections). Actionable optimizations generated.",
+        icon="fa-file-shield",
+        title="ATS Compatibility Scan",
+        category="resume",
+        action_tab="placement-matching"
+    )
+
+    return jsonify({
+        'success': True,
+        'ats_score': total_ats,
+        'overall_score': total_ats,
+        'category_scores': {
+            'contact_info': contact_score * 5,
+            'action_verbs': int(action_verb_score * 4),
+            'quantified_metrics': int(quant_score * 5),
+            'structure': int(structure_score * 5),
+            'keyword_density': int(keyword_score * 6.6)
+        },
+        'metrics': {
+            'contact_info': contact_score * 5,
+            'action_verbs': int(action_verb_score * 4),
+            'quantified_impact': int(quant_score * 5),
+            'structure': int(structure_score * 5),
+            'keyword_density': int(keyword_score * 6.6)
+        },
+        'strengths': strengths,
+        'improvements': improvements,
+        'detected_action_verbs': found_verbs,
+        'bullet_enhancements': bullet_enhancements,
+        'bullet_upgrades': [
+            {
+                "original": b["original"],
+                "upgraded": b["enhanced"],
+                "impact": "Quantified impact + Action Verb"
+            } for b in bullet_enhancements
+        ],
+        'sections_detected': sections_found
+    })
+
+@app.route('/api/tailor-resume', methods=['POST'])
+def tailor_resume():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json() or {}
+    company = data.get('company', 'Target Company')
+    role = data.get('role', 'Software Engineer Intern')
+    required_skills_str = data.get('required_skills', 'Python, SQL, Algorithms')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    profile = cursor.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+
+    skills = [s.strip() for s in (profile['skills'] if profile else '').split(',') if s.strip()]
+    cgpa = profile['cgpa'] if profile else 8.0
+
+    tailored_summary = (
+        f"Goal-oriented Computer Science undergraduate (CGPA: {cgpa}) passionate about engineering scalable solutions "
+        f"for {company}. Demonstrates strong core foundation in {', '.join(skills[:3]) or 'software engineering'} with proven "
+        f"hands-on project experience aligned with {role} responsibilities. Eager to contribute high-impact code and drive performance optimization."
+    )
+
+    req_skills = [s.strip() for s in required_skills_str.split(',') if s.strip()]
+    tailored_bullets = [
+        f"Designed and deployed modular services adhering to {company}'s focus on {req_skills[0] if req_skills else 'reliable software architecture'}.",
+        f"Optimized performance and data throughput utilizing {req_skills[1] if len(req_skills) > 1 else 'clean algorithmic patterns'}, improving system responsiveness by 30%."
+    ]
+
+    insert_notification(
+        session['email'],
+        f"Customized summary & targeted experience bullets generated for '{role}' at {company}.",
+        icon="fa-wand-magic-sparkles",
+        title=f"Tailored Resume: {company}",
+        category="resume",
+        action_tab="placement-matching"
+    )
+
+    return jsonify({
+        'success': True,
+        'company': company,
+        'role': role,
+        'target_role': role,
+        'tailored_summary': tailored_summary,
+        'highlight_skills': req_skills[:5],
+        'top_skills': req_skills[:5],
+        'tailored_bullets': tailored_bullets,
+        'featured_bullets': tailored_bullets
+    })
+
+@app.route('/api/certificate/data', methods=['GET'])
+def get_certificate_data():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    profile = cursor.execute('SELECT * FROM student_profiles WHERE user_id = ?', (session['user_id'],)).fetchone()
+    user = cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+
+    name = session.get('name') or (user['name'] if user else 'Ritvik Medam')
+    email = session.get('email', 'student@rvu.edu.in')
+    cgpa = profile['cgpa'] if profile and 'cgpa' in profile.keys() else 8.75
+    skills_raw = profile['skills'] if profile and 'skills' in profile.keys() else 'Python, Machine Learning, Data Structures, Algorithms, SQL, Git'
+    skills = [s.strip().title() for s in (skills_raw or '').split(',') if s.strip()]
+
+    # Generate unique verifiable credential ID
+    cred_seed = f"{email}-{cgpa}-{name}-2026"
+    hash_id = hashlib.sha256(cred_seed.encode()).hexdigest()[:10].upper()
+    cred_id = f"RV-INTEL-2026-{hash_id}"
+    tier_level = 'Tier-1 Highly Employable' if cgpa >= 8.0 else 'Placement Certified'
+    issued_date = datetime.now().strftime('%B %d, %Y')
+
+    return jsonify({
+        'success': True,
+        'student_name': name,
+        'tier_level': tier_level,
+        'cgpa': cgpa,
+        'skills': skills[:6] if skills else ['Python', 'Data Structures', 'Machine Learning'],
+        'issued_date': issued_date,
+        'credential_id': cred_id,
+        'certificate': {
+            'credential_id': cred_id,
+            'recipient_name': name,
+            'recipient_email': email,
+            'cgpa': cgpa,
+            'readiness_tier': tier_level,
+            'verified_competencies': skills[:6] if skills else ['Python', 'Data Structures'],
+            'issue_date': issued_date,
+            'issuing_authority': 'PlacementIntel Center of Career & Employability Systems',
+            'institution': 'RV University Placement & Corporate Relations Cell',
+            'verification_url': f"http://127.0.0.1:5050/verify/{cred_id}"
+        }
+    })
 
 
 def extract_text_from_pdf(pdf_path):

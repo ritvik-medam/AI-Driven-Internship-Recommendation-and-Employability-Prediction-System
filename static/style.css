@@ -2191,6 +2191,210 @@ body.theme-light .terminal-input {
     color: #0f172a !important;
 }
 
+/* Coding Sandbox Light Mode */
+body.theme-light #sandbox-problem-description {
+    color: #1e293b !important;
+}
+body.theme-light #sandbox-expected-signature {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+body.theme-light #sandbox-code-editor {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+body.theme-light #sandbox-console-log {
+    color: #0f172a !important;
+}
+body.theme-light #mock-coding-panel div[style*="background: rgba(0,0,0,0.25)"] {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+body.theme-light #mock-coding-panel div[style*="background: rgba(255,255,255,0.01)"] {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Career Advisor Light Mode */
+body.theme-light #career-advisor-panel div[style*="background: rgba(255,255,255,0.01)"] {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+body.theme-light #roadmap-visualization-wrap {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+body.theme-light .roadmap-node {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+body.theme-light .roadmap-node-label {
+    color: #0f172a !important;
+}
+body.theme-light .roadmap-node.status-learned {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: #10b981 !important;
+}
+body.theme-light .roadmap-node.status-gap {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border-color: #f59e0b !important;
+}
+body.theme-light .roadmap-node.status-target {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: #3b82f6 !important;
+}
+body.theme-light .roadmap-connector-arrow {
+    color: #94a3b8 !important;
+}
+
+/* Market Insights & Heatmap Light Mode */
+body.theme-light .heat-tile.heat-high {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #dc2626 !important;
+}
+body.theme-light .heat-tile.heat-medium {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: #d97706 !important;
+}
+body.theme-light .heat-tile.heat-low {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: #2563eb !important;
+}
+body.theme-light .heat-tile-name {
+    color: #0f172a !important;
+}
+body.theme-light .heat-tile-val {
+    color: #475569 !important;
+}
+body.theme-light #market-insights-panel .card[style*="background: var(--bg-card)"] {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+body.theme-light .custom-range-slider {
+    background: #e2e8f0 !important;
+}
+
+/* Percentile Rank & Interview Scheduler Light Mode */
+body.theme-light .percentile-ring {
+    border-color: #e2e8f0 !important;
+    border-top-color: #2563eb !important;
+}
+body.theme-light .percentile-val {
+    color: #0f172a !important;
+}
+body.theme-light .scheduler-slot-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+}
+body.theme-light .scheduler-slot-date {
+    color: #0f172a !important;
+}
+body.theme-light .scheduler-slot-time {
+    color: #475569 !important;
+}
+body.theme-light .scheduler-slot-interviewer {
+    color: #2563eb !important;
+}
+
+/* Employer Kanban & Recruiter desk Light Mode */
+body.theme-light .kanban-column {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+body.theme-light .kanban-header {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+body.theme-light .kanban-header .count-badge {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+body.theme-light .kanban-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+}
+body.theme-light .kanban-card-title {
+    color: #0f172a !important;
+}
+body.theme-light .kanban-card-role {
+    color: #475569 !important;
+}
+body.theme-light .kanban-card-meta {
+    border-top-color: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+/* Employability Passport Card Light Mode */
+body.theme-light .passport-holographic-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+}
+body.theme-light .passport-brand {
+    color: #0f172a !important;
+}
+body.theme-light .passport-name {
+    color: #0f172a !important;
+}
+body.theme-light .passport-email {
+    color: #475569 !important;
+}
+body.theme-light .passport-metrics-row {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+body.theme-light .passport-metric .p-label {
+    color: #64748b !important;
+}
+body.theme-light .passport-metric .p-val {
+    color: #0f172a !important;
+}
+body.theme-light .passport-footer {
+    border-top-color: #e2e8f0 !important;
+}
+
+/* AI Interview Coach Terminal Light Mode */
+body.theme-light .terminal-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+body.theme-light .terminal-header {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+body.theme-light .terminal-title {
+    color: #475569 !important;
+}
+body.theme-light .terminal-body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+body.theme-light .terminal-prompt {
+    color: #2563eb !important;
+}
+
+/* Empty states and icons */
+body.theme-light .empty-state-card i,
+body.theme-light .timeline-empty i,
+body.theme-light #interview-history-empty i {
+    color: #cbd5e1 !important;
+}
+body.theme-light .empty-state-card p,
+body.theme-light .timeline-empty p,
+body.theme-light #interview-history-empty p {
+    color: #64748b !important;
+}
+
 /* ================== CAREER ROADMAP FLOWCHART ================== */
 .roadmap-node {
     display: flex;

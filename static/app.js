@@ -64,6 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabSignupBtn = document.getElementById('tab-signup-btn');
     const logoutBtn = document.getElementById('logout-btn');
 
+    // Theme initialization
+    const savedInitialTheme = localStorage.getItem('theme');
+    if (savedInitialTheme === 'light') {
+        document.body.classList.add('theme-light');
+    } else {
+        document.body.classList.remove('theme-light');
+    }
+
     // Session headers
     const sessionUsername = document.getElementById('session-username');
     const sessionUserrole = document.getElementById('session-userrole');
@@ -157,6 +165,96 @@ document.addEventListener('DOMContentLoaded', () => {
     let marketSectorsChart = null;
     let marketSalaryChart = null;
     let candidateCompareChart = null;
+
+    function getChartThemeColors() {
+        const isLight = document.body.classList.contains('theme-light');
+        return {
+            isLight: isLight,
+            textColor: isLight ? '#0f172a' : '#d0d8e5',
+            subtextColor: isLight ? '#475569' : '#94a3b8',
+            gridColor: isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.08)',
+            angleLineColor: isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+            cyanBorder: isLight ? '#0284c7' : 'rgba(0, 242, 254, 1)',
+            cyanBg: isLight ? 'rgba(2, 132, 199, 0.22)' : 'rgba(0, 242, 254, 0.15)',
+            purpleBorder: isLight ? '#7c3aed' : 'rgba(155, 81, 224, 1)',
+            purpleBg: isLight ? 'rgba(124, 58, 237, 0.18)' : 'rgba(155, 81, 224, 0.12)',
+            greenBorder: isLight ? '#059669' : 'rgba(0, 245, 160, 1)',
+            greenBg: isLight ? 'rgba(5, 150, 105, 0.22)' : 'rgba(0, 245, 160, 0.15)'
+        };
+    }
+
+    function updateAllChartsTheme() {
+        const colors = getChartThemeColors();
+        const allCharts = [
+            skillRadarChart,
+            peerRadarChart,
+            readinessChart,
+            forecastingChart,
+            interviewTrendChart,
+            marketSectorsChart,
+            marketSalaryChart,
+            candidateCompareChart
+        ];
+
+        allCharts.forEach(chart => {
+            if (!chart) return;
+
+            // Update Scales
+            if (chart.options && chart.options.scales) {
+                if (chart.options.scales.r) {
+                    const r = chart.options.scales.r;
+                    if (!r.grid) r.grid = {};
+                    r.grid.color = colors.gridColor;
+                    if (!r.angleLines) r.angleLines = {};
+                    r.angleLines.color = colors.angleLineColor;
+                    if (!r.pointLabels) r.pointLabels = {};
+                    r.pointLabels.color = colors.textColor;
+                    if (r.ticks) r.ticks.backdropColor = 'transparent';
+                }
+                if (chart.options.scales.x) {
+                    const x = chart.options.scales.x;
+                    if (!x.ticks) x.ticks = {};
+                    x.ticks.color = colors.textColor;
+                    if (x.grid && x.grid.display !== false) {
+                        x.grid.color = colors.gridColor;
+                    }
+                }
+                if (chart.options.scales.y) {
+                    const y = chart.options.scales.y;
+                    if (!y.ticks) y.ticks = {};
+                    y.ticks.color = colors.textColor;
+                    if (!y.grid) y.grid = {};
+                    y.grid.color = colors.gridColor;
+                }
+            }
+
+            // Update Legend
+            if (chart.options && chart.options.plugins && chart.options.plugins.legend) {
+                if (!chart.options.plugins.legend.labels) chart.options.plugins.legend.labels = {};
+                chart.options.plugins.legend.labels.color = colors.textColor;
+            }
+
+            // Update radar chart dataset colors
+            if (chart === skillRadarChart && chart.data && chart.data.datasets.length >= 2) {
+                chart.data.datasets[0].borderColor = colors.greenBorder;
+                chart.data.datasets[0].backgroundColor = colors.greenBg;
+                chart.data.datasets[0].pointBackgroundColor = colors.greenBorder;
+                chart.data.datasets[1].borderColor = colors.purpleBorder;
+                chart.data.datasets[1].backgroundColor = colors.purpleBg;
+                chart.data.datasets[1].pointBackgroundColor = colors.purpleBorder;
+            }
+            if (chart === peerRadarChart && chart.data && chart.data.datasets.length >= 2) {
+                chart.data.datasets[0].borderColor = colors.cyanBorder;
+                chart.data.datasets[0].backgroundColor = colors.cyanBg;
+                chart.data.datasets[0].pointBackgroundColor = colors.cyanBorder;
+                chart.data.datasets[1].borderColor = colors.purpleBorder;
+                chart.data.datasets[1].backgroundColor = colors.purpleBg;
+                chart.data.datasets[1].pointBackgroundColor = colors.purpleBorder;
+            }
+
+            chart.update();
+        });
+    }
 
     // Interview States
     let isInterviewRunning = false;
@@ -2113,6 +2211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const labelsReadiness = Object.keys(data.employability_readiness_distribution);
                 const valuesReadiness = Object.values(data.employability_readiness_distribution);
 
+                const colors = getChartThemeColors();
                 const ctxReadiness = document.getElementById('readinessDistributionChart').getContext('2d');
                 if (readinessChart) readinessChart.destroy();
 
@@ -2141,7 +2240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         plugins: {
                             legend: {
                                 position: 'bottom',
-                                labels: { color: '#d0d8e5', font: { family: 'Inter', size: 10 } }
+                                labels: { color: colors.textColor, font: { family: 'Inter', size: 10, weight: '500' } }
                             }
                         }
                     }
@@ -2159,8 +2258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Current Placement Ratio (%)',
                                 data: fore.current_placement_y,
-                                borderColor: 'rgba(0, 242, 254, 1)',
-                                backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                                borderColor: colors.cyanBorder,
+                                backgroundColor: colors.cyanBg,
                                 borderWidth: 2,
                                 fill: true,
                                 tension: 0.3
@@ -2168,7 +2267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Forecasted Ratio (Revised Syllabus) (%)',
                                 data: fore.forecasted_placement_y,
-                                borderColor: 'rgba(155, 81, 224, 1)',
+                                borderColor: colors.purpleBorder,
                                 backgroundColor: 'transparent',
                                 borderWidth: 2,
                                 borderDash: [5, 5],
@@ -2183,17 +2282,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#d0d8e5', font: { family: 'Inter' } }
+                                ticks: { color: colors.textColor, font: { family: 'Inter' } }
                             },
                             y: {
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                ticks: { color: '#d0d8e5', font: { family: 'Inter' }, stepSize: 20 }
+                                grid: { color: colors.gridColor },
+                                ticks: { color: colors.textColor, font: { family: 'Inter' }, stepSize: 20 }
                             }
                         },
                         plugins: {
                             legend: {
                                 position: 'top',
-                                labels: { color: '#d0d8e5', font: { family: 'Inter', size: 10 } }
+                                labels: { color: colors.textColor, font: { family: 'Inter', size: 10, weight: '500' } }
                             }
                         }
                     }
@@ -2243,6 +2342,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return count / topRecs.length;
         });
 
+        const colors = getChartThemeColors();
         const ctx = document.getElementById('skillRadarChart').getContext('2d');
         if (skillRadarChart) skillRadarChart.destroy();
         skillRadarChart = new Chart(ctx, {
@@ -2253,19 +2353,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Your Skills',
                         data: studentData,
-                        backgroundColor: 'rgba(0, 245, 160, 0.15)',
-                        borderColor: 'rgba(0, 245, 160, 0.8)',
+                        backgroundColor: colors.greenBg,
+                        borderColor: colors.greenBorder,
                         borderWidth: 2,
-                        pointBackgroundColor: '#00f5a0',
+                        pointBackgroundColor: colors.greenBorder,
                         pointRadius: 4
                     },
                     {
                         label: 'Required (Top Internships)',
                         data: requirementData,
-                        backgroundColor: 'rgba(155, 81, 224, 0.12)',
-                        borderColor: 'rgba(155, 81, 224, 0.7)',
+                        backgroundColor: colors.purpleBg,
+                        borderColor: colors.purpleBorder,
                         borderWidth: 2,
-                        pointBackgroundColor: '#9b51e0',
+                        pointBackgroundColor: colors.purpleBorder,
                         pointRadius: 4
                     }
                 ]
@@ -2277,16 +2377,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     r: {
                         beginAtZero: true,
                         max: 1,
-                        ticks: { display: false, stepSize: 0.25 },
-                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
-                        angleLines: { color: 'rgba(255, 255, 255, 0.06)' },
-                        pointLabels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 } }
+                        ticks: { display: false, stepSize: 0.25, backdropColor: 'transparent' },
+                        grid: { color: colors.gridColor },
+                        angleLines: { color: colors.angleLineColor },
+                        pointLabels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' } }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 }, padding: 20 }
+                        labels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' }, padding: 20 }
                     }
                 }
             }
@@ -2392,6 +2492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const techScores = data.map(d => d.technical_score);
                 const commScores = data.map(d => d.communication_score);
 
+                const colors = getChartThemeColors();
                 const ctx = document.getElementById('interviewTrendChart').getContext('2d');
                 if (interviewTrendChart) interviewTrendChart.destroy();
                 interviewTrendChart = new Chart(ctx, {
@@ -2402,32 +2503,32 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Overall Score',
                                 data: avgScores,
-                                borderColor: '#00f2fe',
-                                backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                                borderColor: colors.cyanBorder,
+                                backgroundColor: colors.cyanBg,
                                 borderWidth: 2.5,
                                 fill: true,
                                 tension: 0.4,
                                 pointRadius: 5,
-                                pointBackgroundColor: '#00f2fe'
+                                pointBackgroundColor: colors.cyanBorder
                             },
                             {
                                 label: 'Technical',
                                 data: techScores,
-                                borderColor: '#00f5a0',
+                                borderColor: colors.greenBorder,
                                 borderWidth: 2,
                                 tension: 0.4,
                                 pointRadius: 4,
-                                pointBackgroundColor: '#00f5a0',
+                                pointBackgroundColor: colors.greenBorder,
                                 fill: false
                             },
                             {
                                 label: 'Communication',
                                 data: commScores,
-                                borderColor: '#9b51e0',
+                                borderColor: colors.purpleBorder,
                                 borderWidth: 2,
                                 tension: 0.4,
                                 pointRadius: 4,
-                                pointBackgroundColor: '#9b51e0',
+                                pointBackgroundColor: colors.purpleBorder,
                                 fill: false
                             }
                         ]
@@ -2438,19 +2539,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#d0d8e5', font: { family: 'Inter' } }
+                                ticks: { color: colors.textColor, font: { family: 'Inter' } }
                             },
                             y: {
                                 min: 0,
                                 max: 100,
-                                grid: { color: 'rgba(255,255,255,0.05)' },
-                                ticks: { color: '#d0d8e5', font: { family: 'Inter' }, stepSize: 20 }
+                                grid: { color: colors.gridColor },
+                                ticks: { color: colors.textColor, font: { family: 'Inter' }, stepSize: 20 }
                             }
                         },
                         plugins: {
                             legend: {
                                 position: 'top',
-                                labels: { color: '#d0d8e5', font: { family: 'Inter', size: 11 }, padding: 15 }
+                                labels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '500' }, padding: 15 }
                             }
                         }
                     }
@@ -2692,6 +2793,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Sector Growth Chart
+                const colors = getChartThemeColors();
                 const ctxSec = document.getElementById('marketSectorsChart').getContext('2d');
                 if (marketSectorsChart) marketSectorsChart.destroy();
                 marketSectorsChart = new Chart(ctxSec, {
@@ -2719,8 +2821,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             legend: { display: false }
                         },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: '#d0d8e5' } },
-                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#d0d8e5' } }
+                            x: { grid: { display: false }, ticks: { color: colors.textColor, font: { family: 'Inter', weight: '500' } } },
+                            y: { grid: { color: colors.gridColor }, ticks: { color: colors.textColor, font: { family: 'Inter' } } }
                         }
                     }
                 });
@@ -2744,8 +2846,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Average Stipend (₹/mo)',
                                 data: data.salary_distribution.map(d => d.avg),
-                                borderColor: 'rgba(0, 242, 254, 0.8)',
-                                backgroundColor: 'rgba(0, 242, 254, 0.05)',
+                                borderColor: colors.cyanBorder,
+                                backgroundColor: colors.cyanBg,
                                 borderWidth: 3,
                                 fill: true,
                                 tension: 0.2
@@ -2753,7 +2855,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Maximum Stipend (₹/mo)',
                                 data: data.salary_distribution.map(d => d.max),
-                                borderColor: 'rgba(0, 245, 160, 0.8)',
+                                borderColor: colors.greenBorder,
                                 backgroundColor: 'transparent',
                                 borderWidth: 2,
                                 tension: 0.2
@@ -2764,11 +2866,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { labels: { color: '#d0d8e5' } }
+                            legend: { labels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '500' } } }
                         },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: '#d0d8e5' } },
-                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#d0d8e5' } }
+                            x: { grid: { display: false }, ticks: { color: colors.textColor, font: { family: 'Inter' } } },
+                            y: { grid: { color: colors.gridColor }, ticks: { color: colors.textColor, font: { family: 'Inter' } } }
                         }
                     }
                 });
@@ -2793,6 +2895,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('percentile-feedback').textContent = msg;
 
                 // Render Peer Radar Chart
+                const colors = getChartThemeColors();
                 const ctxPeer = document.getElementById('peerRadarChart').getContext('2d');
                 if (peerRadarChart) peerRadarChart.destroy();
 
@@ -2807,16 +2910,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Your Metric',
                                 data: [u.cgpa, u.skills, u.projects, u.certs, u.experience],
-                                borderColor: 'rgba(0, 242, 254, 1)',
-                                backgroundColor: 'rgba(0, 242, 254, 0.2)',
-                                borderWidth: 2
+                                borderColor: colors.cyanBorder,
+                                backgroundColor: colors.cyanBg,
+                                borderWidth: 2,
+                                pointBackgroundColor: colors.cyanBorder
                             },
                             {
                                 label: 'Cohort Average',
                                 data: [c.cgpa, c.skills, c.projects, c.certs, c.experience],
-                                borderColor: 'rgba(155, 81, 224, 1)',
-                                backgroundColor: 'rgba(155, 81, 224, 0.1)',
-                                borderWidth: 2
+                                borderColor: colors.purpleBorder,
+                                backgroundColor: colors.purpleBg,
+                                borderWidth: 2,
+                                pointBackgroundColor: colors.purpleBorder
                             }
                         ]
                     },
@@ -2824,14 +2929,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'bottom', labels: { color: '#d0d8e5' } }
+                            legend: { position: 'bottom', labels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' } } }
                         },
                         scales: {
                             r: {
-                                angleLines: { color: 'rgba(255,255,255,0.05)' },
-                                grid: { color: 'rgba(255,255,255,0.05)' },
-                                pointLabels: { color: '#d0d8e5', font: { size: 10 } },
-                                ticks: { display: false }
+                                angleLines: { color: colors.angleLineColor },
+                                grid: { color: colors.gridColor },
+                                pointLabels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' } },
+                                ticks: { display: false, backdropColor: 'transparent' }
                             }
                         }
                     }
@@ -2906,14 +3011,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ----------------- Light/Dark Theme Switcher -----------------
     const themeBtn = document.getElementById('theme-toggle-btn');
-    // Ensure default theme is dark as requested; clear any lingering light theme override
-    if (localStorage.getItem('theme') === 'light') {
-        localStorage.setItem('theme', 'dark');
-    }
-    document.body.classList.remove('theme-light');
-    if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
-
     if (themeBtn) {
+        if (document.body.classList.contains('theme-light')) {
+            themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+
         themeBtn.addEventListener('click', () => {
             if (document.body.classList.contains('theme-light')) {
                 document.body.classList.remove('theme-light');
@@ -2924,6 +3028,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('theme', 'light');
                 themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
+            updateAllChartsTheme();
         });
     }
 
@@ -3319,6 +3424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             summary.innerHTML += `<div style="padding:0.35rem 0;"><strong>${candidateB.student_name}</strong>: Match Index ${candidateB.match_score}%, Interview Grade ${candidateB.interview_score || 'N/A'}/100</div>`;
         }
 
+        const colors = getChartThemeColors();
         const ctx = document.getElementById('candidateCompareChart').getContext('2d');
         if (candidateCompareChart) candidateCompareChart.destroy();
 
@@ -3332,14 +3438,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#d0d8e5' } }
+                    legend: { position: 'bottom', labels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' } } }
                 },
                 scales: {
                     r: {
-                        angleLines: { color: 'rgba(255,255,255,0.05)' },
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        pointLabels: { color: '#d0d8e5', font: { size: 11 } },
-                        ticks: { display: false }
+                        angleLines: { color: colors.angleLineColor },
+                        grid: { color: colors.gridColor },
+                        pointLabels: { color: colors.textColor, font: { family: 'Inter', size: 11, weight: '600' } },
+                        ticks: { display: false, backdropColor: 'transparent' }
                     }
                 }
             }

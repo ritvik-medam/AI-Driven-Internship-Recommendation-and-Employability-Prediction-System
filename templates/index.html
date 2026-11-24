@@ -107,25 +107,30 @@
             </div>
 
             <!-- Profile Info Footer -->
-            <div class="user-session-card">
-                <div class="user-session-info">
-                <div id="session-username" style="font-weight: 600; color: #fff;">User Name</div>
-                    <div id="session-userrole" style="font-size: 0.75rem; color: var(--text-secondary); text-transform: capitalize;">Role</div>
-                </div>
-                <div class="sidebar-actions">
-                    <button id="sound-fx-toggle-btn" class="theme-toggle-btn" title="Toggle Sound Feedback" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-volume-high"></i></button>
-                    <button id="restart-tour-btn" class="theme-toggle-btn" title="Platform Feature Tour" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-compass"></i></button>
-                    <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; transition: color 0.2s;"><i class="fas fa-moon"></i></button>
-                    <button id="notif-bell-btn" class="notif-bell" title="Notifications">
+            <!-- Profile & Utility Footer -->
+            <div class="sidebar-footer-container">
+                <div class="sidebar-utility-row">
+                    <button id="theme-toggle-btn" class="sidebar-icon-btn" title="Toggle Light/Dark Theme"><i class="fas fa-moon"></i></button>
+                    <button id="sound-fx-toggle-btn" class="sidebar-icon-btn" title="Toggle Audio Feedback"><i class="fas fa-volume-high"></i></button>
+                    <button id="restart-tour-btn" class="sidebar-icon-btn" title="Platform Feature Tour"><i class="fas fa-compass"></i></button>
+                    <button id="notif-bell-btn" class="sidebar-icon-btn notif-bell" title="Notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
                     </button>
-                    <button id="logout-btn" title="Logout Account"><i class="fas fa-power-off"></i></button>
+                </div>
+
+                <div class="user-profile-strip">
+                    <div class="user-avatar-badge" id="sidebar-user-avatar">ST</div>
+                    <div class="user-session-info">
+                        <div id="session-username" style="font-weight: 600; color: #f8fafc; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">User Name</div>
+                        <div id="session-userrole" style="font-size: 0.72rem; color: var(--text-secondary); text-transform: capitalize;">Student</div>
+                    </div>
+                    <button id="logout-btn" title="Logout Account" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 0.35rem; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background 0.2s;"><i class="fas fa-power-off"></i></button>
                 </div>
             </div>
             
             <div class="sidebar-footer">
-                RV Placement v2.0 © <span>2026</span>
+                Placement<span>Intel</span> • 2026
             </div>
         </aside>
 
@@ -138,11 +143,13 @@
                     <!-- Live Campus Milestone Ticker -->
                     <div class="live-activity-bar">
                         <div class="live-activity-badge"><span class="pulse-dot"></span> LIVE HIRING RADAR</div>
-                        <div class="live-activity-ticker" id="live-activity-ticker">
-                            <span>🚀 <strong>Placement Surge:</strong> 42 students shortlisted this week across Google, Microsoft, Meta & Netflix</span>
-                            <span>🔥 <strong>High Yield Stack:</strong> Docker, AWS Cloud & PyTorch showing +42% interview conversion boost</span>
-                            <span>✨ <strong>AI Interview Simulator:</strong> 18 technical mock sessions completed today • Mean Score: 84%</span>
-                            <span>🎯 <strong>Recruiter Activity:</strong> Google Recruiter desk reviewed 15 candidate portfolios today</span>
+                        <div class="live-activity-ticker-wrap">
+                            <div class="live-activity-ticker" id="live-activity-ticker">
+                                <span>🚀 <strong>Placement Surge:</strong> 42 students shortlisted this week across Google, Microsoft, Meta & Netflix</span>
+                                <span>🔥 <strong>High Yield Stack:</strong> Docker, AWS Cloud & PyTorch showing +42% interview conversion boost</span>
+                                <span>✨ <strong>AI Interview Simulator:</strong> 18 technical mock sessions completed today • Mean Score: 84%</span>
+                                <span>🎯 <strong>Recruiter Activity:</strong> Google Recruiter desk reviewed 15 candidate portfolios today</span>
+                            </div>
                         </div>
                     </div>
 
@@ -151,13 +158,13 @@
                             <h1 class="panel-title">Internship & Employability Matching</h1>
                             <p class="panel-subtitle">Upload your resume PDF to calculate placement readiness scores and job matches.</p>
                         </div>
-                        <button id="btn-open-passport" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.9rem; font-size: 0.8rem; border-radius: 8px; cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3);">
+                        <button id="btn-open-passport" class="btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.9rem; font-size: 0.8rem; border-radius: 8px; cursor: pointer;">
                             <i class="fas fa-id-badge" style="color: var(--accent-blue);"></i> View Employability Passport
                         </button>
                     </div>
 
                     <div class="grid-container">
-                        <!-- Upload Card -->
+                        <!-- Card 1: Upload Card (col-4) -->
                         <div class="card col-4">
                             <h3 class="card-title"><i class="fas fa-cloud-arrow-up"></i> Resume & Documents</h3>
                             <div class="upload-zone" id="upload-zone">
@@ -168,7 +175,7 @@
                             <div class="loader" id="upload-loader"></div>
 
                             <!-- Active Resume Banner -->
-                            <div id="active-resume-banner" style="display: none; margin-top: 0.85rem; padding: 0.6rem 0.8rem; background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 8px; font-size: 0.8rem; align-items: center; justify-content: space-between;">
+                            <div id="active-resume-banner" style="display: none; margin-top: 0.75rem; padding: 0.55rem 0.75rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: 8px; font-size: 0.8rem; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">
                                     <i class="fas fa-file-circle-check" style="color: var(--accent-green); font-size: 1rem; flex-shrink: 0;"></i>
                                     <span id="active-resume-name" style="color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis;">resume.pdf</span>
@@ -181,40 +188,45 @@
                             </div>
 
                             <!-- Upload History Toggle & List -->
-                            <div id="resume-history-section" style="display: none; margin-top: 0.75rem;">
+                            <div id="resume-history-section" style="display: none; margin-top: 0.65rem;">
                                 <button id="btn-toggle-resume-history" type="button" class="btn-secondary" style="width: 100%; font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem;">
                                     <span><i class="fas fa-clock-rotate-left" style="color: var(--accent-blue); margin-right: 0.35rem;"></i> Saved Documents (<span id="resume-history-count">0</span>)</span>
                                     <i class="fas fa-chevron-down" id="resume-history-chevron"></i>
                                 </button>
-                                <div id="resume-history-list" style="display: none; margin-top: 0.5rem; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 0.2rem;">
+                                <div id="resume-history-list" style="display: none; margin-top: 0.5rem; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding-right: 0.2rem;">
                                     <!-- Dynamic uploaded documents list -->
                                 </div>
                             </div>
-                            
-                            <div id="mini-readiness-sec" style="margin-top: 1.25rem; display: none; text-align: center;">
-                                <div id="readiness-badge" class="badge-readiness medium">Medium Readiness</div>
-                            </div>
                         </div>
 
-                        <!-- Critique Checklist Card -->
-                        <div class="card col-4" id="critique-report-card" style="display: none;">
+                        <!-- Card 2: Critique Checklist Card (col-5) -->
+                        <div class="card col-5" id="critique-report-card" style="display: none;">
                             <h3 class="card-title"><i class="fas fa-list-check"></i> Resume Recommendations</h3>
                             <div id="critique-checklist-container">
                                 <!-- Dynamic check marks -->
                             </div>
                         </div>
 
-                        <!-- Score card metrics -->
-                        <div class="card col-4" id="profile-detailed-container" style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <!-- Card 3: Score card metrics (col-3) -->
+                        <div class="card col-3" id="profile-detailed-container" style="display: none; flex-direction: column; gap: 1rem;">
+                            <!-- Header with Title and Readiness Badge -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                                <h3 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0;">
+                                    <i class="fas fa-chart-pie" style="color: var(--accent-blue); margin-right: 0.4rem;"></i> Readiness
+                                </h3>
+                                <div id="mini-readiness-sec">
+                                    <div id="readiness-badge" class="badge-readiness high">High Readiness</div>
+                                </div>
+                            </div>
+
                             <!-- Readiness score gauge -->
                             <div class="gauge-wrapper">
-                                <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600;">Employability Score</h3>
                                 <div class="gauge-circle">
                                     <svg viewBox="0 0 150 150">
                                         <defs>
                                             <linearGradient id="gaugeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#00f2fe" />
-                                                <stop offset="100%" stop-color="#9b51e0" />
+                                                <stop offset="0%" stop-color="#3b82f6" />
+                                                <stop offset="100%" stop-color="#60a5fa" />
                                             </linearGradient>
                                         </defs>
                                         <circle class="gauge-bg" cx="75" cy="75" r="70"></circle>
@@ -225,32 +237,32 @@
                             </div>
                             
                             <!-- Sub-grades Progress -->
-                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.65rem;">
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Formatting Index</span>
-                                        <span id="score-format">0%</span>
+                                        <span id="score-format" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-format" style="width: 0%; background: var(--accent-blue);"></div>
+                                        <div class="critique-progress-fill" id="fill-format" style="width: 0%; background: #3b82f6;"></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Certifications Grade</span>
-                                        <span id="score-certs">0%</span>
+                                        <span id="score-certs" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-certs" style="width: 0%; background: var(--accent-purple);"></div>
+                                        <div class="critique-progress-fill" id="fill-certs" style="width: 0%; background: #6366f1;"></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                                         <span>Projects Index</span>
-                                        <span id="score-projects">0%</span>
+                                        <span id="score-projects" style="font-weight: 600; color: #fff;">0%</span>
                                     </div>
                                     <div class="critique-progress-bar">
-                                        <div class="critique-progress-fill" id="fill-projects" style="width: 0%; background: var(--accent-green);"></div>
+                                        <div class="critique-progress-fill" id="fill-projects" style="width: 0%; background: #10b981;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -301,7 +313,7 @@
                     </div>
 
                     <!-- Interactive What-If Skill Growth Simulator -->
-                    <div class="card col-12" id="whatif-simulator-container" style="display: none; margin-top: 1.5rem; background: linear-gradient(135deg, rgba(18, 24, 46, 0.85) 0%, rgba(25, 34, 68, 0.7) 100%); border: 1px solid rgba(0, 242, 254, 0.25);">
+                    <div class="card col-12" id="whatif-simulator-container" style="display: none; margin-top: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                             <div>
                                 <h3 class="card-title" style="margin-bottom: 0.35rem; font-family: 'Outfit', sans-serif;">
@@ -610,7 +622,7 @@
                     </div>
 
                     <!-- Interactive Stipend & ROI Calculator Card -->
-                    <div class="card col-12" style="margin-top: 1.5rem; background: linear-gradient(135deg, rgba(18, 24, 46, 0.9) 0%, rgba(20, 30, 60, 0.75) 100%); border: 1px solid rgba(0, 242, 254, 0.25);">
+                    <div class="card col-12" style="margin-top: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <div class="panel-header" style="margin-bottom: 1.5rem;">
                             <h2 class="panel-title" style="font-size: 1.25rem;"><i class="fas fa-calculator" style="color: var(--accent-green);"></i> Interactive Stipend & Placement ROI Calculator</h2>
                             <p class="panel-subtitle">Simulate how your GPA, tech stack projects, and hands-on experience mathematically project your monthly entry offer bracket.</p>
@@ -667,7 +679,7 @@
                             <div class="col-5" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
                                     <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">Estimated Monthly Stipend</div>
-                                    <div id="roi-projected-stipend" style="font-size: 1.85rem; font-weight: 800; font-family: 'Outfit', sans-serif; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">₹52,000 - ₹72,000</div>
+                                    <div id="roi-projected-stipend" style="font-size: 1.85rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #3b82f6;">₹52,000 - ₹72,000</div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">Per month entry stipend rate across tech hubs</div>
 
                                     <div style="margin-top: 1.25rem;">
@@ -676,12 +688,12 @@
                                             <span id="roi-shortlist-pct" style="font-weight: 700; color: var(--accent-green);">84%</span>
                                         </div>
                                         <div class="critique-progress-bar" style="height: 8px;">
-                                            <div id="roi-progress-bar" class="critique-progress-fill" style="width: 84%; background: var(--gradient-glow);"></div>
+                                            <div id="roi-progress-bar" class="critique-progress-fill" style="width: 84%; background: #3b82f6;"></div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div id="roi-insight-box" style="margin-top: 1.25rem; padding: 0.85rem; background: rgba(0, 242, 254, 0.05); border: 1px dashed rgba(0, 242, 254, 0.25); border-radius: 8px; font-size: 0.78rem; line-height: 1.45; color: #d0e4ff;">
+                                <div id="roi-insight-box" style="margin-top: 1.25rem; padding: 0.85rem; background: rgba(59, 130, 246, 0.06); border: 1px dashed rgba(59, 130, 246, 0.25); border-radius: 8px; font-size: 0.78rem; line-height: 1.45; color: #d0e4ff;">
                                     <i class="fas fa-lightbulb" style="color: var(--accent-yellow); margin-right: 0.35rem;"></i>
                                     <span id="roi-tip-text">Completing 1 additional cloud certification (AWS/GCP) will increase projected stipend potential by approx ₹10,000/month.</span>
                                 </div>

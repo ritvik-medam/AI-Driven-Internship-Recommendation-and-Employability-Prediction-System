@@ -922,6 +922,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sessionUsername.textContent = user.name;
         sessionUserrole.textContent = user.role === 'university' ? 'University Director' : `${user.role} workspace`;
+        const avatarEl = document.getElementById('sidebar-user-avatar');
+        if (avatarEl && user.name) {
+            const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            avatarEl.textContent = initials || 'ST';
+        }
 
         // Reset menu & tab displays
         studentMenu.style.display = 'none';
